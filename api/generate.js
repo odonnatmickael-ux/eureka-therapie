@@ -4,26 +4,25 @@ export default async function handler(req, res) {
   const { system, user, tokens } = req.body;
 
   try {
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + process.env.OPENAI_API_KEY
+        "x-api-key": process.env.CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "claude-sonnet-4-6",
         max_tokens: tokens || 4096,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ]
+        system: system,
+        messages: [{ role: "user", content: user }]
       })
     });
 
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
 
-    const text = data.choices?.[0]?.message?.content || "";
+    const text = data.content?.[0]?.text || "";
     return res.status(200).json({ text });
 
   } catch (e) {
