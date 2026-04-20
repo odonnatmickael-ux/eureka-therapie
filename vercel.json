@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/eureka.html" }
+  ],
+  "functions": {
+    "api/generate.js": { "maxDuration": 60 },
+    "api/tts.js": { "maxDuration": 60 }
+  }
+}
