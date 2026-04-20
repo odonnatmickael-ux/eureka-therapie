@@ -923,7 +923,7 @@ function SeancePlayer({ userData, onRestart }) {
         " | Spiritualite: " + beliefSystem;
 
       const gpt = async (sys, usr, tok) => {
-        const r = await fetch("/api/generate_claude", {
+        const r = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ system: sys, user: usr, tokens: tok || 4096 })
