@@ -38,10 +38,10 @@
 <script>
 const CONFIG = {
   // ── Claude API (génération du script de séance) ──────────────────────────
-  OPENAI_API_KEY: "SECURISE_PAR_VERCEL", // ← clé OpenAI
+  CLAUDE_API_KEY: "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", // ← clé OpenAI
 
   // ── ElevenLabs (synthèse vocale) ─────────────────────────────────────────
-  ELEVEN_API_KEY:  "SECURISE_PAR_VERCEL",
+  ELEVEN_API_KEY:  "sk_a7eaaf9306bf08ba44c4a71c80c2891d7230d07e658cdd1b",
   ELEVEN_VOICE_ID: "PjN1x5uqQvyU3DO0gdJz",  // voix par défaut
 
   // ── EmailJS ───────────────────────────────────────────────────────────────
@@ -716,7 +716,7 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
         body: JSON.stringify({
           text: previewText,
           model_id: "eleven_multilingual_v2",
-          voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false }
+          voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.88 }
         })
       });
       if (r.ok) {
@@ -927,14 +927,16 @@ function SeancePlayer({ userData, onRestart }) {
         " | Spiritualite: " + beliefSystem;
 
       const gpt = async (sys, usr, tok) => {
-        const r = await fetch("/api/generate", {
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ system: sys, user: usr, tokens: tok || 4096 })
+          headers: { "Content-Type": "application/json", "x-api-key": CONFIG.CLAUDE_API_KEY,
+            "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: tok || 4096,
+            system: sys, messages: [{ role: "user", content: usr }] })
         });
         const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        return d.text || "";
+        if (d.error) throw new Error(d.error.message);
+        return d.content?.[0]?.text || "";
       };
 
       // APPEL 1 : Accueil + Respirations + Relaxation physique + Pauses alpha + Relaxation mentale
@@ -953,9 +955,9 @@ function SeancePlayer({ userData, onRestart }) {
       setLoadMsg("Generation des 3 scenes...");
       const scenes = await gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "Scene 1 (min 200 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (min 200 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (min 200 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 1 (min 120 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (min 120 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (min 120 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
@@ -1004,12 +1006,13 @@ function SeancePlayer({ userData, onRestart }) {
         const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
         const tts = async (txt) => {
           if (!txt.trim()) return null;
-          const r = await fetch("/api/tts", {
+          const r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "xi-api-key": CONFIG.ELEVEN_API_KEY },
             body: JSON.stringify({
               text: txt.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
-              voiceId: selectedVoice
+              model_id: "eleven_multilingual_v2",
+              voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.88 }
             })
           });
           if (!r.ok) return null;
