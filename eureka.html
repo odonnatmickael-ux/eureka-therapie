@@ -1026,19 +1026,14 @@ function SeancePlayer({ userData, onRestart }) {
         for (const p of parts) {
           if (p.type === "s") { fp.push(p); continue; }
           let tx = p.c;
-          // Découper aux "... " pour éviter accélération entre chunks
-          let segs = tx.split("... ");
-          for (let i = 0; i < segs.length; i++) {
-            let s = (i < segs.length - 1 ? segs[i] + "... " : segs[i]).trim();
-            if (!s) continue;
-            while (s.length > 4800) {
-              let cut = s.lastIndexOf(". ", 4800);
-              if (cut < 50) cut = 4800;
-              fp.push({ type: "t", c: s.substring(0, cut + 2) });
-              s = s.substring(cut + 2).trim();
-            }
-            if (s) fp.push({ type: "t", c: s });
+          while (tx.length > 4800) {
+            let cut = tx.lastIndexOf("... ", 4800);
+            if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
+            if (cut < 500) cut = 4800;
+            fp.push({ type: "t", c: tx.substring(0, cut + 3) });
+            tx = tx.substring(cut + 3).trim();
           }
+          if (tx) fp.push({ type: "t", c: tx });
         }
         const tc = fp.filter(p => p.type === "t").length;
         let done = 0;
@@ -1171,7 +1166,7 @@ function SeancePlayer({ userData, onRestart }) {
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
                 🌙 Conseil : réduisez la luminosité de votre écran · Position allongée recommandée ·
-                Durée estimée : 30 à 60 min · Ne conduisez pas pendant la séance
+                Ne conduisez pas pendant la séance
               </p>
             </div>
           </div>
