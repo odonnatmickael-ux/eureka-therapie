@@ -949,9 +949,9 @@ function SeancePlayer({ userData, onRestart }) {
       setLoadMsg("Generation des 3 scenes...");
       const scenes = await gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "Scene 1 (min 200 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (min 200 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (min 200 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 1 (min 120 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (min 120 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (min 120 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
@@ -1026,14 +1026,19 @@ function SeancePlayer({ userData, onRestart }) {
         for (const p of parts) {
           if (p.type === "s") { fp.push(p); continue; }
           let tx = p.c;
-          while (tx.length > 4800) {
-            let cut = tx.lastIndexOf("... ", 4800);
-            if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
-            if (cut < 500) cut = 4800;
-            fp.push({ type: "t", c: tx.substring(0, cut + 3) });
-            tx = tx.substring(cut + 3).trim();
+          // Découper aux "... " pour éviter accélération entre chunks
+          let segs = tx.split("... ");
+          for (let i = 0; i < segs.length; i++) {
+            let s = (i < segs.length - 1 ? segs[i] + "... " : segs[i]).trim();
+            if (!s) continue;
+            while (s.length > 4800) {
+              let cut = s.lastIndexOf(". ", 4800);
+              if (cut < 50) cut = 4800;
+              fp.push({ type: "t", c: s.substring(0, cut + 2) });
+              s = s.substring(cut + 2).trim();
+            }
+            if (s) fp.push({ type: "t", c: s });
           }
-          if (tx) fp.push({ type: "t", c: tx });
         }
         const tc = fp.filter(p => p.type === "t").length;
         let done = 0;
