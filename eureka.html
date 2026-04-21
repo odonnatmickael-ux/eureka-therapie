@@ -949,9 +949,14 @@ function SeancePlayer({ userData, onRestart }) {
       setLoadMsg("Generation des 3 scenes...");
       const scenes = await gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "Scene 1 (min 120 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (min 120 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (min 120 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "VERBES CANAL - ne jamais repeter le meme verbe plus de 2 fois par scene:\n" +
+        "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu percois, tu discernes, tu visualises\n" +
+        "- Auditif: tu entends, tu percois, tu captes, tu ecoutes, tu ressens la resonance, tu distingues\n" +
+        "- Kinesth.: tu ressens, tu eprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
+        "- Rationnel: tu comprends, tu realises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
+        "Scene 1 (min 100 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (min 100 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (min 100 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
@@ -992,7 +997,7 @@ function SeancePlayer({ userData, onRestart }) {
       setScript(clean);
 
       // AUDIO
-      setLoadMsg("Generation audio - 3 a 5 minutes...");
+      setLoadMsg("Generation audio en cours...");
       try {
         const actx = new (window.AudioContext || window.webkitAudioContext)();
         const sr = actx.sampleRate;
@@ -1099,7 +1104,7 @@ function SeancePlayer({ userData, onRestart }) {
               backgroundSize:"200% 100%" }} />
           </div>
           <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>
-            Patientez 3 à 5 minutes — génération du script puis de l'audio complet
+            Patientez — génération du script puis de l'audio complet
           </p>
         </div>
       </Card>
