@@ -38,10 +38,10 @@
 <script>
 const CONFIG = {
   // ── Claude API (génération du script de séance) ──────────────────────────
-  CLAUDE_API_KEY: "SECURISE_PAR_VERCEL", // ← clé OpenAI
+  CLAUDE_API_KEY: "", // ← clé OpenAI
 
   // ── ElevenLabs (synthèse vocale) ─────────────────────────────────────────
-  ELEVEN_API_KEY:  "SECURISE_PAR_VERCEL",
+  ELEVEN_API_KEY:  "",
   ELEVEN_VOICE_ID: "PjN1x5uqQvyU3DO0gdJz",  // voix par défaut
 
   // ── EmailJS ───────────────────────────────────────────────────────────────
@@ -710,14 +710,10 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
     try {
       // Générer un court extrait à la demande via ElevenLabs
       const previewText = "Bonjour... installez-vous confortablement... respirez doucement... et laissez la détente s'installer naturellement en vous...";
-      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice.id}`, {
+      const r = await fetch("/api/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "xi-api-key": CONFIG.ELEVEN_API_KEY },
-        body: JSON.stringify({
-          text: previewText,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: previewText, voiceId: voice.id })
       });
       if (r.ok) {
         const blob = await r.blob();
@@ -953,9 +949,9 @@ function SeancePlayer({ userData, onRestart }) {
       setLoadMsg("Generation des 3 scenes...");
       const scenes = await gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "Scene 1 (min 200 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (min 200 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (min 200 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 1 (min 120 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (min 120 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (min 120 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
@@ -969,7 +965,7 @@ function SeancePlayer({ userData, onRestart }) {
         "Une dernière fois... pour sceller cette transformation dans les profondeurs de votre être..."
       ];
       let cycles = "";
-      for (let i = 0; i < 1; i++) {
+      for (let i = 0; i < 7; i++) {
         cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
       }
 
@@ -1170,7 +1166,7 @@ function SeancePlayer({ userData, onRestart }) {
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
                 🌙 Conseil : réduisez la luminosité de votre écran · Position allongée recommandée ·
-                Durée estimée : 15 à 25 min · Ne conduisez pas pendant la séance
+                Ne conduisez pas pendant la séance
               </p>
             </div>
           </div>
