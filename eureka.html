@@ -1231,8 +1231,27 @@ function SeancePlayer({ userData, onRestart }) {
 
       setScript(clean);
 
-      // AUDIO
-      setLoadMsg("Generation audio en cours...");
+      // AUDIO — charger l'audio pré-généré depuis Vercel Blob
+      setLoadMsg("Chargement de votre audio...");
+      setAudioUrl(getDemoAudioUrl(vakog, relaxDir));
+
+      // EMAIL
+      setLoadMsg("Envoi email...");
+      try {
+        emailjs.init(CONFIG.EJS_PUBLIC_KEY);
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+          to_email: email, to_name: prenom, mbti_type: mbti,
+          mbti_profile: MBTI_NAMES[mbti], vakog: VAKOG_NAMES[vakog],
+          problem, objectif, script: clean.substring(0, 8000),
+          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum
+        });
+        setEmailStatus("ok");
+      } catch { setEmailStatus("fail"); }
+
+      computeNewStreak();
+      setPhase("ready");
+      return;
+      } catch(UNUSED) {} // placeholder
       try {
         const actx = new (window.AudioContext || window.webkitAudioContext)();
         const sr = actx.sampleRate;
@@ -1407,7 +1426,7 @@ function SeancePlayer({ userData, onRestart }) {
             <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
               onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
               onTimeUpdate={e => setProgress(e.target.currentTime)}
-              onLoadedMetadata={e => { e.target.playbackRate = 0.78; setDuration(e.target.duration); }} />
+              onLoadedMetadata={e => setDuration(e.target.duration)} />
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
@@ -1519,6 +1538,16 @@ function SeancePlayer({ userData, onRestart }) {
 // ══════════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ══════════════════════════════════════════════════════════════════
+
+// ── Audio pré-généré (Vercel Blob) ───────────────────────────────
+function getDemoAudioUrl(vakog, relaxDir) {
+  const BLOB = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com";
+  const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
+  const canal = canalMap[vakog] || "visuel";
+  const dir = relaxDir === "TF" ? "tf" : "ft";
+  return BLOB + "/demo_" + canal + "_" + dir + ".wav";
+}
+
 function bufferToWav(buffer, sampleRate) {
   const numCh = 1, bps = 16;
   const byteRate = sampleRate * numCh * bps / 8;
