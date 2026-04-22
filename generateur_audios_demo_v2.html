@@ -223,9 +223,9 @@ const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
 const DIR_NOMS = { TF:'tf', FT:'ft' };
 
 async function generer() {
-  const claudeKey = document.getElementById('claudeKey').value.trim();
+  const claudeKey = null; // utilisé via /api/generate Vercel
   const elevenKey = document.getElementById('elevenKey').value.trim();
-  if (!claudeKey || !elevenKey) { alert('Entrez vos clés API'); return; }
+  if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
 
   document.getElementById('progressCard').style.display = 'block';
   document.getElementById('genBtn').disabled = true;
