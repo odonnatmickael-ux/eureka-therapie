@@ -172,7 +172,7 @@ function buildPromptSysteme(vakog, dir) {
     "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n\n" +
     "GROUPES MUSCULAIRES:\n" + (dir === 'TF' ? groupesTF : groupesFT) + "\n\n" +
-    "SPIRITUALITE: Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...";
+    "";  // Pas d'affirmations spirituelles en démo
 }
 
 async function callClaude(claudeKey, system, user, tokens) {
@@ -188,13 +188,13 @@ async function callClaude(claudeKey, system, user, tokens) {
 }
 
 async function callTTS(elevenKey, text) {
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+  // Appel via /api/tts (Vercel serverless) — évite le blocage CORS
+  const r = await fetch("/api/tts", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "xi-api-key": elevenKey },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text: text.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
-      model_id: "eleven_multilingual_v2",
-      voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
+      voiceId: VOICE_ID
     })
   });
   if (!r.ok) throw new Error("ElevenLabs error: " + r.status);
@@ -246,9 +246,7 @@ async function generer() {
       "4. Je vais me taire... [PAUSE_15s] corps s enfonce... [PAUSE_15s] s approfondir... [PAUSE_15s]\n" +
       "5. Relaxation mentale canal " + selVakog + " : lieu interieur, descente dans l espace...\n" +
       "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
-      "7. Je cultive l amour... je cultive la verite... je cultive la paix...\n" +
-      "8. [PAUSE_15s]\n" +
-      "9. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse\n" +
+      "7. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse\n" +
       "STOP - pas de scenes therapeutiques, pas de cycles", 4096);
 
     const clean = script
