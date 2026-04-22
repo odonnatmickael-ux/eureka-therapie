@@ -1139,6 +1139,9 @@ function SeancePlayer({ userData, onRestart }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [elevenClientKey, setElevenClientKey] = useState("");
+  const [fullGenPhase, setFullGenPhase] = useState(null);
+  const [fullGenMsg, setFullGenMsg] = useState("");
 
   useEffect(() => { generateSession(); }, []);
 
@@ -1272,7 +1275,7 @@ function SeancePlayer({ userData, onRestart }) {
       const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
       const ttsClient = async (txt) => {
         if (!txt.trim()) return null;
-        const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice}`, {
+        const r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
           method: "POST",
           headers: { "Content-Type": "application/json", "xi-api-key": key },
           body: JSON.stringify({
@@ -1281,7 +1284,7 @@ function SeancePlayer({ userData, onRestart }) {
             voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
           })
         });
-        if (!r.ok) throw new Error("Clé ElevenLabs invalide ou crédits insuffisants (erreur " + r.status + ")");
+        if (!r.ok) throw new Error("Clé invalide ou crédits insuffisants (" + r.status + ")");
         return await actx.decodeAudioData(await r.arrayBuffer());
       };
       const pat = /\[PAUSE_(\d+)s\]/gi;
@@ -1289,12 +1292,12 @@ function SeancePlayer({ userData, onRestart }) {
       let li = 0, mx;
       while ((mx = pat.exec(script)) !== null) {
         const t = script.slice(li, mx.index).trim();
-        if (t) parts.push({ type: "t", c: t });
-        parts.push({ type: "s", sec: parseInt(mx[1]) });
+        if (t) parts.push({ type:"t", c:t });
+        parts.push({ type:"s", sec:parseInt(mx[1]) });
         li = mx.index + mx[0].length;
       }
       const rem = script.slice(li).trim();
-      if (rem) parts.push({ type: "t", c: rem });
+      if (rem) parts.push({ type:"t", c:rem });
       const fp = [];
       for (const p of parts) {
         if (p.type === "s") { fp.push(p); continue; }
@@ -1303,21 +1306,19 @@ function SeancePlayer({ userData, onRestart }) {
           let cut = tx.lastIndexOf("... ", 4800);
           if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
           if (cut < 500) cut = 4800;
-          fp.push({ type: "t", c: tx.substring(0, cut + 3) });
-          tx = tx.substring(cut + 3).trim();
+          fp.push({ type:"t", c:tx.substring(0, cut+3) });
+          tx = tx.substring(cut+3).trim();
         }
-        if (tx) fp.push({ type: "t", c: tx });
+        if (tx) fp.push({ type:"t", c:tx });
       }
       const tc = fp.filter(p => p.type === "t").length;
       let done = 0;
       for (const p of fp) {
-        if (p.type === "s") { bufs.push(sil(p.sec)); }
-        else {
-          done++;
-          setFullGenMsg("Audio " + done + " / " + tc + " segments...");
-          const b = await ttsClient(p.c);
-          if (b) bufs.push(b);
-        }
+        if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
+        done++;
+        setFullGenMsg("Audio " + done + " / " + tc + " segments...");
+        const b = await ttsClient(p.c);
+        if (b) bufs.push(b);
       }
       if (bufs.length > 0) {
         const tot = bufs.reduce((s, b) => s + b.length, 0);
@@ -1387,6 +1388,9 @@ function SeancePlayer({ userData, onRestart }) {
           </p>
         </div>
 
+        {/* Streak banner */}
+        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
+
         {/* Statut email */}
         {emailStatus && (
           <div style={{ padding:"0.75rem 1rem", borderRadius:"10px", marginBottom:"1rem", fontSize:"12px",
@@ -1448,15 +1452,12 @@ function SeancePlayer({ userData, onRestart }) {
             fontWeight:"400", marginBottom:"0.75rem" }}>✦ Générer ma séance complète personnalisée</h3>
           <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75", marginBottom:"1rem",
             fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
-            Cette démo vous offre une relaxation générique selon votre profil. La séance complète inclut
-            votre prénom, vos problèmes précis et 7 cycles de transformation profonde.
+            Cette démo vous offre une relaxation générique selon votre profil. La séance complète inclut votre prénom, vos problèmes précis et 7 cycles de transformation profonde.
           </p>
           <div style={{ background:C.bg, borderRadius:"12px", padding:"1rem 1.25rem",
             border:`1px solid ${C.border}`, marginBottom:"1rem" }}>
-            <p style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500", marginBottom:"0.75rem" }}>
-              Pour obtenir votre clé ElevenLabs gratuite :
-            </p>
-            <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.8" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem" }}>Pour obtenir votre clé ElevenLabs gratuite :</p>
+            <p style={{ fontSize:"12px", color:C.muted, lineHeight:"2" }}>
               1. Créez un compte gratuit sur <strong style={{color:C.cream}}>elevenlabs.io</strong><br/>
               2. Allez dans "Profile" → "API Key"<br/>
               3. Copiez votre clé et collez-la ci-dessous<br/>
@@ -1494,9 +1495,6 @@ function SeancePlayer({ userData, onRestart }) {
             {fullGenPhase === "generating" ? "Génération en cours..." : "Générer ma séance complète →"}
           </Btn>
         </div>
-
-        {/* Streak banner */}
-        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
 
         {/* Script */}
         {script && (
