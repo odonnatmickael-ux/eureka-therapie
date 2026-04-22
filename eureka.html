@@ -48,110 +48,7 @@ const CONFIG = {
   EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
   EJS_SERVICE_ID:  "service_veoaw2j",
   EJS_TEMPLATE_ID: "template_pvpb8m6",
-
-  // ── MODE DÉMO ─────────────────────────────────────────────────────────────
-  DEMO_MODE: false,
 };
-
-if (CONFIG.DEMO_MODE) {
-
-  const DEMO_SCRIPT = `Marie, je vous invite à vous installer confortablement... laissez votre corps trouver sa position naturelle... et permettez à vos yeux de se fermer doucement...
-
-Nous allons commencer par trois respirations profondes et libératrices.
-Première respiration — inspirez lentement par le nez... retenez un instant... et expirez complètement par la bouche... laissez partir toute tension.
-Deuxième respiration — inspirez encore plus profondément... sentez votre ventre se gonfler... et à l'expiration, relâchez chaque muscle.
-Troisième respiration — inspirez la paix... et expirez tout ce qui ne vous appartient plus.
-
-[PAUSE_5s]
-
-Votre cuir chevelu se détend... votre front se lisse... vos yeux, vos joues, votre mâchoire relâchent toute leur tension...
-[PAUSE_3s]
-Votre cou et vos épaules s'alourdissent doucement... vos bras glissent vers le bas...
-[PAUSE_3s]
-Votre poitrine s'élargit à chaque souffle... votre ventre monte et descend naturellement...
-[PAUSE_3s]
-Vos cuisses, vos jambes, vos pieds se relâchent complètement...
-
-Je vais me taire un instant...
-[PAUSE_15s]
-Votre corps sait exactement comment se détendre...
-[PAUSE_15s]
-Maintenant imaginez un lieu intérieur qui vous appartient entièrement...
-[PAUSE_15s]
-
-Je vous invite maintenant a commencer ce travail de transformation, Marie... installez-vous encore plus profondement...
-
-Vous apercevez cette difficulté telle qu'elle était... vous la contemplez sans jugement... puis vous discernez son emprise se dissoudre... s'évaporer... disparaître complètement...
-[PAUSE_5s]
-Son emprise s'est évaporée. Vous percevez maintenant le vide lumineux qu'elle laisse derrière elle.
-[PAUSE_5s]
-
-Vous visualisez Marie en action... vous apercevez chaque geste concret, chaque décision prise avec clarté...
-[PAUSE_5s]
-La transformation est RÉELLE... elle est PERMANENTE... elle est MAINTENANT...
-[PAUSE_5s]
-
-Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...
-[PAUSE_15s]
-
-Doucement, commencez à revenir... bougez légèrement vos doigts... vos orteils... étirez-vous... ouvrez les yeux...
-
-Bienvenue de l'autre côté, Marie.`;
-
-  function makeSilentWav(durationSec = 2) {
-    const sr = 22050, numSamples = sr * durationSec;
-    const buf = new ArrayBuffer(44 + numSamples * 2);
-    const view = new DataView(buf);
-    const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-    ws(0,"RIFF"); view.setUint32(4,36+numSamples*2,true); ws(8,"WAVE"); ws(12,"fmt ");
-    view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
-    view.setUint32(24,sr,true); view.setUint32(28,sr*2,true);
-    view.setUint16(32,2,true); view.setUint16(34,16,true);
-    ws(36,"data"); view.setUint32(40,numSamples*2,true);
-    return new Blob([buf], { type: "audio/wav" });
-  }
-
-  const _realFetch = window.fetch.bind(window);
-  window.fetch = async function(url, options) {
-    if (typeof url === "string" && url.startsWith("/api/")) {
-      if (url === "/api/generate") {
-        await new Promise(r => setTimeout(r, 1800));
-        return new Response(JSON.stringify({ text: DEMO_SCRIPT }), {
-          status: 200, headers: { "Content-Type": "application/json" }
-        });
-      }
-      if (url === "/api/tts") {
-        await new Promise(r => setTimeout(r, 500));
-        return new Response(makeSilentWav(2), {
-          status: 200, headers: { "Content-Type": "audio/wav" }
-        });
-      }
-    }
-    return _realFetch(url, options);
-  };
-
-  window.addEventListener("load", () => {
-    if (window.emailjs) {
-      emailjs.send = async function() {
-        await new Promise(r => setTimeout(r, 700));
-        return { status: 200, text: "OK" };
-      };
-    }
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const b = document.createElement("div");
-    b.innerHTML = "🧪 MODE DÉMO — Aucun crédit consommé · Aucune connexion requise · <span style='opacity:.75;font-size:11px'>Mettre DEMO_MODE: false pour la production</span>";
-    Object.assign(b.style, {
-      position:"fixed",top:"0",left:"0",width:"100%",zIndex:"9999",
-      background:"#b8955a",color:"#08191a",textAlign:"center",
-      padding:"8px 16px",fontSize:"13px",fontFamily:"Raleway,sans-serif",
-      fontWeight:"600",letterSpacing:"0.03em",boxShadow:"0 2px 8px rgba(0,0,0,.4)"
-    });
-    document.body.prepend(b);
-    document.body.style.paddingTop = "40px";
-  });
-}
 
 // ── Version Premium ────────────────────────────────────────────────
 const isPremium = false; // TODO: intégrer paiement (Stripe)
@@ -1242,7 +1139,7 @@ function SeancePlayer({ userData, onRestart }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(0.78);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
   useEffect(() => { generateSession(); }, []);
 
@@ -1511,7 +1408,7 @@ function SeancePlayer({ userData, onRestart }) {
             <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
               onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
               onTimeUpdate={e => setProgress(e.target.currentTime)}
-              onLoadedMetadata={e => { e.target.playbackRate = 0.78; setDuration(e.target.duration); }} />
+              onLoadedMetadata={e => { e.target.playbackRate = 1.0; setDuration(e.target.duration); }} />
             <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginTop:"0.6rem", flexWrap:"wrap" }}>
               <span style={{ fontSize:"11px", color:C.muted, whiteSpace:"nowrap" }}>Vitesse :</span>
               {[{v:0.75,l:"× 0,75 — Très lent"},{v:0.78,l:"× 0,78 — Sophrologie profonde"},{v:0.83,l:"× 0,83 — Sophrologie"},{v:1.00,l:"× 1,00 — Standard"}].map(({v,l}) => (
