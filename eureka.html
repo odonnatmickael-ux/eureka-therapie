@@ -1260,6 +1260,81 @@ function SeancePlayer({ userData, onRestart }) {
   };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+  const generateFullAudio = async () => {
+    const key = elevenClientKey.trim();
+    if (!key) return;
+    setFullGenPhase("generating");
+    setFullGenMsg("Préparation de votre séance complète...");
+    try {
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const sr = actx.sampleRate;
+      const bufs = [];
+      const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
+      const ttsClient = async (txt) => {
+        if (!txt.trim()) return null;
+        const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "xi-api-key": key },
+          body: JSON.stringify({
+            text: txt.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
+            model_id: "eleven_multilingual_v2",
+            voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
+          })
+        });
+        if (!r.ok) throw new Error("Clé ElevenLabs invalide ou crédits insuffisants (erreur " + r.status + ")");
+        return await actx.decodeAudioData(await r.arrayBuffer());
+      };
+      const pat = /\[PAUSE_(\d+)s\]/gi;
+      const parts = [];
+      let li = 0, mx;
+      while ((mx = pat.exec(script)) !== null) {
+        const t = script.slice(li, mx.index).trim();
+        if (t) parts.push({ type: "t", c: t });
+        parts.push({ type: "s", sec: parseInt(mx[1]) });
+        li = mx.index + mx[0].length;
+      }
+      const rem = script.slice(li).trim();
+      if (rem) parts.push({ type: "t", c: rem });
+      const fp = [];
+      for (const p of parts) {
+        if (p.type === "s") { fp.push(p); continue; }
+        let tx = p.c;
+        while (tx.length > 4800) {
+          let cut = tx.lastIndexOf("... ", 4800);
+          if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
+          if (cut < 500) cut = 4800;
+          fp.push({ type: "t", c: tx.substring(0, cut + 3) });
+          tx = tx.substring(cut + 3).trim();
+        }
+        if (tx) fp.push({ type: "t", c: tx });
+      }
+      const tc = fp.filter(p => p.type === "t").length;
+      let done = 0;
+      for (const p of fp) {
+        if (p.type === "s") { bufs.push(sil(p.sec)); }
+        else {
+          done++;
+          setFullGenMsg("Audio " + done + " / " + tc + " segments...");
+          const b = await ttsClient(p.c);
+          if (b) bufs.push(b);
+        }
+      }
+      if (bufs.length > 0) {
+        const tot = bufs.reduce((s, b) => s + b.length, 0);
+        const comb = actx.createBuffer(1, tot, sr);
+        const ch = comb.getChannelData(0);
+        let off = 0;
+        for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+        setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
+        setFullGenPhase("done");
+        setFullGenMsg("Votre séance complète est prête !");
+      }
+    } catch(e) {
+      setFullGenPhase("error");
+      setFullGenMsg(e.message);
+    }
+  };
+
   const downloadScript = () => {
     const content = `EUREKA THÉRAPIE — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nProfil : ${mbti} — ${mbtiName}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${script}`;
     const blob = new Blob([content], { type:"text/plain;charset=utf-8" });
@@ -1311,9 +1386,6 @@ function SeancePlayer({ userData, onRestart }) {
             {new Date().toLocaleDateString("fr-FR", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}
           </p>
         </div>
-
-        {/* Streak banner */}
-        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
 
         {/* Statut email */}
         {emailStatus && (
@@ -1367,6 +1439,64 @@ function SeancePlayer({ userData, onRestart }) {
             </p>
           </div>
         )}
+
+
+        {/* Guide séance complète */}
+        <div style={{ background:C.panel, borderRadius:"16px", padding:"1.5rem",
+          border:`1.5px solid ${C.gold}`, marginBottom:"1.5rem" }}>
+          <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.gold,
+            fontWeight:"400", marginBottom:"0.75rem" }}>✦ Générer ma séance complète personnalisée</h3>
+          <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75", marginBottom:"1rem",
+            fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
+            Cette démo vous offre une relaxation générique selon votre profil. La séance complète inclut
+            votre prénom, vos problèmes précis et 7 cycles de transformation profonde.
+          </p>
+          <div style={{ background:C.bg, borderRadius:"12px", padding:"1rem 1.25rem",
+            border:`1px solid ${C.border}`, marginBottom:"1rem" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500", marginBottom:"0.75rem" }}>
+              Pour obtenir votre clé ElevenLabs gratuite :
+            </p>
+            <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.8" }}>
+              1. Créez un compte gratuit sur <strong style={{color:C.cream}}>elevenlabs.io</strong><br/>
+              2. Allez dans "Profile" → "API Key"<br/>
+              3. Copiez votre clé et collez-la ci-dessous<br/>
+              4. Le plan gratuit suffit pour plusieurs séances
+            </p>
+          </div>
+          <input type="password" value={elevenClientKey}
+            onChange={e => setElevenClientKey(e.target.value)}
+            placeholder="Votre clé ElevenLabs (sk_...)"
+            style={{ width:"100%", padding:"0.875rem 1rem", background:C.bg,
+              border:`1.5px solid ${elevenClientKey ? C.teal : C.border}`, borderRadius:"10px",
+              fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
+              outline:"none", marginBottom:"0.75rem" }} />
+          {fullGenPhase === "generating" && (
+            <div style={{ padding:"0.75rem 1rem", background:"rgba(42,138,143,.1)",
+              borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:C.teal }}>
+              ⏳ {fullGenMsg}
+            </div>
+          )}
+          {fullGenPhase === "done" && (
+            <div style={{ padding:"0.75rem 1rem", background:C.greenBg,
+              borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:"#4ade80" }}>
+              ✓ {fullGenMsg}
+            </div>
+          )}
+          {fullGenPhase === "error" && (
+            <div style={{ padding:"0.75rem 1rem", background:"rgba(192,57,43,.1)",
+              borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:"#f87171" }}>
+              ✕ {fullGenMsg}
+            </div>
+          )}
+          <Btn onClick={generateFullAudio}
+            disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
+            variant="gold">
+            {fullGenPhase === "generating" ? "Génération en cours..." : "Générer ma séance complète →"}
+          </Btn>
+        </div>
+
+        {/* Streak banner */}
+        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
 
         {/* Script */}
         {script && (
