@@ -1231,89 +1231,13 @@ function SeancePlayer({ userData, onRestart }) {
 
       setScript(clean);
 
-      // AUDIO — charger l'audio pré-généré depuis Vercel Blob
-      setLoadMsg("Chargement de votre audio...");
-      setAudioUrl(getDemoAudioUrl(vakog, relaxDir));
-
-      // EMAIL
-      setLoadMsg("Envoi email...");
-      try {
-        emailjs.init(CONFIG.EJS_PUBLIC_KEY);
-        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
-          to_email: email, to_name: prenom, mbti_type: mbti,
-          mbti_profile: MBTI_NAMES[mbti], vakog: VAKOG_NAMES[vakog],
-          problem, objectif, script: clean.substring(0, 8000),
-          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum
-        });
-        setEmailStatus("ok");
-      } catch { setEmailStatus("fail"); }
-
-      computeNewStreak();
-      setPhase("ready");
-      return;
-      } catch(UNUSED) {} // placeholder
-      try {
-        const actx = new (window.AudioContext || window.webkitAudioContext)();
-        const sr = actx.sampleRate;
-        const bufs = [];
-        const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
-        const tts = async (txt) => {
-          if (!txt.trim()) return null;
-          const r = await fetch("/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: txt.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
-              voiceId: selectedVoice
-            })
-          });
-          if (!r.ok) return null;
-          return await actx.decodeAudioData(await r.arrayBuffer());
-        };
-        const pat = /\[PAUSE_(\d+)s\]/gi;
-        const parts = [];
-        let li = 0, mx;
-        while ((mx = pat.exec(clean)) !== null) {
-          const t = clean.slice(li, mx.index).trim();
-          if (t) parts.push({ type: "t", c: t });
-          parts.push({ type: "s", sec: parseInt(mx[1]) });
-          li = mx.index + mx[0].length;
-        }
-        const rem = clean.slice(li).trim();
-        if (rem) parts.push({ type: "t", c: rem });
-        const fp = [];
-        for (const p of parts) {
-          if (p.type === "s") { fp.push(p); continue; }
-          let tx = p.c;
-          while (tx.length > 4800) {
-            let cut = tx.lastIndexOf("... ", 4800);
-            if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
-            if (cut < 500) cut = 4800;
-            fp.push({ type: "t", c: tx.substring(0, cut + 3) });
-            tx = tx.substring(cut + 3).trim();
-          }
-          if (tx) fp.push({ type: "t", c: tx });
-        }
-        const tc = fp.filter(p => p.type === "t").length;
-        let done = 0;
-        for (const p of fp) {
-          if (p.type === "s") { bufs.push(sil(p.sec)); }
-          else {
-            done++;
-            setLoadMsg("Audio " + done + " / " + tc + " segments...");
-            const b = await tts(p.c);
-            if (b) bufs.push(b);
-          }
-        }
-        if (bufs.length > 0) {
-          const tot = bufs.reduce((s, b) => s + b.length, 0);
-          const comb = actx.createBuffer(1, tot, sr);
-          const ch = comb.getChannelData(0);
-          let off = 0;
-          for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-          setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
-        } else { setError("Audio non genere - verifiez ElevenLabs."); }
-      } catch (ae) { setError("Erreur audio: " + ae.message); }
+      // AUDIO — chargement depuis Vercel Blob selon profil
+      setLoadMsg("Chargement de votre audio personnalisé...");
+      const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
+      const canal = canalMap[vakog] || "visuel";
+      const dir = relaxDir === "TF" ? "tf" : "ft";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + canal + "_" + dir + ".wav";
+      setAudioUrl(blobUrl);
 
       // EMAIL
       setLoadMsg("Envoi email...");
@@ -1538,16 +1462,6 @@ function SeancePlayer({ userData, onRestart }) {
 // ══════════════════════════════════════════════════════════════════
 // APP PRINCIPALE
 // ══════════════════════════════════════════════════════════════════
-
-// ── Audio pré-généré (Vercel Blob) ───────────────────────────────
-function getDemoAudioUrl(vakog, relaxDir) {
-  const BLOB = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com";
-  const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
-  const canal = canalMap[vakog] || "visuel";
-  const dir = relaxDir === "TF" ? "tf" : "ft";
-  return BLOB + "/demo_" + canal + "_" + dir + ".wav";
-}
-
 function bufferToWav(buffer, sampleRate) {
   const numCh = 1, bps = 16;
   const byteRate = sampleRate * numCh * bps / 8;
