@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EUREKA — Générateur Audios DÉMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; color: #f0e8d8; padding: 2rem; }
+h1 { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: #b8955a; letter-spacing: 4px; margin-bottom: 0.25rem; }
+h2 { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: #f0e8d8; margin-bottom: 1rem; }
+.subtitle { font-size: 12px; color: #7a9ea0; letter-spacing: 2px; margin-bottom: 2rem; }
+.container { max-width: 800px; margin: 0 auto; }
+.card { background: #112e30; border: 1px solid #1a4548; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+label { font-size: 11px; color: #7a9ea0; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+input[type="text"], input[type="password"] {
+  width: 100%; padding: 0.75rem 1rem; background: #0d2a2c; border: 1px solid #1a4548;
+  border-radius: 8px; color: #f0e8d8; font-family: 'Raleway', sans-serif; font-size: 13px;
+  outline: none; margin-bottom: 1rem;
+}
+input:focus { border-color: #b8955a; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.opt { padding: 0.75rem 1rem; background: #0d2a2c; border: 1.5px solid #1a4548; border-radius: 10px;
+  cursor: pointer; font-size: 12px; color: #7a9ea0; transition: all .2s; text-align: center; }
+.opt:hover { border-color: #b8955a; color: #f0e8d8; }
+.opt.selected { border-color: #b8955a; background: rgba(184,149,90,.15); color: #f0e8d8; }
+.btn {
+  display: block; width: 100%; padding: 0.875rem; border: none; border-radius: 10px;
+  font-family: 'Raleway', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer; transition: all .2s; margin-top: 0.75rem;
+}
+.btn-gold { background: linear-gradient(135deg, #b8955a, #9a7a40); color: #1a0e00; }
+.btn-gold:disabled { opacity: .4; cursor: not-allowed; }
+.btn-teal { background: linear-gradient(135deg, #2a8a8f, #1e6668); color: #f0e8d8; }
+.progress { background: #1a4548; border-radius: 4px; height: 6px; overflow: hidden; margin: 0.75rem 0; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, #2a8a8f, #b8955a); transition: width .3s; border-radius: 4px; }
+.log { background: #0d2a2c; border-radius: 8px; padding: 1rem; font-size: 11px; color: #7a9ea0;
+  max-height: 200px; overflow-y: auto; font-family: monospace; line-height: 1.8; }
+.log .ok { color: #4ade80; }
+.log .err { color: #f87171; }
+.audio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.audio-card { background: #0d2a2c; border: 1px solid #1a4548; border-radius: 10px; padding: 1rem; }
+.audio-card h3 { font-size: 12px; color: #b8955a; margin-bottom: 0.5rem; font-family: 'Raleway'; font-weight: 600; letter-spacing: 1px; }
+.audio-card audio { width: 100%; margin-bottom: 0.5rem; accent-color: #b8955a; }
+.dl-btn { display: block; width: 100%; padding: 6px; background: linear-gradient(135deg,#1e6668,#2a8a8f);
+  border: none; border-radius: 6px; color: #f0e8d8; font-size: 11px; cursor: pointer;
+  font-family: 'Raleway'; text-align: center; text-decoration: none; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px;
+  background: #1a4548; color: #7a9ea0; margin-bottom: 8px; }
+.warning { background: rgba(184,149,90,.1); border: 1px solid #b8955a; border-radius: 10px;
+  padding: 0.875rem 1rem; font-size: 12px; color: #d4b483; line-height: 1.7; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>EUREKA</h1>
+  <p class="subtitle">Générateur d'Audios DÉMO · Usage interne uniquement</p>
+
+  <div class="warning">
+    ⚠️ Cet outil est réservé à l'administrateur du site. Il génère les 8 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude.
+  </div>
+
+  <!-- Clés API -->
+  <div class="card">
+    <h2>🔑 Clés API</h2>
+    <p style="font-size:12px;color:#4ade80;margin-bottom:0.5rem">✓ Clé Claude — utilisée via Vercel (déjà configurée)</p>
+    <label>Clé ElevenLabs</label>
+    <input type="password" id="elevenKey" placeholder="sk_..." />
+  </div>
+
+  <!-- Sélection -->
+  <div class="card">
+    <h2>🎯 Générer un audio</h2>
+    <label>Canal VAKOG</label>
+    <div class="grid" id="vagokGrid">
+      <div class="opt" data-val="V" onclick="select('vakog',this)">👁️ Visuel</div>
+      <div class="opt" data-val="A" onclick="select('vakog',this)">👂 Auditif</div>
+      <div class="opt" data-val="K" onclick="select('vakog',this)">🤲 Kinesthésique</div>
+      <div class="opt" data-val="R" onclick="select('vakog',this)">🧠 Rationnel</div>
+    </div>
+    <label>Direction de relaxation</label>
+    <div class="grid" id="dirGrid">
+      <div class="opt" data-val="TF" onclick="select('dir',this)">⬇️ Tête → Pieds</div>
+      <div class="opt" data-val="FT" onclick="select('dir',this)">⬆️ Pieds → Tête</div>
+    </div>
+    <button class="btn btn-gold" id="genBtn" onclick="generer()" disabled>Générer cet audio →</button>
+  </div>
+
+  <!-- Progression -->
+  <div class="card" id="progressCard" style="display:none">
+    <h2>⏳ Génération en cours…</h2>
+    <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <p id="progressMsg" style="font-size:12px;color:#7a9ea0;margin-top:0.5rem"></p>
+    <div class="log" id="logEl"></div>
+  </div>
+
+  <!-- Audios générés -->
+  <div class="card" id="resultsCard" style="display:none">
+    <h2>✅ Audios générés</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:1rem">Téléchargez chaque fichier et uploadez-le sur Vercel Blob avec le nom exact indiqué.</p>
+    <div class="audio-grid" id="audioGrid"></div>
+  </div>
+
+  <!-- Checklist -->
+  <div class="card">
+    <h2>📋 Checklist des 8 fichiers</h2>
+    <div style="display:grid;gap:0.5rem" id="checklist">
+      <div id="chk-V-TF" class="badge">⬜ demo_visuel_tf.wav</div>
+      <div id="chk-V-FT" class="badge">⬜ demo_visuel_ft.wav</div>
+      <div id="chk-A-TF" class="badge">⬜ demo_auditif_tf.wav</div>
+      <div id="chk-A-FT" class="badge">⬜ demo_auditif_ft.wav</div>
+      <div id="chk-K-TF" class="badge">⬜ demo_kinesth_tf.wav</div>
+      <div id="chk-K-FT" class="badge">⬜ demo_kinesth_ft.wav</div>
+      <div id="chk-R-TF" class="badge">⬜ demo_rationnel_tf.wav</div>
+      <div id="chk-R-FT" class="badge">⬜ demo_rationnel_ft.wav</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const VOICE_ID = "nPczCjzI2devNBz1zQrb"; // Brian
+let selVakog = null, selDir = null;
+
+function select(type, el) {
+  const grid = type === 'vakog' ? document.getElementById('vagokGrid') : document.getElementById('dirGrid');
+  grid.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  if (type === 'vakog') selVakog = el.dataset.val;
+  else selDir = el.dataset.val;
+  document.getElementById('genBtn').disabled = !(selVakog && selDir);
+}
+
+function log(msg, type='') {
+  const el = document.getElementById('logEl');
+  el.innerHTML += `<div class="${type}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressMsg').textContent = msg;
+}
+
+function buildPromptSysteme(vakog, dir) {
+  const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
+    vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
+    vakog === 'K' ? "Metaphores KINESTH.: sensations, chaleur, poids, fluidite" :
+    "Langage logique et clair";
+
+  const groupesTF = "GROUPES TETE vers PIEDS:\n" +
+    "Groupe TETE: cuir chevelu, oreilles, front, sourcils, paupieres, yeux, nez, joues, bouche, levres, interieur bouche, langue, machoire, menton - chacun: phrase invitation detente + [PAUSE_3s] - puis annoncer toute la tete detendue [PAUSE_5s]\n" +
+    "Groupe COU: cou, nuque, vertebres cervicales - chacun [PAUSE_3s] - puis annoncer cou detendu [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: epaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup detendus [PAUSE_5s]\n" +
+    "Groupe TRONC: vertebres dorsales, lombaires, cage thoracique, poitrine, ventre, abdominaux, coeur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, 2e, 3e, 4e, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps detendu [PAUSE_5s]";
+
+  const groupesFT = "GROUPES PIEDS vers TETE:\n" +
+    "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf detendus [PAUSE_5s]\n" +
+    "Groupe TRONC: intestins, reins, foie, estomac, poumons, coeur, abdominaux, ventre, poitrine, cage thoracique, vertebres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, epaules - chacun [PAUSE_3s] - puis annoncer membres sup detendus [PAUSE_5s]\n" +
+    "Groupe COU: vertebres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou detendu [PAUSE_5s]\n" +
+    "Groupe TETE: menton, machoire, langue, interieur bouche, levres, bouche, joues, nez, yeux, paupieres, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tete detendue [PAUSE_5s]";
+
+  return "Tu es un sophrologue expert. Tu generes un script audio de seance DEMO sans prenom.\n" +
+    "ZERO TITRE. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
+    "Remplacer tout prenom par 'vous'. Pas de scenes therapeutiques. Pas de 7 cycles.\n\n" +
+    "VAKOG: " + vakog + " (" + vakogStyle + ")\n\n" +
+    "REGLES ABSOLUES:\n" +
+    "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction.\n" +
+    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en 4 temps... 1... 2... 3... 4... Bloquez doucement... 1... 2... Et expirez... tout doucement... en 8 temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
+    "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n\n" +
+    "GROUPES MUSCULAIRES:\n" + (dir === 'TF' ? groupesTF : groupesFT) + "\n\n" +
+    "SPIRITUALITE: Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...";
+}
+
+async function callClaude(claudeKey, system, user, tokens) {
+  // Appel via /api/generate (Vercel serverless)
+  const r = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system, user, tokens })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error);
+  return d.text || "";
+}
+
+async function callTTS(elevenKey, text) {
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "xi-api-key": elevenKey },
+    body: JSON.stringify({
+      text: text.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
+      model_id: "eleven_multilingual_v2",
+      voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
+    })
+  });
+  if (!r.ok) throw new Error("ElevenLabs error: " + r.status);
+  return await r.arrayBuffer();
+}
+
+function bufferToWav(buffer, sampleRate) {
+  const numCh = 1, bps = 16;
+  const byteRate = sampleRate * numCh * bps / 8;
+  const blockAlign = numCh * bps / 8;
+  const dataLen = buffer.length * blockAlign;
+  const ab = new ArrayBuffer(44 + dataLen);
+  const v = new DataView(ab);
+  const ws = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,36+dataLen,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,numCh,true);
+  v.setUint32(24,sampleRate,true); v.setUint32(28,byteRate,true);
+  v.setUint16(32,blockAlign,true); v.setUint16(34,bps,true); ws(36,'data');
+  v.setUint32(40,dataLen,true);
+  const d = buffer.getChannelData(0); let o = 44;
+  for (let i=0;i<d.length;i++,o+=2) { const s=Math.max(-1,Math.min(1,d[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); }
+  return new Blob([ab],{type:'audio/wav'});
+}
+
+const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
+const DIR_NOMS = { TF:'tf', FT:'ft' };
+
+async function generer() {
+  const claudeKey = document.getElementById('claudeKey').value.trim();
+  const elevenKey = document.getElementById('elevenKey').value.trim();
+  if (!claudeKey || !elevenKey) { alert('Entrez vos clés API'); return; }
+
+  document.getElementById('progressCard').style.display = 'block';
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('logEl').innerHTML = '';
+
+  const fname = `demo_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
+
+  try {
+    // ÉTAPE 1 : Script relaxation
+    setProgress(10, 'Génération du script relaxation...');
+    log('→ Appel Claude pour script ' + selVakog + ' / ' + selDir + '...');
+    const sys = buildPromptSysteme(selVakog, selDir);
+    const script = await callClaude(null, sys,
+      "Genere le script DEMO complet:\n" +
+      "1. Accueil: 'Je vous invite a vous installer confortablement...' (2-3 phrases)\n" +
+      "2. 3 respirations exactes (texte exact REGLE 2)\n" +
+      "3. Relaxation physique complete (une partie a la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
+      "4. Je vais me taire... [PAUSE_15s] corps s enfonce... [PAUSE_15s] s approfondir... [PAUSE_15s]\n" +
+      "5. Relaxation mentale canal " + selVakog + " : lieu interieur, descente dans l espace...\n" +
+      "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
+      "7. Je cultive l amour... je cultive la verite... je cultive la paix...\n" +
+      "8. [PAUSE_15s]\n" +
+      "9. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse\n" +
+      "STOP - pas de scenes therapeutiques, pas de cycles", 4096);
+
+    const clean = script
+      .replace(/\[VOIX[^\]]*\]/gi, "")
+      .replace(/^#+\s.*$/gm, "")
+      .replace(/\*\*[^*]+\*\*/g, "")
+      .trim();
+
+    log('✓ Script généré (' + clean.length + ' caractères)', 'ok');
+    setProgress(30, 'Découpage en segments audio...');
+
+    // ÉTAPE 2 : Découpage
+    const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+    const sr = actx.sampleRate;
+    const bufs = [];
+    const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
+
+    const pat = /\[PAUSE_(\d+)s\]/gi;
+    const parts = [];
+    let li = 0, mx;
+    while ((mx = pat.exec(clean)) !== null) {
+      const t = clean.slice(li, mx.index).trim();
+      if (t) parts.push({ type:"t", c:t });
+      parts.push({ type:"s", sec:parseInt(mx[1]) });
+      li = mx.index + mx[0].length;
+    }
+    const rem = clean.slice(li).trim();
+    if (rem) parts.push({ type:"t", c:rem });
+
+    const fp = [];
+    for (const p of parts) {
+      if (p.type === "s") { fp.push(p); continue; }
+      let tx = p.c;
+      while (tx.length > 4800) {
+        let cut = tx.lastIndexOf("... ", 4800);
+        if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
+        if (cut < 500) cut = 4800;
+        fp.push({ type:"t", c:tx.substring(0, cut+3) });
+        tx = tx.substring(cut+3).trim();
+      }
+      if (tx) fp.push({ type:"t", c:tx });
+    }
+
+    const tc = fp.filter(p => p.type === "t").length;
+    let done = 0;
+
+    // ÉTAPE 3 : TTS
+    for (const p of fp) {
+      if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
+      done++;
+      const pct = 30 + Math.round((done/tc)*60);
+      setProgress(pct, `Audio ${done} / ${tc} segments...`);
+      log(`→ TTS segment ${done}/${tc}...`);
+      const ab = await callTTS(elevenKey, p.c);
+      const decoded = await actx.decodeAudioData(ab);
+      bufs.push(decoded);
+      log(`✓ Segment ${done} OK`, 'ok');
+    }
+
+    // ÉTAPE 4 : Assemblage
+    setProgress(95, 'Assemblage du fichier WAV...');
+    log('→ Assemblage final...');
+    const tot = bufs.reduce((s,b) => s+b.length, 0);
+    const comb = actx.createBuffer(1, tot, sr);
+    const ch = comb.getChannelData(0);
+    let off = 0;
+    for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+    const wavBlob = bufferToWav(comb, sr);
+    const url = URL.createObjectURL(wavBlob);
+
+    setProgress(100, '✅ Terminé !');
+    log('✓ Fichier WAV prêt : ' + fname, 'ok');
+
+    // Afficher résultat
+    document.getElementById('resultsCard').style.display = 'block';
+    const grid = document.getElementById('audioGrid');
+    const div = document.createElement('div');
+    div.className = 'audio-card';
+    div.innerHTML = `
+      <h3>${fname}</h3>
+      <audio controls src="${url}"></audio>
+      <a class="dl-btn" href="${url}" download="${fname}">⬇ Télécharger ${fname}</a>
+      <p style="font-size:10px;color:#7a9ea0;margin-top:6px;">Taille estimée : ~50 MB · Uploadez via le bouton Upload sur Vercel Blob</p>
+    `;
+    grid.appendChild(div);
+
+    // Cocher la checklist
+    const chkId = `chk-${selVakog}-${selDir}`;
+    const chk = document.getElementById(chkId);
+    if (chk) { chk.textContent = '✅ ' + fname; chk.style.background = 'rgba(74,222,128,.1)'; chk.style.color = '#4ade80'; }
+
+  } catch(e) {
+    log('❌ Erreur : ' + e.message, 'err');
+    setProgress(0, 'Erreur — voir le log');
+  }
+
+  document.getElementById('genBtn').disabled = false;
+}
+</script>
+</body>
+</html>
