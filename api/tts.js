@@ -19,7 +19,7 @@ export default async function handler(req, res) {
           similarity_boost: 0.75,
           style: 0.05,
           use_speaker_boost: false,
-          speed: 0.83
+          speed: 1
         }
       })
     });
