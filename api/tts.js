@@ -5,24 +5,26 @@ export default async function handler(req, res) {
 
   try {
     const r = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "xi-api-key": process.env.ELEVEN_API_KEY
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability: 0.90,
-          similarity_boost: 0.75,
-          style: 0.05,
-          use_speaker_boost: false,
-          speed: 0.78
-        }
-      })
-    });
+      "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "xi-api-key": process.env.ELEVEN_API_KEY
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: "eleven_turbo_v2", // ✅ CHANGÉ ICI
+          voice_settings: {
+            stability: 0.5,          // plus naturel
+            similarity_boost: 0.8,
+            style: 0.2,
+            use_speaker_boost: true,
+            speed: 0.7               // vitesse optimale relaxation
+          }
+        })
+      }
+    );
 
     if (!r.ok) {
       const err = await r.text();
