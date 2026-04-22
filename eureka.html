@@ -1242,6 +1242,7 @@ function SeancePlayer({ userData, onRestart }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(0.78);
 
   useEffect(() => { generateSession(); }, []);
 
@@ -1510,7 +1511,19 @@ function SeancePlayer({ userData, onRestart }) {
             <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
               onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
               onTimeUpdate={e => setProgress(e.target.currentTime)}
-              onLoadedMetadata={e => setDuration(e.target.duration)} />
+              onLoadedMetadata={e => { e.target.playbackRate = 0.78; setDuration(e.target.duration); }} />
+            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginTop:"0.6rem", flexWrap:"wrap" }}>
+              <span style={{ fontSize:"11px", color:C.muted, whiteSpace:"nowrap" }}>Vitesse :</span>
+              {[{v:0.75,l:"× 0,75 — Très lent"},{v:0.78,l:"× 0,78 — Sophrologie profonde"},{v:0.83,l:"× 0,83 — Sophrologie"},{v:1.00,l:"× 1,00 — Standard"}].map(({v,l}) => (
+                <button key={v} onClick={() => { setPlaybackRate(v); if(audioRef.current) audioRef.current.playbackRate = v; }}
+                  style={{ fontSize:"10px", padding:"3px 10px", borderRadius:"20px",
+                    border:`1px solid ${playbackRate===v ? C.gold : C.border}`,
+                    background: playbackRate===v ? `linear-gradient(135deg,${C.tealDark},${C.teal})` : "transparent",
+                    color: playbackRate===v ? C.cream : C.muted, cursor:"pointer", whiteSpace:"nowrap", transition:"all .2s" }}>
+                  {l}
+                </button>
+              ))}
+            </div>
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
