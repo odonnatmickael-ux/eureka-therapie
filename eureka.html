@@ -48,7 +48,141 @@ const CONFIG = {
   EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
   EJS_SERVICE_ID:  "service_veoaw2j",
   EJS_TEMPLATE_ID: "template_pvpb8m6",
+
+  // ── MODE DÉMO ─────────────────────────────────────────────────────────────
+  DEMO_MODE: true,
 };
+
+if (CONFIG.DEMO_MODE) {
+
+  const DEMO_SCRIPT = `Marie, je vous invite à vous installer confortablement... laissez votre corps trouver sa position naturelle... et permettez à vos yeux de se fermer doucement...
+
+Nous allons commencer par trois respirations profondes et libératrices.
+Première respiration — inspirez lentement par le nez... retenez un instant... et expirez complètement par la bouche... laissez partir toute tension.
+Deuxième respiration — inspirez encore plus profondément... sentez votre ventre se gonfler... et à l'expiration, relâchez chaque muscle.
+Troisième respiration — inspirez la paix... et expirez tout ce qui ne vous appartient plus.
+
+[PAUSE_5s]
+
+Votre cuir chevelu se détend... votre front se lisse... vos yeux, vos joues, votre mâchoire relâchent toute leur tension...
+[PAUSE_3s]
+Votre cou et vos épaules s'alourdissent doucement... vos bras glissent vers le bas...
+[PAUSE_3s]
+Votre poitrine s'élargit à chaque souffle... votre ventre monte et descend naturellement...
+[PAUSE_3s]
+Vos cuisses, vos jambes, vos pieds se relâchent complètement...
+
+Je vais me taire un instant...
+[PAUSE_15s]
+Votre corps sait exactement comment se détendre...
+[PAUSE_15s]
+Maintenant imaginez un lieu intérieur qui vous appartient entièrement...
+[PAUSE_15s]
+
+Je vous invite maintenant a commencer ce travail de transformation, Marie... installez-vous encore plus profondement...
+
+Vous apercevez cette difficulté telle qu'elle était... vous la contemplez sans jugement... puis vous discernez son emprise se dissoudre... s'évaporer... disparaître complètement...
+[PAUSE_5s]
+Son emprise s'est évaporée. Vous percevez maintenant le vide lumineux qu'elle laisse derrière elle.
+[PAUSE_5s]
+
+Vous visualisez Marie en action... vous apercevez chaque geste concret, chaque décision prise avec clarté...
+[PAUSE_5s]
+La transformation est RÉELLE... elle est PERMANENTE... elle est MAINTENANT...
+[PAUSE_5s]
+
+Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...
+[PAUSE_15s]
+
+Doucement, commencez à revenir... bougez légèrement vos doigts... vos orteils... étirez-vous... ouvrez les yeux...
+
+Bienvenue de l'autre côté, Marie.`;
+
+  function makeSilentWav(durationSec = 2) {
+    const sr = 22050, numSamples = sr * durationSec;
+    const buf = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0,"RIFF"); view.setUint32(4,36+numSamples*2,true); ws(8,"WAVE"); ws(12,"fmt ");
+    view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+    view.setUint32(24,sr,true); view.setUint32(28,sr*2,true);
+    view.setUint16(32,2,true); view.setUint16(34,16,true);
+    ws(36,"data"); view.setUint32(40,numSamples*2,true);
+    return new Blob([buf], { type: "audio/wav" });
+  }
+
+  const _realFetch = window.fetch.bind(window);
+  window.fetch = async function(url, options) {
+    if (typeof url === "string" && url.startsWith("/api/")) {
+      if (url === "/api/generate") {
+        await new Promise(r => setTimeout(r, 1800));
+        return new Response(JSON.stringify({ text: DEMO_SCRIPT }), {
+          status: 200, headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (url === "/api/tts") {
+        await new Promise(r => setTimeout(r, 500));
+        return new Response(makeSilentWav(2), {
+          status: 200, headers: { "Content-Type": "audio/wav" }
+        });
+      }
+    }
+    return _realFetch(url, options);
+  };
+
+  window.addEventListener("load", () => {
+    if (window.emailjs) {
+      emailjs.send = async function() {
+        await new Promise(r => setTimeout(r, 700));
+        return { status: 200, text: "OK" };
+      };
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const b = document.createElement("div");
+    b.innerHTML = "🧪 MODE DÉMO — Aucun crédit consommé · Aucune connexion requise · <span style='opacity:.75;font-size:11px'>Mettre DEMO_MODE: false pour la production</span>";
+    Object.assign(b.style, {
+      position:"fixed",top:"0",left:"0",width:"100%",zIndex:"9999",
+      background:"#b8955a",color:"#08191a",textAlign:"center",
+      padding:"8px 16px",fontSize:"13px",fontFamily:"Raleway,sans-serif",
+      fontWeight:"600",letterSpacing:"0.03em",boxShadow:"0 2px 8px rgba(0,0,0,.4)"
+    });
+    document.body.prepend(b);
+    document.body.style.paddingTop = "40px";
+  });
+}
+
+// ── Version Premium ────────────────────────────────────────────────
+const isPremium = false; // TODO: intégrer paiement (Stripe)
+
+// ── Utilitaires Streak 21 jours ────────────────────────────────────
+function getToday() { return new Date().toISOString().slice(0, 10); }
+
+function loadStreak() {
+  try {
+    const raw = localStorage.getItem('eureka_streak');
+    if (!raw) return { lastDate: null, streak: 0 };
+    return JSON.parse(raw);
+  } catch { return { lastDate: null, streak: 0 }; }
+}
+
+function saveStreak(data) {
+  try { localStorage.setItem('eureka_streak', JSON.stringify(data)); } catch {}
+}
+
+function computeNewStreak() {
+  const today = getToday();
+  const current = loadStreak();
+  const { lastDate, streak } = current;
+  if (!lastDate) { const s = { lastDate: today, streak: 1 }; saveStreak(s); return s; }
+  if (lastDate === today) return current;
+  const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+  const yestStr = yest.toISOString().slice(0, 10);
+  const newStreak = lastDate === yestStr ? Math.min(streak + 1, 21) : 1;
+  const s = { lastDate: today, streak: newStreak };
+  saveStreak(s); return s;
+}
 
 // Catalogue de voix ElevenLabs disponibles
 const VOICES = [
@@ -387,11 +521,193 @@ function BreathingOrb() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// COMPOSANT : STREAK BANNER 21 JOURS
+// ══════════════════════════════════════════════════════════════════
+function StreakBanner({ streak }) {
+  const pct = Math.min(Math.round((streak / 21) * 100), 100);
+  const isDone = streak >= 21;
+
+  const msg = streak === 0
+    ? "Générez votre première séance pour commencer"
+    : streak === 1 ? "Excellent début ! Revenez demain pour maintenir votre progression ✨"
+    : streak < 7  ? `🔥 Vous êtes à ${streak} jours consécutifs — vous êtes lancé(e) !`
+    : streak < 14 ? `🔥 ${streak} jours — votre cerveau se reconfigure profondément !`
+    : streak < 21 ? `🔥 ${streak} jours — vous approchez de la transformation complète !`
+    : "";
+
+  if (isDone) return (
+    <div style={{ background:`linear-gradient(135deg,rgba(184,149,90,.2),rgba(42,138,143,.2))`,
+      borderRadius:"16px", padding:"1.25rem 1.5rem", border:`1.5px solid ${C.gold}`,
+      marginBottom:"1.5rem", textAlign:"center", animation:"fadeUp .5s ease" }}>
+      <p style={{ fontSize:"28px", marginBottom:"0.5rem" }}>🎉</p>
+      <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.gold, fontWeight:"400" }}>
+        Bravo, vous avez complété les 21 jours consécutifs !
+      </p>
+      <p style={{ fontSize:"12px", color:C.muted, marginTop:"0.5rem", lineHeight:"1.6" }}>
+        La transformation est intégrée. Continuez à pratiquer pour maintenir les bénéfices.
+      </p>
+    </div>
+  );
+
+  return (
+    <div style={{ background:C.card, borderRadius:"16px", padding:"1rem 1.25rem",
+      border:`1px solid ${C.border}`, marginBottom:"1.25rem", animation:"fadeUp .5s ease" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.6rem" }}>
+        <p style={{ fontSize:"13px", color:C.cream, fontFamily:"'Raleway',sans-serif", flex:1, paddingRight:"1rem", lineHeight:"1.5" }}>
+          {msg}
+        </p>
+        <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:C.gold, flexShrink:0, whiteSpace:"nowrap" }}>
+          Jour {streak} <span style={{ fontSize:"14px", color:C.muted }}>/ 21</span>
+        </span>
+      </div>
+      <div style={{ height:"8px", background:C.border, borderRadius:"4px", overflow:"hidden" }}>
+        <div style={{ height:"100%", borderRadius:"4px", width:`${pct}%`,
+          background:`linear-gradient(90deg,${C.teal},${C.gold})`, transition:"width .6s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANT : RAPPELS QUOTIDIENS
+// ══════════════════════════════════════════════════════════════════
+function ReminderPanel() {
+  const [permStatus, setPermStatus] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  );
+  const [reminderTime, setReminderTime] = useState(() => {
+    try { return localStorage.getItem('eureka_reminder_time') || '20:00'; } catch { return '20:00'; }
+  });
+  const [saved, setSaved] = useState(false);
+  const [showFallback] = useState(() => {
+    const { lastDate } = loadStreak();
+    return lastDate !== getToday();
+  });
+
+  const requestPermission = async () => {
+    if (typeof Notification === 'undefined') return;
+    const p = await Notification.requestPermission();
+    setPermStatus(p);
+    if (p === 'granted') {
+      new Notification("EUREKA Sophrologie 🌿", {
+        body: "Prenez 5 minutes pour votre séance aujourd'hui 🌿",
+        icon: "/favicon.ico"
+      });
+    }
+  };
+
+  const saveTime = () => {
+    try { localStorage.setItem('eureka_reminder_time', reminderTime); } catch {}
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ background:C.card, borderRadius:"16px", padding:"1.25rem 1.5rem",
+      border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
+      <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"18px", color:C.cream,
+        fontWeight:"400", marginBottom:"1rem" }}>🔔 Rappels quotidiens</h3>
+
+      {showFallback && (
+        <div style={{ background:"rgba(184,149,90,.1)", borderRadius:"10px",
+          padding:"0.75rem 1rem", border:`1px solid ${C.gold}`, marginBottom:"1rem" }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, lineHeight:"1.6" }}>
+            🌿 N'oubliez pas votre séance aujourd'hui
+          </p>
+        </div>
+      )}
+
+      <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", marginBottom:"1rem", flexWrap:"wrap" }}>
+        <label style={{ fontSize:"12px", color:C.muted, fontFamily:"'Raleway',sans-serif" }}>Heure préférée :</label>
+        <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)}
+          style={{ padding:"6px 10px", background:C.panel, border:`1px solid ${C.border}`,
+            borderRadius:"8px", color:C.cream, fontSize:"13px", fontFamily:"'Raleway',sans-serif" }} />
+        <button onClick={saveTime}
+          style={{ padding:"6px 14px", background:C.tealDark, border:"none", borderRadius:"8px",
+            color:C.cream, fontSize:"12px", cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
+          {saved ? "✓ Enregistré" : "Enregistrer"}
+        </button>
+      </div>
+
+      {permStatus === 'unsupported'
+        ? <p style={{ fontSize:"12px", color:C.muted }}>Notifications non disponibles sur ce navigateur.</p>
+        : permStatus === 'granted'
+          ? <p style={{ fontSize:"12px", color:"#4ade80" }}>✓ Notifications activées — rappel à {reminderTime}</p>
+          : permStatus === 'denied'
+            ? <p style={{ fontSize:"12px", color:C.muted }}>Notifications bloquées. Autorisez-les dans les paramètres de votre navigateur.</p>
+            : (
+              <button onClick={requestPermission}
+                style={{ width:"100%", padding:"0.75rem",
+                  background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+                  border:"none", borderRadius:"10px", color:C.cream, fontSize:"13px",
+                  cursor:"pointer", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
+                🔔 Activer les rappels
+              </button>
+            )
+      }
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANT : MODAL MENTIONS LÉGALES
+// ══════════════════════════════════════════════════════════════════
+function MentionsModal({ onClose }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}
+      onClick={onClose}>
+      <div style={{ background:C.card, borderRadius:"20px", padding:"2rem",
+        border:`1px solid ${C.border}`, maxWidth:"560px", width:"100%",
+        maxHeight:"85vh", overflowY:"auto" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
+          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:C.cream, fontWeight:"400" }}>
+            Informations légales
+          </h2>
+          <button onClick={onClose}
+            style={{ background:"transparent", border:"none", color:C.muted, fontSize:"20px", cursor:"pointer" }}>✕</button>
+        </div>
+
+        {[
+          { title:"⚕️ Avertissement médical", text:"Ce service propose des séances de relaxation et de sophrologie générées par intelligence artificielle. Il ne remplace en aucun cas un suivi médical, psychologique ou thérapeutique professionnel. En cas de trouble sérieux, veuillez consulter un professionnel de santé." },
+          { title:"🔒 Données personnelles (RGPD)", text:"Les informations saisies (email, réponses au questionnaire) sont utilisées uniquement pour générer votre séance personnalisée en temps réel. Elles ne sont pas stockées ni conservées sur nos serveurs." },
+          { title:"📋 Conditions d'utilisation", text:"Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service." },
+        ].map(({ title, text }) => (
+          <div key={title} style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem",
+            borderBottom:`1px solid ${C.border}` }}>
+            <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
+              fontFamily:"'Raleway',sans-serif" }}>{title}</p>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>{text}</p>
+          </div>
+        ))}
+
+        {!isPremium && (
+          <div style={{ background:`rgba(184,149,90,.08)`, borderRadius:"12px",
+            padding:"1rem", border:`1px solid ${C.border}`, textAlign:"center" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
+            <p style={{ fontSize:"11px", color:C.muted, marginTop:"4px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
+          </div>
+        )}
+
+        <button onClick={onClose}
+          style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1.5rem",
+            background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+            border:"none", borderRadius:"10px", color:C.cream, fontSize:"13px",
+            cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
+          Fermer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
 // ÉTAPES DU FUNNEL
 // ══════════════════════════════════════════════════════════════════
 
 // ÉTAPE 0 : Landing
-function Landing({ onStart }) {
+function Landing({ onStart, onMentions }) {
   return (
     <div style={{ textAlign:"center", maxWidth:"600px", width:"100%", animation:"fadeUp .6s ease" }}>
       <BreathingOrb />
@@ -437,6 +753,14 @@ function Landing({ onStart }) {
         Commencer ma séance personnalisée →
       </button>
       <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>Durée : environ 8 minutes de personnalisation</p>
+
+      {/* Avertissement médical */}
+      <div style={{ marginTop:"1.5rem", padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
+        borderRadius:"12px", border:`1px solid rgba(184,149,90,.2)`, textAlign:"left" }}>
+        <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+          ⚕️ Ce service propose des séances de sophrologie générées par IA. Il ne remplace pas un suivi médical ou thérapeutique professionnel.
+        </p>
+      </div>
     </div>
   );
 }
@@ -514,14 +838,23 @@ function Anamnese({ onNext }) {
         </div>
 
         <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer",
-          marginBottom:"1.5rem" }}>
+          marginBottom:"1rem" }}>
           <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
             style={{ marginTop:"3px", accentColor:C.gold }} />
           <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
-            J'accepte que ces informations soient utilisées pour personnaliser mes séances.
-            Ces données restent confidentielles et ne sont jamais partagées.
+            J'accepte que mes données (email, réponses au questionnaire) soient utilisées pour personnaliser ma séance.
+            Ces données sont utilisées uniquement en temps réel et <strong style={{ color:C.cream }}>ne sont pas conservées sur nos serveurs</strong>.
           </span>
         </label>
+
+        {/* Mention médicale */}
+        <div style={{ padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
+          borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)`, marginBottom:"1.5rem" }}>
+          <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+            ⚕️ Ce service propose des séances de relaxation et de sophrologie par IA.
+            Il ne remplace pas un suivi médical, psychologique ou thérapeutique professionnel.
+          </p>
+        </div>
 
         <Btn onClick={() => onNext({ prenom, email, problem, objectif })} disabled={!canSubmit} variant="gold">
           Continuer → Profil de personnalité
@@ -848,6 +1181,11 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
             </div>
           ))}
         </div>
+        {/* Note discrète sous les extraits */}
+        <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.75rem", lineHeight:"1.6",
+          fontStyle:"italic", paddingLeft:"4px" }}>
+          Les extraits sont en vitesse standard. La séance finale sera plus lente et adaptée à la relaxation.
+        </p>
       </div>
 
       {/* Musique de fond */}
@@ -954,9 +1292,9 @@ function SeancePlayer({ userData, onRestart }) {
         "- Auditif: tu entends, tu percois, tu captes, tu ecoutes, tu ressens la resonance, tu distingues\n" +
         "- Kinesth.: tu ressens, tu eprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
         "- Rationnel: tu comprends, tu realises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
-        "Scene 1 (min 100 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (min 100 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (min 100 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 1 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
@@ -1074,6 +1412,9 @@ function SeancePlayer({ userData, onRestart }) {
         setEmailStatus("ok");
       } catch { setEmailStatus("fail"); }
 
+      // STREAK 21 JOURS
+      computeNewStreak();
+
       setPhase("ready");
     } catch (e) { console.error(e); setError("Erreur: " + e.message); setPhase("ready"); }
   };
@@ -1130,6 +1471,9 @@ function SeancePlayer({ userData, onRestart }) {
             {new Date().toLocaleDateString("fr-FR", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}
           </p>
         </div>
+
+        {/* Streak banner */}
+        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
 
         {/* Statut email */}
         {emailStatus && (
@@ -1244,17 +1588,32 @@ function SeancePlayer({ userData, onRestart }) {
           );
         })()}
 
-                <Btn onClick={downloadScript} variant="ghost">⬇ Télécharger le script (.txt)</Btn>
-        <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
+        <Btn onClick={downloadScript} variant="ghost">⬇ Télécharger le script (.txt)</Btn>
 
-        <div style={{ marginTop:"1.5rem", padding:"1rem", background:C.panel,
+        {/* Rappels */}
+        <div style={{ marginTop:"1.5rem" }}>
+          <ReminderPanel />
+        </div>
+
+        {/* Premium teaser */}
+        {!isPremium && (
+          <div style={{ padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
+            borderRadius:"12px", border:`1px solid rgba(184,149,90,.2)`,
+            marginBottom:"0.75rem", textAlign:"center" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
+            <p style={{ fontSize:"11px", color:C.hint, marginTop:"3px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
+          </div>
+        )}
+
+        <div style={{ marginTop:"1rem", padding:"1rem", background:C.panel,
           borderRadius:"12px", border:`1px solid ${C.border}` }}>
           <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.7", textAlign:"center" }}>
             <strong style={{ color:C.goldLight }}>Protocole EUREKA — 21 séances</strong><br/>
-            Pour une transformation durable, pratiquez une séance par jour pendant 21 jours.
-            Chaque séance est générée et personnalisée en fonction de votre évolution.
+            Écoutez votre séance chaque jour pendant 21 jours consécutifs pour ancrer la transformation durablement dans votre cerveau.
           </p>
         </div>
+
+        <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
       </div>
     </Card>
   );
@@ -1284,6 +1643,7 @@ function bufferToWav(buffer, sampleRate) {
 function App() {
   const [step, setStep] = useState("landing");
   const [userData, setUserData] = useState({});
+  const [showMentions, setShowMentions] = useState(false);
 
   const STEP_LABELS = ["Accueil","Profil","Sensorialité","Personnalisation","Séance"];
 
@@ -1321,6 +1681,8 @@ function App() {
       flexDirection:"column", alignItems:"center", justifyContent:"center",
       padding:"clamp(1rem,3vw,2rem)" }}>
 
+      {showMentions && <MentionsModal onClose={() => setShowMentions(false)} />}
+
       {/* Fond décoratif */}
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
         {[...Array(5)].map((_,i) => (
@@ -1335,7 +1697,7 @@ function App() {
       <div style={{ position:"relative", zIndex:1, width:"100%",
         display:"flex", flexDirection:"column", alignItems:"center" }}>
 
-        {step === "landing" && <Landing onStart={handleLandingNext} />}
+        {step === "landing" && <Landing onStart={handleLandingNext} onMentions={() => setShowMentions(true)} />}
         {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
         {step === "mbti" && <QuizMBTI prenom={userData.prenom} onComplete={handleMBTINext} />}
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
@@ -1347,10 +1709,19 @@ function App() {
           <SeancePlayer userData={{ ...userData }} onRestart={handleRestart} />
         )}
 
-        <p style={{ fontSize:"10px", color:C.hint, textAlign:"center", marginTop:"2rem",
-          fontFamily:"'Raleway', sans-serif", letterSpacing:"1px" }}>
-          EUREKA Thérapie · Sophrologie · Protocole personnalisé
-        </p>
+        <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
+          flexWrap:"wrap", justifyContent:"center" }}>
+          <p style={{ fontSize:"10px", color:C.hint, textAlign:"center",
+            fontFamily:"'Raleway', sans-serif", letterSpacing:"1px" }}>
+            EUREKA Thérapie · Sophrologie · Protocole personnalisé
+          </p>
+          <button onClick={() => setShowMentions(true)}
+            style={{ background:"transparent", border:"none", color:C.hint, fontSize:"10px",
+              cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
+              letterSpacing:"1px", padding:0 }}>
+            Mentions légales
+          </button>
+        </div>
       </div>
     </div>
   );
