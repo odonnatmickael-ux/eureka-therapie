@@ -16,13 +16,13 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           text: text,
-          model_id: "eleven_turbo_v2",
+          model_id: "eleven_multilingual_v2", // ✅ retour stable
           voice_settings: {
             stability: 0.65,
             similarity_boost: 0.7,
-            style: 0.15,
+            style: 0.1,
             use_speaker_boost: true,
-            speed: 0.68
+            speed: 0.7
           }
         })
       }
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const error = await response.text();
+      console.error("ELEVEN ERROR:", error);
       return res.status(500).json({ error });
     }
 
