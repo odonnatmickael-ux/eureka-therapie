@@ -42,7 +42,7 @@ const CONFIG = {
 
   // ── ElevenLabs (synthèse vocale) ─────────────────────────────────────────
   ELEVEN_API_KEY:  "",
-  ELEVEN_VOICE_ID: "PjN1x5uqQvyU3DO0gdJz",  // voix par défaut
+  ELEVEN_VOICE_ID: "4RZ84U1b4WCqpu57LvIq",  // Bella — voix par défaut (douce, enveloppante)
 
   // ── EmailJS ───────────────────────────────────────────────────────────────
   EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
@@ -83,17 +83,94 @@ function computeNewStreak() {
 
 // Catalogue de voix ElevenLabs disponibles
 const VOICES = [
-  { id:"PjN1x5uqQvyU3DO0gdJz", name:"Antoine", desc:"Voix masculine, grave et chaleureuse", gender:"M",
-    preview:"https://storage.googleapis.com/eleven-public-prod/premade/voices/Antoine/Antoine-preview.mp3" },
-  { id:"nPczCjzI2devNBz1zQrb", name:"Brian",   desc:"Voix masculine, profonde et posée", gender:"M",
-    preview:"" },
-  { id:"cgSgspJ2msm6clMCkdW9", name:"Jessica", desc:"Voix féminine, douce et rassurante", gender:"F",
+  { id:"4RZ84U1b4WCqpu57LvIq", name:"Bella",   desc:"Voix féminine, douce et enveloppante (recommandée)", gender:"F",
     preview:"" },
   { id:"9BWtsMINqrJLrRacOk9x", name:"Aria",    desc:"Voix féminine, apaisante et claire", gender:"F",
+    preview:"" },
+  { id:"pNInz6obpgDQGcFmaJgB", name:"Adam",    desc:"Voix masculine, profonde et rassurante", gender:"M",
+    preview:"" },
+  { id:"nPczCjzI2devNBz1zQrb", name:"Brian",   desc:"Voix masculine, posée et neutre", gender:"M",
     preview:"" },
 ];
 </script>
 
+<!-- ╔═══════════════════════════════════════════════╗ -->
+<!-- ║           PRE-LANDING HTML (avant React)       ║ -->
+<!-- ╚═══════════════════════════════════════════════╝ -->
+<div id="prelanding" style="
+  min-height:100vh;
+  background:#08191a;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem;
+  font-family:'Raleway',sans-serif;
+  text-align:center;
+">
+  <div style="max-width:500px;width:100%;animation:fadeUp .6s ease">
+    <!-- Orbe décoratif -->
+    <div style="width:70px;height:70px;border-radius:50%;border:1.5px solid rgba(184,149,90,.6);
+      display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;
+      background:radial-gradient(circle,rgba(42,138,143,.25) 0%,transparent 70%);
+      animation:breathe 3s ease-in-out infinite">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:28px;color:#b8955a">◈</span>
+    </div>
+
+    <p style="font-size:10px;letter-spacing:5px;color:#b8955a;text-transform:uppercase;margin-bottom:8px">Méthode</p>
+    <h1 style="font-family:'Cormorant Garamond',serif;font-size:clamp(38px,9vw,56px);
+      font-weight:300;letter-spacing:6px;color:#f0e8d8;margin:0 0 6px">EUREKA</h1>
+    <p style="font-size:11px;color:#7a9ea0;letter-spacing:3px;margin-bottom:2rem">Sophrologie · Transformation</p>
+
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,5vw,30px);
+      font-weight:300;color:#f0e8d8;line-height:1.4;margin-bottom:8px">
+      Et si ton mental pouvait<br>enfin ralentir…
+    </h2>
+    <p style="color:#b8955a;font-size:15px;margin-bottom:1rem;font-style:italic">en 21 jours seulement</p>
+
+    <p style="color:#7a9ea0;font-size:14px;line-height:1.7;margin-bottom:1.5rem">
+      Une séance audio <strong style="color:#f0e8d8">personnalisée</strong> créée pour toi,<br>
+      selon ton fonctionnement mental unique.
+    </p>
+
+    <!-- Badges de réassurance conversion -->
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem">
+      <span style="padding:5px 12px;background:rgba(42,138,143,.15);border:1px solid rgba(42,138,143,.3);
+        border-radius:20px;font-size:12px;color:#7a9ea0">⏱ 2 minutes pour créer ta séance</span>
+      <span style="padding:5px 12px;background:rgba(184,149,90,.1);border:1px solid rgba(184,149,90,.25);
+        border-radius:20px;font-size:12px;color:#b8955a">✦ 100% personnalisée</span>
+      <span style="padding:5px 12px;background:rgba(42,138,143,.15);border:1px solid rgba(42,138,143,.3);
+        border-radius:20px;font-size:12px;color:#7a9ea0">🌙 21 jours de transformation</span>
+    </div>
+
+    <button onclick="startApp()" style="
+      display:block;width:100%;padding:1.125rem 1.5rem;
+      border:none;border-radius:14px;
+      background:linear-gradient(135deg,#b8955a,#9a7a40);
+      color:#1a0e00;font-family:'Raleway',sans-serif;
+      font-size:12px;font-weight:600;letter-spacing:2.5px;
+      text-transform:uppercase;cursor:pointer;
+      box-shadow:0 8px 30px rgba(184,149,90,.3);
+      transition:opacity .2s;margin-bottom:1rem">
+      Créer ma séance personnalisée →
+    </button>
+
+    <p style="font-size:11px;color:#4a6e70">🎧 Écouter avec un casque pour une immersion optimale</p>
+
+    <div style="margin-top:2rem;padding:.875rem 1rem;
+      background:rgba(184,149,90,.05);border-radius:12px;
+      border:1px solid rgba(184,149,90,.15)">
+      <p style="font-size:11px;color:#4a6e70;line-height:1.65">
+        ⚕️ Ce service propose des séances de sophrologie guidée. Il ne remplace pas un suivi médical ou thérapeutique professionnel.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════╗ -->
+<!-- ║              APP REACT (cachée au départ)      ║ -->
+<!-- ╚═══════════════════════════════════════════════╝ -->
+<div id="app" style="display:none">
 <div id="root"></div>
 
 <script type="text/babel">
@@ -288,6 +365,13 @@ function buildSystemPrompt(data) {
     "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n\n" +
+    "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
+    "7. PHRASES COURTES - maximum 10 mots par phrase. Jamais de longue phrase explicative.\n" +
+    "8. RYTHME BRISE - une idee par ligne. Espace entre chaque pensee. Laisser le silence travailler.\n" +
+    "9. LANGAGE SENSORIEL - utiliser le canal " + vakog + " a chaque etape. Faire RESSENTIR, pas expliquer.\n" +
+    "10. REPETITION HYPNOTIQUE - les mots cles reviennent... encore... et encore... comme une vague.\n" +
+    "11. PRESENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous etes'.\n" +
+    "12. VERBES D ACTION LENTS - fondre, glisser, lacher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
     "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
     "SPIRITUALITE:\n" +
     "Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
@@ -1281,7 +1365,7 @@ function SeancePlayer({ userData, onRestart }) {
           body: JSON.stringify({
             text: txt.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
             model_id: "eleven_multilingual_v2",
-            voice_settings: { stability: 0.90, similarity_boost: 0.75, style: 0.05, use_speaker_boost: false, speed: 0.78 }
+            voice_settings: { stability: 0.65, similarity_boost: 0.70, style: 0.20, use_speaker_boost: false, speed: 0.72 }
           })
         });
         if (!r.ok) throw new Error("Clé invalide ou crédits insuffisants (" + r.status + ")");
@@ -1697,6 +1781,14 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
+</script>
+</div><!-- /#app -->
+
+<script>
+function startApp() {
+  document.getElementById("prelanding").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
 </script>
 </body>
 </html>
