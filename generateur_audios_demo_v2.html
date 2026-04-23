@@ -3,146 +3,354 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>EUREKA — Thérapie Guidée par Sophrologie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; color: #f0e8d8; padding: 2rem; }
-h1 { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: #b8955a; letter-spacing: 4px; margin-bottom: 0.25rem; }
-h2 { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: #f0e8d8; margin-bottom: 1rem; }
-.subtitle { font-size: 12px; color: #7a9ea0; letter-spacing: 2px; margin-bottom: 2rem; }
-.container { max-width: 800px; margin: 0 auto; }
-.card { background: #112e30; border: 1px solid #1a4548; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-label { font-size: 11px; color: #7a9ea0; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 6px; }
-input[type="text"], input[type="password"] {
-  width: 100%; padding: 0.75rem 1rem; background: #0d2a2c; border: 1px solid #1a4548;
-  border-radius: 8px; color: #f0e8d8; font-family: 'Raleway', sans-serif; font-size: 13px;
-  outline: none; margin-bottom: 1rem;
-}
-input:focus { border-color: #b8955a; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
-.opt { padding: 0.75rem 1rem; background: #0d2a2c; border: 1.5px solid #1a4548; border-radius: 10px;
-  cursor: pointer; font-size: 12px; color: #7a9ea0; transition: all .2s; text-align: center; }
-.opt:hover { border-color: #b8955a; color: #f0e8d8; }
-.opt.selected { border-color: #b8955a; background: rgba(184,149,90,.15); color: #f0e8d8; }
-.btn {
-  display: block; width: 100%; padding: 0.875rem; border: none; border-radius: 10px;
-  font-family: 'Raleway', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px;
-  text-transform: uppercase; cursor: pointer; transition: all .2s; margin-top: 0.75rem;
-}
-.btn-gold { background: linear-gradient(135deg, #b8955a, #9a7a40); color: #1a0e00; }
-.btn-gold:disabled { opacity: .4; cursor: not-allowed; }
-.btn-teal { background: linear-gradient(135deg, #2a8a8f, #1e6668); color: #f0e8d8; }
-.progress { background: #1a4548; border-radius: 4px; height: 6px; overflow: hidden; margin: 0.75rem 0; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, #2a8a8f, #b8955a); transition: width .3s; border-radius: 4px; }
-.log { background: #0d2a2c; border-radius: 8px; padding: 1rem; font-size: 11px; color: #7a9ea0;
-  max-height: 200px; overflow-y: auto; font-family: monospace; line-height: 1.8; }
-.log .ok { color: #4ade80; }
-.log .err { color: #f87171; }
-.audio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.audio-card { background: #0d2a2c; border: 1px solid #1a4548; border-radius: 10px; padding: 1rem; }
-.audio-card h3 { font-size: 12px; color: #b8955a; margin-bottom: 0.5rem; font-family: 'Raleway'; font-weight: 600; letter-spacing: 1px; }
-.audio-card audio { width: 100%; margin-bottom: 0.5rem; accent-color: #b8955a; }
-.dl-btn { display: block; width: 100%; padding: 6px; background: linear-gradient(135deg,#1e6668,#2a8a8f);
-  border: none; border-radius: 6px; color: #f0e8d8; font-size: 11px; cursor: pointer;
-  font-family: 'Raleway'; text-align: center; text-decoration: none; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px;
-  background: #1a4548; color: #7a9ea0; margin-bottom: 8px; }
-.warning { background: rgba(184,149,90,.1); border: 1px solid #b8955a; border-radius: 10px;
-  padding: 0.875rem 1rem; font-size: 12px; color: #d4b483; line-height: 1.7; margin-bottom: 1rem; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #0d2a2c; }
+  ::-webkit-scrollbar-thumb { background: #b8955a; border-radius: 3px; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity:.7; transform:scale(1); } 50% { opacity:1; transform:scale(1.05); } }
+  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+  @keyframes breathe { 0%,100% { transform:scale(1); opacity:.6; } 50% { transform:scale(1.15); opacity:1; } }
+  @keyframes orbit { from { transform:rotate(0deg) translateX(120px) rotate(0deg); } to { transform:rotate(360deg) translateX(120px) rotate(-360deg); } }
+  @keyframes ripple { 0% { transform:scale(0); opacity:.6; } 100% { transform:scale(4); opacity:0; } }
+  audio { width:100%; accent-color:#b8955a; }
+  input::placeholder, textarea::placeholder { color:#5a7e80; }
+  .opt-card:hover { border-color:#b8955a !important; background:rgba(184,149,90,.08) !important; transform:translateY(-2px); }
+  .step-btn:hover { opacity:.88 !important; transform:translateY(-1px); }
+  .back-btn:hover { color:#b8955a !important; }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · Usage interne uniquement</p>
 
-  <div class="warning">
-    ⚠️ Cet outil est réservé à l'administrateur du site. Il génère les 8 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude.
-  </div>
-
-  <!-- Clés API -->
-  <div class="card">
-    <h2>🔑 Clés API</h2>
-    <p style="font-size:12px;color:#4ade80;margin-bottom:0.5rem">✓ Clé Claude — utilisée via Vercel (déjà configurée)</p>
-    <label>Clé ElevenLabs</label>
-    <input type="password" id="elevenKey" placeholder="sk_..." />
-  </div>
-
-  <!-- Sélection -->
-  <div class="card">
-    <h2>🎯 Générer un audio</h2>
-    <label>Canal VAKOG</label>
-    <div class="grid" id="vagokGrid">
-      <div class="opt" data-val="V" onclick="select('vakog',this)">👁️ Visuel</div>
-      <div class="opt" data-val="A" onclick="select('vakog',this)">👂 Auditif</div>
-      <div class="opt" data-val="K" onclick="select('vakog',this)">🤲 Kinesthésique</div>
-      <div class="opt" data-val="R" onclick="select('vakog',this)">🧠 Rationnel</div>
-    </div>
-    <label>Direction de relaxation</label>
-    <div class="grid" id="dirGrid">
-      <div class="opt" data-val="TF" onclick="select('dir',this)">⬇️ Tête → Pieds</div>
-      <div class="opt" data-val="FT" onclick="select('dir',this)">⬆️ Pieds → Tête</div>
-    </div>
-    <button class="btn btn-gold" id="genBtn" onclick="generer()" disabled>Générer cet audio →</button>
-  </div>
-
-  <!-- Progression -->
-  <div class="card" id="progressCard" style="display:none">
-    <h2>⏳ Génération en cours…</h2>
-    <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-    <p id="progressMsg" style="font-size:12px;color:#7a9ea0;margin-top:0.5rem"></p>
-    <div class="log" id="logEl"></div>
-  </div>
-
-  <!-- Audios générés -->
-  <div class="card" id="resultsCard" style="display:none">
-    <h2>✅ Audios générés</h2>
-    <p style="font-size:12px;color:#7a9ea0;margin-bottom:1rem">Téléchargez chaque fichier et uploadez-le sur Vercel Blob avec le nom exact indiqué.</p>
-    <div class="audio-grid" id="audioGrid"></div>
-  </div>
-
-  <!-- Checklist -->
-  <div class="card">
-    <h2>📋 Checklist des 8 fichiers</h2>
-    <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-V-TF" class="badge">⬜ demo_visuel_tf.wav</div>
-      <div id="chk-V-FT" class="badge">⬜ demo_visuel_ft.wav</div>
-      <div id="chk-A-TF" class="badge">⬜ demo_auditif_tf.wav</div>
-      <div id="chk-A-FT" class="badge">⬜ demo_auditif_ft.wav</div>
-      <div id="chk-K-TF" class="badge">⬜ demo_kinesth_tf.wav</div>
-      <div id="chk-K-FT" class="badge">⬜ demo_kinesth_ft.wav</div>
-      <div id="chk-R-TF" class="badge">⬜ demo_rationnel_tf.wav</div>
-      <div id="chk-R-FT" class="badge">⬜ demo_rationnel_ft.wav</div>
-    </div>
-  </div>
-</div>
-
+<!-- ╔═══════════════════════════════════════════════╗ -->
+<!-- ║              CONFIGURATION                    ║ -->
+<!-- ╚═══════════════════════════════════════════════╝ -->
 <script>
-const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
-let selVakog = null, selDir = null;
+const CONFIG = {
+  // ── Claude API (génération du script de séance) ──────────────────────────
+  CLAUDE_API_KEY: "", // ← clé OpenAI
 
-function select(type, el) {
-  const grid = type === 'vakog' ? document.getElementById('vagokGrid') : document.getElementById('dirGrid');
-  grid.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  if (type === 'vakog') selVakog = el.dataset.val;
-  else selDir = el.dataset.val;
-  document.getElementById('genBtn').disabled = !(selVakog && selDir);
+  // ── ElevenLabs (synthèse vocale) ─────────────────────────────────────────
+  ELEVEN_API_KEY:  "",
+  ELEVEN_VOICE_ID: "nPczCjzI2devNBz1zQrb", // Brian (config optimisée)
+
+  // ── EmailJS ───────────────────────────────────────────────────────────────
+  EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
+  EJS_SERVICE_ID:  "service_veoaw2j",
+  EJS_TEMPLATE_ID: "template_pvpb8m6",
+
+  // ── MODE DÉMO ─────────────────────────────────────────────────────────────
+  DEMO_MODE: true,
+};
+
+if (CONFIG.DEMO_MODE) {
+
+  const DEMO_SCRIPT = `Marie, je vous invite à vous installer confortablement... laissez votre corps trouver sa position naturelle... et permettez à vos yeux de se fermer doucement...
+
+Nous allons commencer par trois respirations profondes et libératrices.
+Première respiration — inspirez lentement par le nez... retenez un instant... et expirez complètement par la bouche... laissez partir toute tension.
+Deuxième respiration — inspirez encore plus profondément... sentez votre ventre se gonfler... et à l'expiration, relâchez chaque muscle.
+Troisième respiration — inspirez la paix... et expirez tout ce qui ne vous appartient plus.
+
+[PAUSE_5s]
+
+Votre cuir chevelu se détend... votre front se lisse... vos yeux, vos joues, votre mâchoire relâchent toute leur tension...
+[PAUSE_3s]
+Votre cou et vos épaules s'alourdissent doucement... vos bras glissent vers le bas...
+[PAUSE_3s]
+Votre poitrine s'élargit à chaque souffle... votre ventre monte et descend naturellement...
+[PAUSE_3s]
+Vos cuisses, vos jambes, vos pieds se relâchent complètement...
+
+Je vais me taire un instant...
+[PAUSE_15s]
+Votre corps sait exactement comment se détendre...
+[PAUSE_15s]
+Maintenant imaginez un lieu intérieur qui vous appartient entièrement...
+[PAUSE_15s]
+
+Je vous invite maintenant a commencer ce travail de transformation, Marie... installez-vous encore plus profondement...
+
+Vous apercevez cette difficulté telle qu'elle était... vous la contemplez sans jugement... puis vous discernez son emprise se dissoudre... s'évaporer... disparaître complètement...
+[PAUSE_5s]
+Son emprise s'est évaporée. Vous percevez maintenant le vide lumineux qu'elle laisse derrière elle.
+[PAUSE_5s]
+
+Vous visualisez Marie en action... vous apercevez chaque geste concret, chaque décision prise avec clarté...
+[PAUSE_5s]
+La transformation est RÉELLE... elle est PERMANENTE... elle est MAINTENANT...
+[PAUSE_5s]
+
+Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...
+[PAUSE_15s]
+
+Doucement, commencez à revenir... bougez légèrement vos doigts... vos orteils... étirez-vous... ouvrez les yeux...
+
+Bienvenue de l'autre côté, Marie.`;
+
+  function makeSilentWav(durationSec = 2) {
+    const sr = 22050, numSamples = sr * durationSec;
+    const buf = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0,"RIFF"); view.setUint32(4,36+numSamples*2,true); ws(8,"WAVE"); ws(12,"fmt ");
+    view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+    view.setUint32(24,sr,true); view.setUint32(28,sr*2,true);
+    view.setUint16(32,2,true); view.setUint16(34,16,true);
+    ws(36,"data"); view.setUint32(40,numSamples*2,true);
+    return new Blob([buf], { type: "audio/wav" });
+  }
+
+  const _realFetch = window.fetch.bind(window);
+  window.fetch = async function(url, options) {
+    if (typeof url === "string" && url.startsWith("/api/")) {
+      if (url === "/api/generate") {
+        await new Promise(r => setTimeout(r, 1800));
+        return new Response(JSON.stringify({ text: DEMO_SCRIPT }), {
+          status: 200, headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (url === "/api/tts") {
+        await new Promise(r => setTimeout(r, 500));
+        return new Response(makeSilentWav(2), {
+          status: 200, headers: { "Content-Type": "audio/wav" }
+        });
+      }
+    }
+    return _realFetch(url, options);
+  };
+
+  window.addEventListener("load", () => {
+    if (window.emailjs) {
+      emailjs.send = async function() {
+        await new Promise(r => setTimeout(r, 700));
+        return { status: 200, text: "OK" };
+      };
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const b = document.createElement("div");
+    b.innerHTML = "🧪 MODE DÉMO — Aucun crédit consommé · Aucune connexion requise · <span style='opacity:.75;font-size:11px'>Mettre DEMO_MODE: false pour la production</span>";
+    Object.assign(b.style, {
+      position:"fixed",top:"0",left:"0",width:"100%",zIndex:"9999",
+      background:"#b8955a",color:"#08191a",textAlign:"center",
+      padding:"8px 16px",fontSize:"13px",fontFamily:"Raleway,sans-serif",
+      fontWeight:"600",letterSpacing:"0.03em",boxShadow:"0 2px 8px rgba(0,0,0,.4)"
+    });
+    document.body.prepend(b);
+    document.body.style.paddingTop = "40px";
+  });
 }
 
-function log(msg, type='') {
-  const el = document.getElementById('logEl');
-  el.innerHTML += `<div class="${type}">${msg}</div>`;
-  el.scrollTop = el.scrollHeight;
+// ── Version Premium ────────────────────────────────────────────────
+const isPremium = false; // TODO: intégrer paiement (Stripe)
+
+// ── Utilitaires Streak 21 jours ────────────────────────────────────
+function getToday() { return new Date().toISOString().slice(0, 10); }
+
+function loadStreak() {
+  try {
+    const raw = localStorage.getItem('eureka_streak');
+    if (!raw) return { lastDate: null, streak: 0 };
+    return JSON.parse(raw);
+  } catch { return { lastDate: null, streak: 0 }; }
 }
 
-function setProgress(pct, msg) {
-  document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressMsg').textContent = msg;
+function saveStreak(data) {
+  try { localStorage.setItem('eureka_streak', JSON.stringify(data)); } catch {}
 }
 
-function buildPromptSysteme(vakog, dir) {
+function computeNewStreak() {
+  const today = getToday();
+  const current = loadStreak();
+  const { lastDate, streak } = current;
+  if (!lastDate) { const s = { lastDate: today, streak: 1 }; saveStreak(s); return s; }
+  if (lastDate === today) return current;
+  const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+  const yestStr = yest.toISOString().slice(0, 10);
+  const newStreak = lastDate === yestStr ? Math.min(streak + 1, 21) : 1;
+  const s = { lastDate: today, streak: newStreak };
+  saveStreak(s); return s;
+}
+
+// Catalogue de voix ElevenLabs disponibles
+const VOICES = [
+  { id:"PjN1x5uqQvyU3DO0gdJz", name:"Antoine", desc:"Voix masculine, grave et chaleureuse", gender:"M",
+    preview:"https://storage.googleapis.com/eleven-public-prod/premade/voices/Antoine/Antoine-preview.mp3" },
+  { id:"nPczCjzI2devNBz1zQrb", name:"Brian",   desc:"Voix masculine, profonde et posée", gender:"M",
+    preview:"" },
+  { id:"cgSgspJ2msm6clMCkdW9", name:"Jessica", desc:"Voix féminine, douce et rassurante", gender:"F",
+    preview:"" },
+  { id:"9BWtsMINqrJLrRacOk9x", name:"Aria",    desc:"Voix féminine, apaisante et claire", gender:"F",
+    preview:"" },
+];
+</script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ══════════════════════════════════════════════════════════════════
+// DONNÉES : Quiz MBTI 20 questions
+// ══════════════════════════════════════════════════════════════════
+const QUIZ_MBTI = [
+  { dim:"EI", q:"Après une journée intense, vous préférez…",
+    a:["Retrouver des amis pour vous revitaliser","Selon l'humeur du moment","Rester seul(e) pour recharger vos batteries"] },
+  { dim:"EI", q:"En groupe, vous avez tendance à…",
+    a:["Parler spontanément — vous pensez en parlant","Ça dépend vraiment du contexte","Écouter et réfléchir avant de prendre la parole"] },
+  { dim:"EI", q:"Votre cercle social idéal est…",
+    a:["Large — vous adorez rencontrer de nouvelles personnes","Variable selon les moments de vie","Intime — quelques amis précieux et choisis"] },
+  { dim:"SN", q:"Face à un défi, vous faites confiance à…",
+    a:["Votre expérience et aux faits concrets","Un mélange des deux","Votre intuition et aux possibilités invisibles"] },
+  { dim:"SN", q:"Vous êtes davantage attiré(e) par…",
+    a:["Les détails précis et les réalités tangibles","Les deux selon le contexte","Les grandes visions et les possibilités infinies"] },
+  { dim:"SN", q:"Vous apprenez le mieux en…",
+    a:["Pratiquant concrètement, étape par étape","Alternant théorie et pratique","Comprenant d'abord le sens profond des choses"] },
+  { dim:"SN", q:"Votre rapport au futur est…",
+    a:["Pragmatique — bien ancré dans le présent","Équilibré","Visionnaire — tourné vers les possibilités à venir"] },
+  { dim:"TF", q:"Pour décider, vous privilégiez…",
+    a:["L'analyse logique et objective","Logique ET ressenti conjointement","Les valeurs humaines et l'impact émotionnel"] },
+  { dim:"TF", q:"Face à un conflit, vous cherchez d'abord…",
+    a:["La solution la plus juste et rationnelle","Justice ET harmonie ensemble","L'harmonie et le bien-être de chacun"] },
+  { dim:"TF", q:"Vous êtes davantage touché(e) par…",
+    a:["La vérité, même difficile","La vérité dite avec bienveillance","La façon dont les choses sont ressenties"] },
+  { dim:"TF", q:"On vous reproche parfois d'être trop…",
+    a:["Froid(e) ou distant(e)","Ni l'un ni l'autre","Sensible ou influencé(e) par vos émotions"] },
+  { dim:"TF", q:"Vous valorisez davantage…",
+    a:["La compétence et l'efficacité","Les deux équitablement","L'empathie et la profondeur relationnelle"] },
+  { dim:"JP", q:"Votre espace de vie est…",
+    a:["Organisé — chaque chose a sa place","Organisé à ma façon","Vivant — je m'y retrouve à ma façon"] },
+  { dim:"JP", q:"Face à une échéance, vous…",
+    a:["Planifiez à l'avance, livrez tôt","Planifiez en gardant de la marge","Travaillez mieux sous pression"] },
+  { dim:"JP", q:"Vous préférez les projets…",
+    a:["Bien définis avec un plan clair","Structurés mais adaptables","Libres, qui évoluent au fil de l'eau"] },
+  { dim:"JP", q:"En voyage, vous…",
+    a:["Planifiez tout : hôtels, itinéraires","Planifiez les grandes lignes","Improvisez totalement — c'est là que ça commence"] },
+  { dim:"JP", q:"Vous vous sentez mieux quand…",
+    a:["Les décisions sont prises et le plan est clair","Il y a un cap, mais de la flexibilité","Les options restent ouvertes"] },
+  { dim:"JP", q:"Votre rapport aux règles est…",
+    a:["Les règles sont là pour être respectées","Je les respecte si elles font sens","Les règles freinent la créativité"] },
+  { dim:"EI", q:"Lors d'un week-end seul(e), vous vous sentez…",
+    a:["Ennuyé(e) — vous préférez être entouré(e)","Parfois bien, parfois seul(e)","Ressourcé(e) — c'est du luxe"] },
+  { dim:"SN", q:"Les rêves et leur interprétation vous…",
+    a:["Laissent de marbre — trop flou","Intéressent modérément","Fascinent profondément"] },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// DONNÉES : Quiz VAKOG (6 modalités)
+// ══════════════════════════════════════════════════════════════════
+const QUIZ_VAKOG = [
+  { q:"Quand vous apprenez quelque chose de nouveau, vous préférez…",
+    opts:[
+      { v:"V", t:"Voir un schéma, un diagramme ou regarder quelqu'un faire" },
+      { v:"A", t:"Écouter une explication orale ou un podcast" },
+      { v:"K", t:"Essayer par vous-même, sentir les choses dans votre corps" },
+      { v:"R", t:"Lire un texte détaillé ou prendre des notes structurées" },
+    ]},
+  { q:"Quand vous vous souvenez d'un bon moment, c'est d'abord…",
+    opts:[
+      { v:"V", t:"Les images, les couleurs, les visages" },
+      { v:"A", t:"Les sons, la musique, les voix" },
+      { v:"K", t:"Les sensations corporelles, les émotions ressenties" },
+      { v:"O", t:"Les odeurs, les parfums de cet instant" },
+    ]},
+  { q:"Pour vous détendre naturellement, vous…",
+    opts:[
+      { v:"V", t:"Regardez un beau paysage ou visualisez un endroit paisible" },
+      { v:"A", t:"Écoutez de la musique ou de la nature" },
+      { v:"K", t:"Faites du sport, du yoga ou massez vos tensions" },
+      { v:"R", t:"Lisez ou faites quelque chose d'organisé et structuré" },
+    ]},
+  { q:"Lors d'une conversation importante, vous êtes surtout attentif(ve) à…",
+    opts:[
+      { v:"V", t:"Les expressions du visage et le langage corporel" },
+      { v:"A", t:"Le ton de la voix, les intonations, le rythme" },
+      { v:"K", t:"Ce que vous ressentez dans votre ventre, votre intuition" },
+      { v:"R", t:"La cohérence logique et les arguments rationnels" },
+    ]},
+  { q:"Pour prendre une décision difficile, vous…",
+    opts:[
+      { v:"V", t:"Vous faites une liste visuelle, un tableau comparatif" },
+      { v:"A", t:"En parlez à voix haute avec quelqu'un de confiance" },
+      { v:"K", t:"Attendez de sentir dans votre corps quelle option est juste" },
+      { v:"R", t:"Analysez les données, les probabilités, les faits" },
+    ]},
+  { q:"Un souvenir d'enfance vous revient. Ce qui s'impose d'abord, c'est…",
+    opts:[
+      { v:"V", t:"Une image précise — les couleurs, les lieux" },
+      { v:"A", t:"Un son, une voix, une mélodie" },
+      { v:"K", t:"Une sensation physique ou émotionnelle" },
+      { v:"G", t:"Un goût ou une saveur particulière" },
+    ]},
+  { q:"Dans un espace inconnu, vous remarquez d'abord…",
+    opts:[
+      { v:"V", t:"Les couleurs, la lumière, la décoration" },
+      { v:"A", t:"Les sons ambiants, le niveau sonore, la musique" },
+      { v:"K", t:"La température, l'énergie du lieu, votre confort" },
+      { v:"O", t:"Les odeurs, l'atmosphère olfactive" },
+    ]},
+  { q:"Quand vous êtes stressé(e), cela se manifeste d'abord par…",
+    opts:[
+      { v:"V", t:"Des images ou scénarios angoissants dans votre tête" },
+      { v:"A", t:"Une voix intérieure critique ou des bruits qui vous dérangent" },
+      { v:"K", t:"Des tensions physiques — gorge, estomac, épaules" },
+      { v:"R", t:"Des pensées en boucle, une sur-analyse de la situation" },
+    ]},
+];
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITAIRES
+// ══════════════════════════════════════════════════════════════════
+const MBTI_NAMES = {
+  INTJ:"L'Architecte", INTP:"Le Logicien", ENTJ:"Le Commandant", ENTP:"Le Débatteur",
+  INFJ:"L'Avocat", INFP:"Le Médiateur", ENFJ:"Le Protagoniste", ENFP:"Le Militant",
+  ISTJ:"Le Logisticien", ISFJ:"Le Défenseur", ESTJ:"Le Directeur", ESFJ:"Le Consul",
+  ISTP:"Le Virtuose", ISFP:"L'Aventurier", ESTP:"L'Entrepreneur", ESFP:"Le Performeur",
+};
+
+const VAKOG_NAMES = { V:"Visuel", A:"Auditif", K:"Kinesthésique", O:"Olfactif", G:"Gustatif", R:"Rationnel/Analytique" };
+const VAKOG_DESC = {
+  V:"Vous pensez en images, visualisez facilement et êtes sensible aux couleurs et formes. Votre session utilisera des visualisations riches et détaillées.",
+  A:"Les sons, la musique et les mots vous touchent profondément. Votre session jouera sur les tonalités, rythmes et suggestions verbales.",
+  K:"Vous ressentez les choses dans votre corps — vos émotions sont incarnées. Votre session se centrera sur les sensations physiques et la chaleur intérieure.",
+  O:"Les odeurs sont pour vous des portails vers l'émotion et la mémoire. Votre session évoquera des fragrances apaisantes.",
+  G:"Les saveurs résonnent en vous comme des souvenirs vivants. Votre session incorporera des métaphores gustatives.",
+  R:"Vous comprenez et acceptez mieux ce qui a du sens logique. Votre session expliquera le pourquoi de chaque étape."
+};
+
+function scoreMBTI(answers) {
+  const d = { EI:0, SN:0, TF:0, JP:0 };
+  QUIZ_MBTI.forEach((q,i) => { const v=answers[i]; if(v===0) d[q.dim]+=1; else if(v===2) d[q.dim]-=1; });
+  return (d.EI>0?"E":"I")+(d.SN>0?"S":"N")+(d.TF>0?"T":"F")+(d.JP>0?"J":"P");
+}
+
+function scoreVAKOG(answers) {
+  const counts = { V:0, A:0, K:0, O:0, G:0, R:0 };
+  answers.forEach(v => { if(v && counts[v]!==undefined) counts[v]++; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return { dominant: sorted[0][0], scores: counts, sorted };
+}
+
+const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+
+// ══════════════════════════════════════════════════════════════════
+// GÉNÉRATION DU PROMPT SYSTÈME (expertise sophro-hypnose)
+// ══════════════════════════════════════════════════════════════════
+function buildSystemPrompt(data) {
+  const { mbti, mbtiName, vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom } = data;
+
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
     vakog === 'K' ? "Metaphores KINESTH.: sensations, chaleur, poids, fluidite" :
@@ -162,45 +370,1258 @@ function buildPromptSysteme(vakog, dir) {
     "Groupe COU: vertebres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou detendu [PAUSE_5s]\n" +
     "Groupe TETE: menton, machoire, langue, interieur bouche, levres, bouche, joues, nez, yeux, paupieres, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tete detendue [PAUSE_5s]";
 
-  return "Tu es un sophrologue expert. Tu generes un script audio de seance DEMO sans prenom.\n" +
-    "ZERO TITRE. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
-    "Remplacer tout prenom par 'vous'. Pas de scenes therapeutiques. Pas de 7 cycles.\n\n" +
-    "VAKOG: " + vakog + " (" + vakogStyle + ")\n\n" +
+  const groupes = relaxDir === 'TF' ? groupesTF : groupesFT;
+
+  const spirituel = beliefSystem === 'croyant' ?
+    "Puis affirmations connexion divine, lumiere, victoire acquise, Namaste." :
+    beliefSystem === 'spirituel' ?
+    "Puis affirmations amour, paix, transformation, gratitude." :
+    "Puis affirmations ressources interieures, courage, progression.";
+
+  return "Tu es un sophrologue expert. Tu generes un script audio de seance.\n" +
+    "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
+    "CLIENT: " + prenom + " | MBTI: " + mbti + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
+    "PROBLEMES: " + problem + "\n" +
+    "OBJECTIFS: " + objectif + "\n" +
+    "SPIRITUALITE: " + beliefSystem + "\n\n" +
     "REGLES ABSOLUES:\n" +
-    "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction.\n" +
-    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en 4 temps... 1... 2... 3... 4... Bloquez doucement... 1... 2... Et expirez... tout doucement... en 8 temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
-    "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
-    "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n\n" +
-    "GROUPES MUSCULAIRES:\n" + (dir === 'TF' ? groupesTF : groupesFT) + "\n\n" +
-    "";  // Pas d'affirmations spirituelles en démo
+    "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
+    "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
+    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en 4 temps... 1... 2... 3... 4... Bloquez doucement... 1... 2... Et expirez... tout doucement... en 8 temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
+    "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
+    "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n\n" +
+    "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
+    "SPIRITUALITE:\n" +
+    "Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
+    spirituel;
+}
+// ══════════════════════════════════════════════════════════════════
+// COULEURS & STYLES
+// ══════════════════════════════════════════════════════════════════
+const C = {
+  bg: "#08191a", panel: "#0d2a2c", card: "#112e30",
+  border: "#1a4548", gold: "#b8955a", goldLight: "#d4b483",
+  teal: "#2a8a8f", tealDark: "#1e6668",
+  cream: "#f0e8d8", creamDark: "#d4c8b0", muted: "#7a9ea0",
+  hint: "#4a6e70", text: "#e8f0f0", white: "#ffffff",
+  red: "#c0392b", green: "#1a7a4a", greenBg: "#0d2a1e",
+  amber: "#d4a017",
+};
+
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANTS UI
+// ══════════════════════════════════════════════════════════════════
+function Logo({ small }) {
+  return (
+    <div style={{ textAlign:"center", marginBottom: small ? "1rem" : "2rem" }}>
+      {!small && (
+        <div style={{ width:"60px", height:"60px", borderRadius:"50%", border:`2px solid ${C.gold}`,
+          display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem",
+          background:`radial-gradient(circle, rgba(184,149,90,.2) 0%, transparent 70%)` }}>
+          <span style={{ fontSize:"24px" }}>◈</span>
+        </div>
+      )}
+      <p style={{ fontFamily:"'Raleway', sans-serif", fontSize:"10px", letterSpacing:"6px",
+        color:C.gold, textTransform:"uppercase", marginBottom:"6px" }}>Méthode</p>
+      <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize: small ? "28px" : "42px",
+        color:C.cream, fontWeight:"300", letterSpacing:"4px", margin:"0 0 4px" }}>EUREKA</h1>
+      <p style={{ fontSize:"11px", color:C.muted, letterSpacing:"2px", fontFamily:"'Raleway', sans-serif" }}>
+        Sophrologie · Transformation
+      </p>
+    </div>
+  );
 }
 
-async function callClaude(claudeKey, system, user, tokens) {
-  // Appel via /api/generate (Vercel serverless)
-  const r = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, user, tokens })
+function StepIndicator({ current, total, labels }) {
+  return (
+    <div style={{ marginBottom:"2rem" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+        {labels.map((l,i) => (
+          <div key={i} style={{ flex:1, textAlign:"center" }}>
+            <div style={{ width:"24px", height:"24px", borderRadius:"50%", margin:"0 auto 4px",
+              background: i < current ? C.teal : i === current ? C.gold : C.border,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:"10px", color: i <= current ? C.bg : C.hint, fontWeight:"600",
+              transition:"all .3s", border: i === current ? `2px solid ${C.goldLight}` : "2px solid transparent" }}>
+              {i < current ? "✓" : i+1}
+            </div>
+            <p style={{ fontSize:"9px", color: i === current ? C.goldLight : C.hint,
+              fontFamily:"'Raleway', sans-serif", letterSpacing:"1px", textTransform:"uppercase" }}>{l}</p>
+          </div>
+        ))}
+        <div style={{ position:"absolute", left:"2rem", right:"2rem", height:"1px",
+          background:C.border, top:"12px", zIndex:0 }} />
+      </div>
+      <div style={{ height:"2px", background:C.border, borderRadius:"1px", overflow:"hidden" }}>
+        <div style={{ height:"100%", background:`linear-gradient(90deg, ${C.teal}, ${C.gold})`,
+          width:`${(current/total)*100}%`, transition:"width .5s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+function Card({ children, style }) {
+  return (
+    <div style={{ background:C.card, borderRadius:"20px", padding:"2.5rem",
+      border:`1px solid ${C.border}`, maxWidth:"600px", width:"100%",
+      animation:"fadeUp .5s ease", boxShadow:"0 20px 60px rgba(0,0,0,.4)", ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function Btn({ children, onClick, variant="primary", disabled, style }) {
+  const variants = {
+    primary: { background:`linear-gradient(135deg, ${C.teal}, ${C.tealDark})`, color:C.cream },
+    gold:    { background:`linear-gradient(135deg, ${C.gold}, #9a7a40)`, color:"#1a0e00" },
+    ghost:   { background:"transparent", color:C.muted, border:`1px solid ${C.border}` },
+    danger:  { background:`linear-gradient(135deg, ${C.red}, #8b1c12)`, color:C.cream },
+  };
+  return (
+    <button className="step-btn" onClick={onClick} disabled={disabled}
+      style={{ display:"block", width:"100%", padding:"1rem 1.5rem", borderRadius:"12px",
+        fontSize:"13px", fontFamily:"'Raleway', sans-serif", fontWeight:"500",
+        letterSpacing:"1.5px", textTransform:"uppercase", cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? .4 : 1, border:"none", marginTop:"0.75rem",
+        transition:"all .25s", ...variants[variant], ...style }}>
+      {children}
+    </button>
+  );
+}
+
+function Spinner({ msg }) {
+  return (
+    <div style={{ textAlign:"center", padding:"3rem 0" }}>
+      <div style={{ width:"50px", height:"50px", border:`3px solid ${C.border}`,
+        borderTop:`3px solid ${C.gold}`, borderRadius:"50%", margin:"0 auto 1.5rem",
+        animation:"spin 1.2s linear infinite" }} />
+      <p style={{ fontSize:"14px", color:C.muted, fontFamily:"'Raleway', sans-serif",
+        animation:"pulse 2s ease infinite" }}>{msg || "Chargement…"}</p>
+    </div>
+  );
+}
+
+function BreathingOrb() {
+  return (
+    <div style={{ position:"relative", width:"160px", height:"160px", margin:"0 auto 2rem" }}>
+      {[0,1,2].map(i => (
+        <div key={i} style={{ position:"absolute", inset:0, borderRadius:"50%",
+          border:`1px solid rgba(184,149,90,${.5-i*.15})`,
+          animation:`breathe ${3+i*.5}s ease-in-out ${i*.3}s infinite` }} />
+      ))}
+      <div style={{ position:"absolute", inset:"20px", borderRadius:"50%",
+        background:`radial-gradient(circle, rgba(42,138,143,.4) 0%, rgba(184,149,90,.2) 60%, transparent 100%)`,
+        animation:"breathe 3s ease-in-out infinite", display:"flex",
+        alignItems:"center", justifyContent:"center" }}>
+        <span style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"36px", color:C.gold }}>◈</span>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANT : STREAK BANNER 21 JOURS
+// ══════════════════════════════════════════════════════════════════
+function StreakBanner({ streak }) {
+  const pct = Math.min(Math.round((streak / 21) * 100), 100);
+  const isDone = streak >= 21;
+
+  const msg = streak === 0
+    ? "Générez votre première séance pour commencer"
+    : streak === 1 ? "Excellent début ! Revenez demain pour maintenir votre progression ✨"
+    : streak < 7  ? `🔥 Vous êtes à ${streak} jours consécutifs — vous êtes lancé(e) !`
+    : streak < 14 ? `🔥 ${streak} jours — votre cerveau se reconfigure profondément !`
+    : streak < 21 ? `🔥 ${streak} jours — vous approchez de la transformation complète !`
+    : "";
+
+  if (isDone) return (
+    <div style={{ background:`linear-gradient(135deg,rgba(184,149,90,.2),rgba(42,138,143,.2))`,
+      borderRadius:"16px", padding:"1.25rem 1.5rem", border:`1.5px solid ${C.gold}`,
+      marginBottom:"1.5rem", textAlign:"center", animation:"fadeUp .5s ease" }}>
+      <p style={{ fontSize:"28px", marginBottom:"0.5rem" }}>🎉</p>
+      <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.gold, fontWeight:"400" }}>
+        Bravo, vous avez complété les 21 jours consécutifs !
+      </p>
+      <p style={{ fontSize:"12px", color:C.muted, marginTop:"0.5rem", lineHeight:"1.6" }}>
+        La transformation est intégrée. Continuez à pratiquer pour maintenir les bénéfices.
+      </p>
+    </div>
+  );
+
+  return (
+    <div style={{ background:C.card, borderRadius:"16px", padding:"1rem 1.25rem",
+      border:`1px solid ${C.border}`, marginBottom:"1.25rem", animation:"fadeUp .5s ease" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.6rem" }}>
+        <p style={{ fontSize:"13px", color:C.cream, fontFamily:"'Raleway',sans-serif", flex:1, paddingRight:"1rem", lineHeight:"1.5" }}>
+          {msg}
+        </p>
+        <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:C.gold, flexShrink:0, whiteSpace:"nowrap" }}>
+          Jour {streak} <span style={{ fontSize:"14px", color:C.muted }}>/ 21</span>
+        </span>
+      </div>
+      <div style={{ height:"8px", background:C.border, borderRadius:"4px", overflow:"hidden" }}>
+        <div style={{ height:"100%", borderRadius:"4px", width:`${pct}%`,
+          background:`linear-gradient(90deg,${C.teal},${C.gold})`, transition:"width .6s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANT : RAPPELS QUOTIDIENS
+// ══════════════════════════════════════════════════════════════════
+function ReminderPanel() {
+  const [permStatus, setPermStatus] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  );
+  const [reminderTime, setReminderTime] = useState(() => {
+    try { return localStorage.getItem('eureka_reminder_time') || '20:00'; } catch { return '20:00'; }
   });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error);
-  return d.text || "";
-}
-
-async function callTTS(elevenKey, text) {
-  // Appel via /api/tts (Vercel serverless) — évite le blocage CORS
-  const r = await fetch("/api/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      text: text.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
-      voiceId: VOICE_ID
-    })
+  const [saved, setSaved] = useState(false);
+  const [showFallback] = useState(() => {
+    const { lastDate } = loadStreak();
+    return lastDate !== getToday();
   });
-  if (!r.ok) throw new Error("ElevenLabs error: " + r.status);
-  return await r.arrayBuffer();
+
+  const requestPermission = async () => {
+    if (typeof Notification === 'undefined') return;
+    const p = await Notification.requestPermission();
+    setPermStatus(p);
+    if (p === 'granted') {
+      new Notification("EUREKA Sophrologie 🌿", {
+        body: "Prenez 5 minutes pour votre séance aujourd'hui 🌿",
+        icon: "/favicon.ico"
+      });
+    }
+  };
+
+  const saveTime = () => {
+    try { localStorage.setItem('eureka_reminder_time', reminderTime); } catch {}
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ background:C.card, borderRadius:"16px", padding:"1.25rem 1.5rem",
+      border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
+      <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"18px", color:C.cream,
+        fontWeight:"400", marginBottom:"1rem" }}>🔔 Rappels quotidiens</h3>
+
+      {showFallback && (
+        <div style={{ background:"rgba(184,149,90,.1)", borderRadius:"10px",
+          padding:"0.75rem 1rem", border:`1px solid ${C.gold}`, marginBottom:"1rem" }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, lineHeight:"1.6" }}>
+            🌿 N'oubliez pas votre séance aujourd'hui
+          </p>
+        </div>
+      )}
+
+      <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", marginBottom:"1rem", flexWrap:"wrap" }}>
+        <label style={{ fontSize:"12px", color:C.muted, fontFamily:"'Raleway',sans-serif" }}>Heure préférée :</label>
+        <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)}
+          style={{ padding:"6px 10px", background:C.panel, border:`1px solid ${C.border}`,
+            borderRadius:"8px", color:C.cream, fontSize:"13px", fontFamily:"'Raleway',sans-serif" }} />
+        <button onClick={saveTime}
+          style={{ padding:"6px 14px", background:C.tealDark, border:"none", borderRadius:"8px",
+            color:C.cream, fontSize:"12px", cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
+          {saved ? "✓ Enregistré" : "Enregistrer"}
+        </button>
+      </div>
+
+      {permStatus === 'unsupported'
+        ? <p style={{ fontSize:"12px", color:C.muted }}>Notifications non disponibles sur ce navigateur.</p>
+        : permStatus === 'granted'
+          ? <p style={{ fontSize:"12px", color:"#4ade80" }}>✓ Notifications activées — rappel à {reminderTime}</p>
+          : permStatus === 'denied'
+            ? <p style={{ fontSize:"12px", color:C.muted }}>Notifications bloquées. Autorisez-les dans les paramètres de votre navigateur.</p>
+            : (
+              <button onClick={requestPermission}
+                style={{ width:"100%", padding:"0.75rem",
+                  background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+                  border:"none", borderRadius:"10px", color:C.cream, fontSize:"13px",
+                  cursor:"pointer", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
+                🔔 Activer les rappels
+              </button>
+            )
+      }
+    </div>
+  );
 }
 
+// ══════════════════════════════════════════════════════════════════
+// COMPOSANT : MODAL MENTIONS LÉGALES
+// ══════════════════════════════════════════════════════════════════
+function MentionsModal({ onClose }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}
+      onClick={onClose}>
+      <div style={{ background:C.card, borderRadius:"20px", padding:"2rem",
+        border:`1px solid ${C.border}`, maxWidth:"560px", width:"100%",
+        maxHeight:"85vh", overflowY:"auto" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
+          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:C.cream, fontWeight:"400" }}>
+            Informations légales
+          </h2>
+          <button onClick={onClose}
+            style={{ background:"transparent", border:"none", color:C.muted, fontSize:"20px", cursor:"pointer" }}>✕</button>
+        </div>
+
+        {[
+          { title:"⚕️ Avertissement médical", text:"Ce service propose des séances de relaxation et de sophrologie générées par intelligence artificielle. Il ne remplace en aucun cas un suivi médical, psychologique ou thérapeutique professionnel. En cas de trouble sérieux, veuillez consulter un professionnel de santé." },
+          { title:"🔒 Données personnelles (RGPD)", text:"Les informations saisies (email, réponses au questionnaire) sont utilisées uniquement pour générer votre séance personnalisée en temps réel. Elles ne sont pas stockées ni conservées sur nos serveurs." },
+          { title:"📋 Conditions d'utilisation", text:"Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service." },
+        ].map(({ title, text }) => (
+          <div key={title} style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem",
+            borderBottom:`1px solid ${C.border}` }}>
+            <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
+              fontFamily:"'Raleway',sans-serif" }}>{title}</p>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>{text}</p>
+          </div>
+        ))}
+
+        {!isPremium && (
+          <div style={{ background:`rgba(184,149,90,.08)`, borderRadius:"12px",
+            padding:"1rem", border:`1px solid ${C.border}`, textAlign:"center" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
+            <p style={{ fontSize:"11px", color:C.muted, marginTop:"4px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
+          </div>
+        )}
+
+        <button onClick={onClose}
+          style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1.5rem",
+            background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+            border:"none", borderRadius:"10px", color:C.cream, fontSize:"13px",
+            cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
+          Fermer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ÉTAPES DU FUNNEL
+// ══════════════════════════════════════════════════════════════════
+
+// ÉTAPE 0 : Landing
+function Landing({ onStart, onMentions }) {
+  return (
+    <div style={{ textAlign:"center", maxWidth:"600px", width:"100%", animation:"fadeUp .6s ease" }}>
+      <BreathingOrb />
+      <p style={{ fontFamily:"'Raleway', sans-serif", fontSize:"10px", letterSpacing:"6px",
+        color:C.gold, textTransform:"uppercase", marginBottom:"12px" }}>Méthode</p>
+      <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"clamp(42px,8vw,60px)",
+        color:C.cream, fontWeight:"300", letterSpacing:"6px", margin:"0 0 8px" }}>EUREKA</h1>
+      <p style={{ fontSize:"12px", color:C.muted, letterSpacing:"3px", marginBottom:"2rem",
+        fontFamily:"'Raleway', sans-serif" }}>Sophrologie · Transformation</p>
+
+      <div style={{ background:C.card, borderRadius:"20px", padding:"2rem 2.5rem",
+        border:`1px solid ${C.border}`, marginBottom:"2rem", textAlign:"left" }}>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px", color:C.goldLight,
+          fontWeight:"400", marginBottom:"1rem" }}>
+          Un protocole unique, fait pour vous
+        </h2>
+        <div style={{ display:"grid", gap:"1rem" }}>
+          {[
+            ["🧬", "Analyse de votre profil", "MBTI + VAKOG pour personnaliser chaque séance"],
+            ["🎙️", "Voix et musique sur mesure", "Choisissez l'environnement sonore qui vous convient"],
+            ["🌊", "Descente alpha profonde", "Protocole sophrologique avec pauses de consolidation"],
+            ["✨", "Transformation intérieure", "Sophro-acceptation progressive — la victoire est déjà là"],
+          ].map(([icon,title,desc]) => (
+            <div key={title} style={{ display:"flex", gap:"1rem", alignItems:"flex-start" }}>
+              <span style={{ fontSize:"20px", flexShrink:0, marginTop:"2px" }}>{icon}</span>
+              <div>
+                <p style={{ fontFamily:"'Raleway', sans-serif", fontSize:"13px", color:C.cream,
+                  fontWeight:"500", marginBottom:"2px" }}>{title}</p>
+                <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button className="step-btn" onClick={onStart}
+        style={{ display:"block", width:"100%", padding:"1.25rem",
+          background:`linear-gradient(135deg, ${C.gold}, #9a7a40)`,
+          color:"#1a0e00", border:"none", borderRadius:"14px",
+          fontSize:"12px", fontFamily:"'Raleway', sans-serif", fontWeight:"600",
+          letterSpacing:"3px", textTransform:"uppercase", cursor:"pointer",
+          boxShadow:`0 8px 30px rgba(184,149,90,.3)` }}>
+        Commencer ma séance personnalisée →
+      </button>
+      <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>Durée : environ 8 minutes de personnalisation</p>
+
+      {/* Avertissement médical */}
+      <div style={{ marginTop:"1.5rem", padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
+        borderRadius:"12px", border:`1px solid rgba(184,149,90,.2)`, textAlign:"left" }}>
+        <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+          ⚕️ Ce service propose des séances de sophrologie générées par IA. Il ne remplace pas un suivi médical ou thérapeutique professionnel.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ÉTAPE 1 : Anamnèse
+function Anamnese({ onNext }) {
+  const [email, setEmail] = useState("");
+  const [emailTouched, setET] = useState(false);
+  const [prenom, setPrenom] = useState("");
+  const [problem, setProblem] = useState("");
+  const [objectif, setObjectif] = useState("");
+  const [consentement, setConsentement] = useState(false);
+  const emailErr = emailTouched && !isValidEmail(email);
+
+  const canSubmit = prenom.trim() && isValidEmail(email) && problem.trim().length > 15 && objectif.trim().length > 10 && consentement;
+
+  return (
+    <Card>
+      <Logo small />
+      <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+        <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
+          borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
+          textTransform:"uppercase", marginBottom:"1rem" }}>Étape 1 — Anamnèse</div>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>Parlez-moi de vous</h2>
+        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+          Ces informations me permettent de créer une séance qui vous correspond vraiment.
+          Tout reste strictement confidentiel.
+        </p>
+
+        {[
+          { label:"Votre prénom", val:prenom, set:setPrenom, type:"text", ph:"Marie, Pierre…" },
+          { label:"Votre email", val:email, set:v => { setEmail(v); setET(true); }, type:"email", ph:"vous@exemple.com", err:emailErr },
+        ].map(({ label, val, set, type, ph, err }) => (
+          <div key={label} style={{ marginBottom:"1rem" }}>
+            <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
+              textTransform:"uppercase", marginBottom:"6px", fontFamily:"'Raleway', sans-serif" }}>{label}</label>
+            <input type={type} value={val} onChange={e => set(e.target.value)} placeholder={ph}
+              style={{ width:"100%", padding:"0.875rem 1rem", background:C.panel,
+                border:`1.5px solid ${err ? C.red : C.border}`, borderRadius:"10px",
+                fontSize:"14px", fontFamily:"'Raleway', sans-serif", color:C.text,
+                outline:"none", transition:"border-color .2s" }}
+              onFocus={e => e.target.style.borderColor=C.gold}
+              onBlur={e => e.target.style.borderColor=err?C.red:C.border} />
+            {err && <p style={{ fontSize:"12px", color:C.red, marginTop:"4px" }}>Email invalide</p>}
+          </div>
+        ))}
+
+        <div style={{ marginBottom:"1rem" }}>
+          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
+            textTransform:"uppercase", marginBottom:"6px" }}>Ce que vous traversez en ce moment</label>
+          <textarea value={problem} onChange={e => setProblem(e.target.value)}
+            placeholder="Décrivez ce qui vous préoccupe, ce qui vous pèse, ce que vous souhaitez transformer…"
+            rows={4} style={{ width:"100%", padding:"1rem", background:C.panel,
+              border:`1.5px solid ${C.border}`, borderRadius:"10px", fontSize:"14px",
+              fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
+              outline:"none", lineHeight:"1.7", transition:"border-color .2s" }}
+            onFocus={e => e.target.style.borderColor=C.gold}
+            onBlur={e => e.target.style.borderColor=C.border} />
+          <p style={{ fontSize:"11px", color:problem.length>15?C.teal:C.hint, textAlign:"right",
+            marginTop:"4px" }}>{problem.length} caractères {problem.length>15?"✓":""}</p>
+        </div>
+
+        <div style={{ marginBottom:"1.5rem" }}>
+          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
+            textTransform:"uppercase", marginBottom:"6px" }}>Ce que vous voulez atteindre</label>
+          <textarea value={objectif} onChange={e => setObjectif(e.target.value)}
+            placeholder="Votre objectif précis, ce que vous ressentiriez si ce problème était résolu…"
+            rows={3} style={{ width:"100%", padding:"1rem", background:C.panel,
+              border:`1.5px solid ${C.border}`, borderRadius:"10px", fontSize:"14px",
+              fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
+              outline:"none", lineHeight:"1.7" }}
+            onFocus={e => e.target.style.borderColor=C.gold}
+            onBlur={e => e.target.style.borderColor=C.border} />
+        </div>
+
+        <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer",
+          marginBottom:"1rem" }}>
+          <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
+            style={{ marginTop:"3px", accentColor:C.gold }} />
+          <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
+            J'accepte que mes données (email, réponses au questionnaire) soient utilisées pour personnaliser ma séance.
+            Ces données sont utilisées uniquement en temps réel et <strong style={{ color:C.cream }}>ne sont pas conservées sur nos serveurs</strong>.
+          </span>
+        </label>
+
+        {/* Mention médicale */}
+        <div style={{ padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
+          borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)`, marginBottom:"1.5rem" }}>
+          <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+            ⚕️ Ce service propose des séances de relaxation et de sophrologie par IA.
+            Il ne remplace pas un suivi médical, psychologique ou thérapeutique professionnel.
+          </p>
+        </div>
+
+        <Btn onClick={() => onNext({ prenom, email, problem, objectif })} disabled={!canSubmit} variant="gold">
+          Continuer → Profil de personnalité
+        </Btn>
+      </div>
+    </Card>
+  );
+}
+
+// ÉTAPE 2 : Quiz MBTI
+function QuizMBTI({ prenom, onComplete }) {
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const pct = Math.round((current / QUIZ_MBTI.length) * 100);
+
+  const handleAnswer = (idx) => {
+    const newAns = { ...answers, [current]: idx };
+    setAnswers(newAns);
+    if (current < QUIZ_MBTI.length - 1) {
+      setCurrent(c => c + 1);
+    } else {
+      const type = scoreMBTI(newAns);
+      onComplete(type);
+    }
+  };
+
+  const q = QUIZ_MBTI[current];
+
+  return (
+    <Card>
+      <Logo small />
+      <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+          marginBottom:"1rem" }}>
+          <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
+            borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
+            textTransform:"uppercase" }}>Étape 2 — Personnalité</div>
+          <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {QUIZ_MBTI.length}</span>
+        </div>
+
+        <div style={{ height:"3px", background:C.border, borderRadius:"2px", marginBottom:"1.75rem", overflow:"hidden" }}>
+          <div style={{ height:"100%", background:`linear-gradient(90deg,${C.teal},${C.gold})`,
+            width:`${pct}%`, transition:"width .4s ease", borderRadius:"2px" }} />
+        </div>
+
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.cream,
+          fontWeight:"400", lineHeight:"1.45", marginBottom:"1.5rem" }}>
+          {prenom && <span style={{ color:C.goldLight }}>{prenom}, </span>}{q.q}
+        </h2>
+
+        <div style={{ display:"grid", gap:"0.6rem" }}>
+          {q.a.map((opt, i) => (
+            <button key={i} className="opt-card" onClick={() => handleAnswer(i)}
+              style={{ padding:"0.875rem 1.125rem", background:C.panel,
+                border:`1.5px solid ${C.border}`, borderRadius:"12px",
+                fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
+                cursor:"pointer", textAlign:"left", lineHeight:"1.5",
+                transition:"all .2s" }}>
+              <span style={{ color:C.gold, marginRight:"8px", fontWeight:"600" }}>{["A","B","C"][i]}.</span>
+              {opt}
+            </button>
+          ))}
+        </div>
+
+        {current > 0 && (
+          <button className="back-btn" onClick={() => setCurrent(c => c-1)}
+            style={{ display:"block", width:"100%", padding:"0.75rem", background:"transparent",
+              border:"none", color:C.hint, fontSize:"12px", cursor:"pointer",
+              marginTop:"0.75rem", fontFamily:"'Raleway', sans-serif", transition:"color .2s" }}>
+            ← Question précédente
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// ÉTAPE 3 : Quiz VAKOG
+function QuizVAKOG({ prenom, onComplete }) {
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const pct = Math.round((current / QUIZ_VAKOG.length) * 100);
+
+  const handleAnswer = (modality) => {
+    const newAns = [...answers];
+    newAns[current] = modality;
+    setAnswers(newAns);
+    if (current < QUIZ_VAKOG.length - 1) {
+      setCurrent(c => c + 1);
+    } else {
+      const result = scoreVAKOG(newAns);
+      onComplete(result);
+    }
+  };
+
+  const q = QUIZ_VAKOG[current];
+  const modalityColors = { V:"#4a9a8f", A:"#9a7a4a", K:"#6a4a9a", O:"#9a4a6a", G:"#7a9a4a", R:"#4a6a9a" };
+
+  return (
+    <Card>
+      <Logo small />
+      <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+          marginBottom:"1rem" }}>
+          <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
+            borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
+            textTransform:"uppercase" }}>Étape 3 — Modalités sensorielles</div>
+          <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {QUIZ_VAKOG.length}</span>
+        </div>
+
+        <div style={{ height:"3px", background:C.border, borderRadius:"2px", marginBottom:"1.75rem", overflow:"hidden" }}>
+          <div style={{ height:"100%", background:`linear-gradient(90deg,${C.tealDark},${C.teal})`,
+            width:`${pct}%`, transition:"width .4s ease", borderRadius:"2px" }} />
+        </div>
+
+        <p style={{ fontSize:"11px", color:C.muted, letterSpacing:"1px", textTransform:"uppercase",
+          marginBottom:"0.75rem" }}>Choisissez votre réponse spontanée</p>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.cream,
+          fontWeight:"400", lineHeight:"1.45", marginBottom:"1.5rem" }}>{q.q}</h2>
+
+        <div style={{ display:"grid", gap:"0.6rem" }}>
+          {q.opts.map((opt, i) => (
+            <button key={i} className="opt-card" onClick={() => handleAnswer(opt.v)}
+              style={{ padding:"0.875rem 1.125rem", background:C.panel,
+                border:`1.5px solid ${C.border}`, borderRadius:"12px",
+                fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
+                cursor:"pointer", textAlign:"left", lineHeight:"1.5",
+                transition:"all .2s", display:"flex", gap:"10px", alignItems:"center" }}>
+              <span style={{ width:"22px", height:"22px", borderRadius:"50%", flexShrink:0,
+                background: modalityColors[opt.v] || C.teal, display:"flex",
+                alignItems:"center", justifyContent:"center", fontSize:"9px",
+                color:C.bg, fontWeight:"700" }}>{opt.v}</span>
+              {opt.t}
+            </button>
+          ))}
+        </div>
+
+        {current > 0 && (
+          <button className="back-btn" onClick={() => { setCurrent(c => c-1); }}
+            style={{ display:"block", width:"100%", padding:"0.75rem", background:"transparent",
+              border:"none", color:C.hint, fontSize:"12px", cursor:"pointer",
+              marginTop:"0.75rem", fontFamily:"'Raleway', sans-serif", transition:"color .2s" }}>
+            ← Question précédente
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// ÉTAPE 4 : Résultats profil + choix techniques
+function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
+  const [relaxDir, setRelaxDir] = useState("");
+  const [beliefSystem, setBeliefSystem] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
+  const [musicChoice, setMusicChoice] = useState("");
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const audioRef = useRef(null);
+
+  const mbtiName = MBTI_NAMES[mbti] || mbti;
+  const vakog = vakogResult.dominant;
+  const isIntrovert = mbti.startsWith("I");
+  const isIntuitive = mbti[1] === "N";
+
+  // Recommandation auto de la direction de relaxation
+  const recommendedDir = isIntrovert || isIntuitive ? "TF" : "FT";
+
+  const MUSIQUES = [
+    { id:"tambour", icon:"🥁", name:"Tambour chamanique", desc:"Rythme profond, 4-7 Hz, ancrage puissant" },
+    { id:"coeur", icon:"💓", name:"Battement de cœur", desc:"72 BPM, résonance maternelle, sécurité" },
+    { id:"binaural", icon:"🎧", name:"Battements binauraux", desc:"Ondes alpha 8-12 Hz, état sophrologique optimal" },
+    { id:"relaxation", icon:"🎵", name:"Musique de relaxation", desc:"Bol tibétain, piano ambiant, nature" },
+    { id:"perso", icon:"🎶", name:"Ma propre musique", desc:"Jouez votre musique en fond pendant la séance" },
+  ];
+
+  const canContinue = relaxDir && beliefSystem && selectedVoice && musicChoice;
+
+  const playPreview = async (voice) => {
+    // Stop si déjà en lecture
+    if (playingPreview === voice.id) {
+      audioRef.current?.pause();
+      setPlayingPreview(null);
+      return;
+    }
+    setPlayingPreview(voice.id + "_loading");
+    try {
+      // Générer un court extrait à la demande via ElevenLabs
+      const previewText = "Bonjour... installez-vous confortablement... respirez doucement... et laissez la détente s'installer naturellement en vous...";
+      const r = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: previewText, voiceId: voice.id })
+      });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = url;
+          audioRef.current.play();
+          setPlayingPreview(voice.id);
+        }
+      } else {
+        setPlayingPreview(null);
+      }
+    } catch(e) {
+      setPlayingPreview(null);
+    }
+  };
+
+  return (
+    <Card style={{ maxWidth:"680px" }}>
+      <Logo small />
+      <audio ref={audioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
+
+      {/* Résultats profil */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"2rem" }}>
+        <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+          border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <p style={{ fontSize:"9px", color:C.muted, letterSpacing:"2px", textTransform:"uppercase",
+            marginBottom:"8px" }}>Personnalité MBTI</p>
+          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"36px", color:C.gold,
+            fontWeight:"300", lineHeight:1 }}>{mbti}</p>
+          <p style={{ fontSize:"12px", color:C.cream, marginTop:"4px" }}>{mbtiName}</p>
+        </div>
+        <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+          border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <p style={{ fontSize:"9px", color:C.muted, letterSpacing:"2px", textTransform:"uppercase",
+            marginBottom:"8px" }}>Canal dominant</p>
+          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"36px", color:C.teal,
+            fontWeight:"300", lineHeight:1 }}>{VAKOG_NAMES[vakog]}</p>
+          <p style={{ fontSize:"12px", color:C.cream, marginTop:"4px" }}>
+            {vakogResult.sorted.slice(0,3).map(([k,v])=>`${VAKOG_NAMES[k]} (${v})`).join(" · ")}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ background:C.panel, borderRadius:"12px", padding:"1rem 1.25rem",
+        border:`1px solid ${C.border}`, marginBottom:"2rem" }}>
+        <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.7", fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
+          {VAKOG_DESC[vakog]}
+        </p>
+      </div>
+
+      {/* Direction de relaxation */}
+      <div style={{ marginBottom:"2rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>Direction de la relaxation</h3>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem", lineHeight:"1.6" }}>
+          {isIntrovert || isIntuitive
+            ? `Recommandé pour votre profil ${mbti} : Tête → Pieds (relaxation classique sophrologique)`
+            : `Recommandé pour votre profil ${mbti} : Pieds → Tête (ancrage puis élévation)`}
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
+          {[
+            { id:"TF", icon:"⬇️", name:"Tête → Pieds", desc:"Classique Caycedo, dénoue le mental en premier" },
+            { id:"FT", icon:"⬆️", name:"Pieds → Tête", desc:"Ancrage terrestre, monte vers l'apaisement mental" },
+          ].map(opt => (
+            <button key={opt.id} className="opt-card" onClick={() => setRelaxDir(opt.id)}
+              style={{ padding:"1rem", background: relaxDir===opt.id ? `rgba(184,149,90,.15)` : C.panel,
+                border:`1.5px solid ${relaxDir===opt.id ? C.gold : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+              <p style={{ fontSize:"18px", marginBottom:"4px" }}>{opt.icon}</p>
+              <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>
+                {opt.name} {opt.id === recommendedDir ? "⭐" : ""}
+              </p>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{opt.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Croyances / spiritualité */}
+      <div style={{ marginBottom:"2rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"1rem" }}>Votre univers intérieur</h3>
+        <div style={{ display:"grid", gap:"0.6rem" }}>
+          {[
+            { id:"croyant", icon:"✨", name:"Croyant(e)", desc:"Mantras de connexion divine, fils/fille de Lumière" },
+            { id:"spirituel", icon:"🌌", name:"Spirituel(le)", desc:"Énergie universelle, loi d'attraction, conscience" },
+            { id:"rationnel", icon:"🧠", name:"Athée / Rationnel(le)", desc:"Neurosciences, ressources intérieures, evidence-based" },
+          ].map(opt => (
+            <button key={opt.id} className="opt-card" onClick={() => setBeliefSystem(opt.id)}
+              style={{ padding:"0.875rem 1rem", background: beliefSystem===opt.id ? `rgba(42,138,143,.15)` : C.panel,
+                border:`1.5px solid ${beliefSystem===opt.id ? C.teal : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", display:"flex", gap:"12px", alignItems:"center",
+                transition:"all .2s" }}>
+              <span style={{ fontSize:"20px" }}>{opt.icon}</span>
+              <div>
+                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{opt.name}</p>
+                <p style={{ fontSize:"11px", color:C.muted }}>{opt.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Choix de la voix */}
+      <div style={{ marginBottom:"2rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"1rem" }}>La voix de votre thérapeute</h3>
+        <div style={{ display:"grid", gap:"0.6rem" }}>
+          {VOICES.map(v => (
+            <div key={v.id}
+              style={{ padding:"0.875rem 1rem", background: selectedVoice===v.id ? `rgba(184,149,90,.1)` : C.panel,
+                border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"12px",
+                display:"flex", gap:"12px", alignItems:"center", cursor:"pointer",
+                transition:"all .2s" }} onClick={() => setSelectedVoice(v.id)}>
+              <div style={{ width:"36px", height:"36px", borderRadius:"50%",
+                background: v.gender==="M" ? `rgba(42,138,143,.3)` : `rgba(184,149,90,.3)`,
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", flexShrink:0 }}>
+                {v.gender==="M" ? "👨" : "👩"}
+              </div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500" }}>{v.name}</p>
+                <p style={{ fontSize:"11px", color:C.muted }}>{v.desc}</p>
+              </div>
+              <button onClick={e => { e.stopPropagation(); playPreview(v); }}
+                style={{ padding:"6px 14px", background:"transparent",
+                  border:`1px solid ${playingPreview===v.id+"_loading" ? C.gold : C.border}`,
+                  borderRadius:"8px", fontSize:"10px", color:C.muted, cursor:"pointer", flexShrink:0 }}>
+                {playingPreview===v.id+"_loading" ? "⏳" : playingPreview===v.id ? "⏹ Stop" : "▶ Écouter"}
+              </button>
+            </div>
+          ))}
+        </div>
+        {/* Note discrète sous les extraits */}
+        <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.75rem", lineHeight:"1.6",
+          fontStyle:"italic", paddingLeft:"4px" }}>
+          Les extraits sont en vitesse standard. La séance finale sera plus lente et adaptée à la relaxation.
+        </p>
+      </div>
+
+      {/* Musique de fond */}
+      <div style={{ marginBottom:"2rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>Ambiance sonore</h3>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
+          Vous pouvez diffuser votre propre musique en parallèle si vous préférez.
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
+          {MUSIQUES.map(m => (
+            <button key={m.id} className="opt-card" onClick={() => setMusicChoice(m.id)}
+              style={{ padding:"0.875rem", background: musicChoice===m.id ? `rgba(42,138,143,.15)` : C.panel,
+                border:`1.5px solid ${musicChoice===m.id ? C.teal : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+              <p style={{ fontSize:"20px", marginBottom:"4px" }}>{m.icon}</p>
+              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{m.name}</p>
+              <p style={{ fontSize:"10px", color:C.muted, lineHeight:"1.4" }}>{m.desc}</p>
+            </button>
+          ))}
+        </div>
+        {musicChoice === "perso" && (
+          <div style={{ background:C.panel, borderRadius:"12px", padding:"1rem",
+            border:`1px solid ${C.gold}`, marginTop:"0.75rem" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.6" }}>
+              💡 Lancez votre musique préférée sur Spotify/YouTube avant de démarrer la séance.
+              Réglez le volume doucement en arrière-plan — la voix guidante sera au premier plan.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <Btn onClick={() => onNext({ relaxDir, beliefSystem, selectedVoice, musicChoice })}
+        disabled={!canContinue} variant="gold">
+        Générer ma séance personnalisée ✦
+      </Btn>
+    </Card>
+  );
+}
+
+// ÉTAPE 5 : Génération & Player
+function SeancePlayer({ userData, onRestart }) {
+  const { prenom, email, problem, objectif, mbti, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
+  const vakog = vakogResult.dominant;
+  const mbtiName = MBTI_NAMES[mbti] || mbti;
+
+  const [phase, setPhase] = useState("generating"); // generating | ready | playing | done
+  const [script, setScript] = useState("");
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [error, setError] = useState("");
+  const [loadMsg, setLoadMsg] = useState("Analyse de votre profil…");
+  const [emailStatus, setEmailStatus] = useState("");
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => { generateSession(); }, []);
+
+  const generateSession = async () => {
+    try {
+      setLoadMsg("Analyse de votre profil...");
+      await sleep(500);
+
+      const sysPrompt = buildSystemPrompt({
+        mbti, mbtiName, vakog, vagokDesc: VAKOG_DESC[vakog],
+        relaxDir, beliefSystem, problem, objectif, prenom
+      });
+
+      const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
+        " | MBTI: " + mbti + " | VAKOG: " + vakog +
+        " | Relaxation: " + (relaxDir === 'TF' ? 'Tete-Pieds' : 'Pieds-Tete') +
+        " | Spiritualite: " + beliefSystem;
+
+      const gpt = async (sys, usr, tok) => {
+        const r = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ system: sys, user: usr, tokens: tok || 4096 })
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        return d.text || "";
+      };
+
+      // APPEL 1 : Accueil + Respirations + Relaxation physique + Pauses alpha + Relaxation mentale
+      setLoadMsg("Generation de la relaxation...");
+      const part1 = await gpt(sysPrompt,
+        info + "\n\nGenere UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
+        "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases)\n" +
+        "2. 3 respirations exactes (texte exact REGLE 3)\n" +
+        "3. Relaxation physique complete (une partie a la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
+        "4. Je vais me taire... [PAUSE_15s] corps s enfonce... [PAUSE_15s] s approfondir... [PAUSE_15s]\n" +
+        "5. Relaxation mentale canal " + vakog + " : lieu interieur, descente dans l espace...\n" +
+        "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
+        "STOP ici - ne pas commencer les scenes.", 4096);
+
+      // APPEL 2 : Les 3 scenes UNE SEULE FOIS en detail
+      setLoadMsg("Generation des 3 scenes...");
+      const scenes = await gpt(sysPrompt,
+        info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
+        "VERBES CANAL - ne jamais repeter le meme verbe plus de 2 fois par scene:\n" +
+        "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu percois, tu discernes, tu visualises\n" +
+        "- Auditif: tu entends, tu percois, tu captes, tu ecoutes, tu ressens la resonance, tu distingues\n" +
+        "- Kinesth.: tu ressens, tu eprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
+        "- Rationnel: tu comprends, tu realises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
+        "Scene 1 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
+        "Scene 2 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
+        "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
+        "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
+
+      // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
+      const annonces = [
+        "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
+        "Nous recommençons une deuxième fois...",
+        "Une troisième fois...",
+        "Une quatrième fois...",
+        "Une cinquième fois...",
+        "Une sixième fois...",
+        "Une dernière fois... pour sceller cette transformation dans les profondeurs de votre être..."
+      ];
+      let cycles = "";
+      for (let i = 0; i < 7; i++) {
+        cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
+      }
+
+      // APPEL 3 : Cloture spirituelle + Desophronisation
+      setLoadMsg("Generation de la cloture...");
+      const part3 = await gpt(sysPrompt,
+        info + "\n\nGenere UNIQUEMENT la fin de seance - ZERO TITRE - commencer DIRECTEMENT:\n" +
+        "1. Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
+        "2. Affirmations " + beliefSystem + "\n" +
+        "3. [PAUSE_15s]\n" +
+        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom, 1500);
+
+      // Assembler et nettoyer les titres residuels
+      const raw = part1 + cycles + "\n\n" + part3;
+      const clean = raw
+        .replace(/\[VOIX[^\]]*\]/gi, "")
+        .replace(/^#+\s.*$/gm, "")
+        .replace(/\*\*[^*]+\*\*/g, "")
+        .replace(/SCENE\s*\d[^\n]*/gi, "")
+        .replace(/CYCLE\s*\d[^\n]*/gi, "")
+        .replace(/Phase\s*\d[^\n]*/gi, "")
+        .trim();
+
+      setScript(clean);
+
+      // AUDIO
+      setLoadMsg("Generation audio en cours...");
+      try {
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        const sr = actx.sampleRate;
+        const bufs = [];
+        const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
+        const tts = async (txt) => {
+          if (!txt.trim()) return null;
+          const r = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: txt.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
+              voiceId: selectedVoice
+            })
+          });
+          if (!r.ok) return null;
+          return await actx.decodeAudioData(await r.arrayBuffer());
+        };
+        const pat = /\[PAUSE_(\d+)s\]/gi;
+        const parts = [];
+        let li = 0, mx;
+        while ((mx = pat.exec(clean)) !== null) {
+          const t = clean.slice(li, mx.index).trim();
+          if (t) parts.push({ type: "t", c: t });
+          parts.push({ type: "s", sec: parseInt(mx[1]) });
+          li = mx.index + mx[0].length;
+        }
+        const rem = clean.slice(li).trim();
+        if (rem) parts.push({ type: "t", c: rem });
+        const fp = [];
+        for (const p of parts) {
+          if (p.type === "s") { fp.push(p); continue; }
+          let tx = p.c;
+          while (tx.length > 4800) {
+            let cut = tx.lastIndexOf("... ", 4800);
+            if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
+            if (cut < 500) cut = 4800;
+            fp.push({ type: "t", c: tx.substring(0, cut + 3) });
+            tx = tx.substring(cut + 3).trim();
+          }
+          if (tx) fp.push({ type: "t", c: tx });
+        }
+        const tc = fp.filter(p => p.type === "t").length;
+        let done = 0;
+        for (const p of fp) {
+          if (p.type === "s") { bufs.push(sil(p.sec)); }
+          else {
+            done++;
+            setLoadMsg("Audio " + done + " / " + tc + " segments...");
+            const b = await tts(p.c);
+            if (b) bufs.push(b);
+          }
+        }
+        if (bufs.length > 0) {
+          const tot = bufs.reduce((s, b) => s + b.length, 0);
+          const comb = actx.createBuffer(1, tot, sr);
+          const ch = comb.getChannelData(0);
+          let off = 0;
+          for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+          setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
+        } else { setError("Audio non genere - verifiez ElevenLabs."); }
+      } catch (ae) { setError("Erreur audio: " + ae.message); }
+
+      // EMAIL
+      setLoadMsg("Envoi email...");
+      try {
+        emailjs.init(CONFIG.EJS_PUBLIC_KEY);
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+          to_email: email, to_name: prenom, mbti_type: mbti,
+          mbti_profile: MBTI_NAMES[mbti], vakog: VAKOG_NAMES[vakog],
+          problem, objectif, script: clean.substring(0, 8000),
+          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum
+        });
+        setEmailStatus("ok");
+      } catch { setEmailStatus("fail"); }
+
+      // STREAK 21 JOURS
+      computeNewStreak();
+
+      setPhase("ready");
+    } catch (e) { console.error(e); setError("Erreur: " + e.message); setPhase("ready"); }
+  };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  const downloadScript = () => {
+    const content = `EUREKA THÉRAPIE — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nProfil : ${mbti} — ${mbtiName}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${script}`;
+    const blob = new Blob([content], { type:"text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `eureka_seance${seanceNum}_${prenom}_${mbti}.txt`;
+    a.click();
+  };
+
+  if (phase === "generating") {
+    return (
+      <Card>
+        <Logo small />
+        <div style={{ textAlign:"center", padding:"2rem 0" }}>
+          <BreathingOrb />
+          <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px", color:C.cream,
+            fontWeight:"300", marginBottom:"0.75rem" }}>Création en cours…</h2>
+          <p style={{ fontSize:"13px", color:C.muted, marginBottom:"2rem",
+            animation:"pulse 2s ease infinite" }}>{loadMsg}</p>
+          <div style={{ height:"3px", background:C.border, borderRadius:"2px", overflow:"hidden" }}>
+            <div style={{ height:"100%", background:`linear-gradient(90deg,${C.teal},${C.gold})`,
+              width:"60%", borderRadius:"2px", animation:"shimmer 2s linear infinite",
+              backgroundSize:"200% 100%" }} />
+          </div>
+          <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>
+            Patientez — génération du script puis de l'audio complet
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={{ maxWidth:"640px" }}>
+      <Logo small />
+      <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+
+        {/* En-tête résumé */}
+        <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+          border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            marginBottom:"0.5rem" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.cream,
+              fontWeight:"400" }}>Séance n°{seanceNum} — {prenom}</h2>
+            <span style={{ padding:"3px 10px", background:C.tealDark, borderRadius:"20px",
+              fontSize:"10px", color:C.goldLight, letterSpacing:"1.5px" }}>{mbti} · {VAKOG_NAMES[vakog]}</span>
+          </div>
+          <p style={{ fontSize:"12px", color:C.muted }}>
+            {new Date().toLocaleDateString("fr-FR", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+          </p>
+        </div>
+
+        {/* Streak banner */}
+        {(() => { const { streak } = loadStreak(); return streak > 0 ? <StreakBanner streak={streak} /> : null; })()}
+
+        {/* Statut email */}
+        {emailStatus && (
+          <div style={{ padding:"0.75rem 1rem", borderRadius:"10px", marginBottom:"1rem", fontSize:"12px",
+            background: emailStatus==="ok" ? C.greenBg : "rgba(184,149,90,.1)",
+            border: `1px solid ${emailStatus==="ok" ? C.green : C.gold}`,
+            color: emailStatus==="ok" ? "#4ade80" : C.goldLight }}>
+            {emailStatus==="ok" ? `✓ Séance envoyée à ${email}` :
+             emailStatus==="warn" ? "⚠ EmailJS non configuré — utilisez le bouton télécharger" :
+             "✕ Email non envoyé — téléchargez le script"}
+          </div>
+        )}
+
+        {error && (
+          <div style={{ padding:"0.75rem 1rem", borderRadius:"10px", marginBottom:"1rem", fontSize:"12px",
+            background:"rgba(192,57,43,.1)", border:`1px solid ${C.red}`, color:"#f87171" }}>
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* Player audio */}
+        {audioUrl ? (
+          <div style={{ background:C.bg, borderRadius:"16px", padding:"1.5rem",
+            border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem" }}>
+              <div style={{ width:"48px", height:"48px", borderRadius:"50%",
+                background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
+              <div>
+                <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>Votre séance audio</p>
+                <p style={{ fontSize:"12px", color:C.muted }}>Mettez un casque · Allongez-vous · Fermez les yeux</p>
+              </div>
+            </div>
+            <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
+              onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
+              onTimeUpdate={e => setProgress(e.target.currentTime)}
+              onLoadedMetadata={e => setDuration(e.target.duration)} />
+            <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
+              marginTop:"1rem" }}>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
+                🌙 Conseil : réduisez la luminosité de votre écran · Position allongée recommandée ·
+                Ne conduisez pas pendant la séance
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+            border:`1px solid ${C.border}`, marginBottom:"1.5rem", textAlign:"center" }}>
+            <p style={{ fontSize:"13px", color:C.muted }}>
+              🎙️ Audio non disponible · Lisez le script ci-dessous ou téléchargez-le
+            </p>
+          </div>
+        )}
+
+        {/* Script */}
+        {script && (
+          <div style={{ marginBottom:"1.5rem" }}>
+            <p style={{ fontSize:"11px", color:C.muted, letterSpacing:"1.5px", textTransform:"uppercase",
+              marginBottom:"0.75rem" }}>Script de votre séance</p>
+            <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:"14px",
+              padding:"1.25rem 1.5rem", maxHeight:"280px", overflowY:"auto",
+              fontSize:"13px", lineHeight:"1.9", color:C.cream,
+              fontFamily:"'Cormorant Garamond', serif", whiteSpace:"pre-wrap" }}>
+              {script}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        {/* Liens musique de fond */}
+        {(() => {
+          const mc = userData.musicChoice;
+          if (!mc || mc === "perso") return null;
+          const LINKS = {
+            tambour: [
+              { label:"Tambour chamanique 30 min", url:"https://www.youtube.com/results?search_query=shamanic+drum+meditation+30+minutes" },
+              { label:"Tambour ancrage profond", url:"https://www.youtube.com/results?search_query=tambour+chamanique+meditation+ancrage" },
+            ],
+            coeur: [
+              { label:"Battement de coeur meditation", url:"https://www.youtube.com/results?search_query=heartbeat+meditation+relaxation+60bpm" },
+              { label:"Rythme cardiaque relaxation", url:"https://www.youtube.com/results?search_query=heartbeat+sound+meditation+sleep" },
+            ],
+            binaural: [
+              { label:"Ondes alpha 10Hz etat sophrologique", url:"https://www.youtube.com/results?search_query=binaural+beats+alpha+10hz+meditation" },
+              { label:"Battements binauraux relaxation profonde", url:"https://www.youtube.com/results?search_query=binaural+beats+deep+relaxation+alpha" },
+            ],
+            relaxation: [
+              { label:"Bols tibetains relaxation", url:"https://www.youtube.com/results?search_query=bols+tibetains+relaxation+profonde" },
+              { label:"Piano ambiant et nature", url:"https://www.youtube.com/results?search_query=musique+relaxation+piano+nature+meditation" },
+            ],
+          };
+          const names = { tambour:"Tambour chamanique", coeur:"Battement de coeur", binaural:"Battements binauraux", relaxation:"Musique de relaxation" };
+          const links = LINKS[mc];
+          if (!links) return null;
+          return (
+            <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem", border:"1.5px solid #b8955a", marginBottom:"1.5rem" }}>
+              <p style={{ fontSize:"11px", color:"#d4b483", letterSpacing:"1.5px", textTransform:"uppercase", marginBottom:"0.75rem" }}>
+                Votre musique de fond — {names[mc]}
+              </p>
+              <p style={{ fontSize:"12px", color:C.muted, marginBottom:"0.75rem", lineHeight:"1.6" }}>
+                Ouvrez un de ces liens YouTube, reduisez le volume a 20-30%, puis lancez votre seance audio par-dessus.
+              </p>
+              {links.map((l,i) => (
+                <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                  style={{ display:"block", padding:"0.625rem 1rem", background:C.bg,
+                    border:"1px solid #1a4548", borderRadius:"8px", color:"#d4b483",
+                    fontSize:"12px", textDecoration:"none", marginBottom:"0.5rem" }}>
+                  Chercher sur YouTube : {l.label}
+                </a>
+              ))}
+            </div>
+          );
+        })()}
+
+        <Btn onClick={downloadScript} variant="ghost">⬇ Télécharger le script (.txt)</Btn>
+
+        {/* Rappels */}
+        <div style={{ marginTop:"1.5rem" }}>
+          <ReminderPanel />
+        </div>
+
+        {/* Premium teaser */}
+        {!isPremium && (
+          <div style={{ padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
+            borderRadius:"12px", border:`1px solid rgba(184,149,90,.2)`,
+            marginBottom:"0.75rem", textAlign:"center" }}>
+            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
+            <p style={{ fontSize:"11px", color:C.hint, marginTop:"3px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
+          </div>
+        )}
+
+        <div style={{ marginTop:"1rem", padding:"1rem", background:C.panel,
+          borderRadius:"12px", border:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.7", textAlign:"center" }}>
+            <strong style={{ color:C.goldLight }}>Protocole EUREKA — 21 séances</strong><br/>
+            Écoutez votre séance chaque jour pendant 21 jours consécutifs pour ancrer la transformation durablement dans votre cerveau.
+          </p>
+        </div>
+
+        <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
+      </div>
+    </Card>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// APP PRINCIPALE
+// ══════════════════════════════════════════════════════════════════
 function bufferToWav(buffer, sampleRate) {
   const numCh = 1, bps = 16;
   const byteRate = sampleRate * numCh * bps / 8;
@@ -219,132 +1640,95 @@ function bufferToWav(buffer, sampleRate) {
   return new Blob([ab],{type:'audio/wav'});
 }
 
-const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
-const DIR_NOMS = { TF:'tf', FT:'ft' };
+function App() {
+  const [step, setStep] = useState("landing");
+  const [userData, setUserData] = useState({});
+  const [showMentions, setShowMentions] = useState(false);
 
-async function generer() {
-  const claudeKey = null; // utilisé via /api/generate Vercel
-  const elevenKey = document.getElementById('elevenKey').value.trim();
-  if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
+  const STEP_LABELS = ["Accueil","Profil","Sensorialité","Personnalisation","Séance"];
 
-  document.getElementById('progressCard').style.display = 'block';
-  document.getElementById('genBtn').disabled = true;
-  document.getElementById('logEl').innerHTML = '';
+  const updateUser = (data) => setUserData(d => ({ ...d, ...data }));
 
-  const fname = `demo_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
+  const handleLandingNext = () => setStep("anamnese");
 
-  try {
-    // ÉTAPE 1 : Script relaxation
-    setProgress(10, 'Génération du script relaxation...');
-    log('→ Appel Claude pour script ' + selVakog + ' / ' + selDir + '...');
-    const sys = buildPromptSysteme(selVakog, selDir);
-    const script = await callClaude(null, sys,
-      "Genere le script DEMO complet:\n" +
-      "1. Accueil: 'Je vous invite a vous installer confortablement...' (2-3 phrases)\n" +
-      "2. 3 respirations exactes (texte exact REGLE 2)\n" +
-      "3. Relaxation physique complete (une partie a la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
-      "4. Je vais me taire... [PAUSE_15s] corps s enfonce... [PAUSE_15s] s approfondir... [PAUSE_15s]\n" +
-      "5. Relaxation mentale canal " + selVakog + " : lieu interieur, descente dans l espace...\n" +
-      "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
-      "7. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse\n" +
-      "STOP - pas de scenes therapeutiques, pas de cycles", 4096);
+  const handleAnamneseNext = (data) => {
+    updateUser(data);
+    setStep("mbti");
+  };
 
-    const clean = script
-      .replace(/\[VOIX[^\]]*\]/gi, "")
-      .replace(/^#+\s.*$/gm, "")
-      .replace(/\*\*[^*]+\*\*/g, "")
-      .trim();
+  const handleMBTINext = (mbti) => {
+    updateUser({ mbti });
+    setStep("vakog");
+  };
 
-    log('✓ Script généré (' + clean.length + ' caractères)', 'ok');
-    setProgress(30, 'Découpage en segments audio...');
+  const handleVAKOGNext = (vakogResult) => {
+    updateUser({ vakogResult });
+    setStep("profil");
+  };
 
-    // ÉTAPE 2 : Découpage
-    const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
-    const sr = actx.sampleRate;
-    const bufs = [];
-    const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
+  const handleProfilNext = (prefs) => {
+    updateUser({ ...prefs, seanceNum: 1 });
+    setStep("seance");
+  };
 
-    const pat = /\[PAUSE_(\d+)s\]/gi;
-    const parts = [];
-    let li = 0, mx;
-    while ((mx = pat.exec(clean)) !== null) {
-      const t = clean.slice(li, mx.index).trim();
-      if (t) parts.push({ type:"t", c:t });
-      parts.push({ type:"s", sec:parseInt(mx[1]) });
-      li = mx.index + mx[0].length;
-    }
-    const rem = clean.slice(li).trim();
-    if (rem) parts.push({ type:"t", c:rem });
+  const handleRestart = () => {
+    setStep("landing");
+    setUserData({});
+  };
 
-    const fp = [];
-    for (const p of parts) {
-      if (p.type === "s") { fp.push(p); continue; }
-      let tx = p.c;
-      while (tx.length > 4800) {
-        let cut = tx.lastIndexOf("... ", 4800);
-        if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
-        if (cut < 500) cut = 4800;
-        fp.push({ type:"t", c:tx.substring(0, cut+3) });
-        tx = tx.substring(cut+3).trim();
-      }
-      if (tx) fp.push({ type:"t", c:tx });
-    }
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex",
+      flexDirection:"column", alignItems:"center", justifyContent:"center",
+      padding:"clamp(1rem,3vw,2rem)" }}>
 
-    const tc = fp.filter(p => p.type === "t").length;
-    let done = 0;
+      {showMentions && <MentionsModal onClose={() => setShowMentions(false)} />}
 
-    // ÉTAPE 3 : TTS
-    for (const p of fp) {
-      if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
-      done++;
-      const pct = 30 + Math.round((done/tc)*60);
-      setProgress(pct, `Audio ${done} / ${tc} segments...`);
-      log(`→ TTS segment ${done}/${tc}...`);
-      const ab = await callTTS(elevenKey, p.c);
-      const decoded = await actx.decodeAudioData(ab);
-      bufs.push(decoded);
-      log(`✓ Segment ${done} OK`, 'ok');
-    }
+      {/* Fond décoratif */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
+        {[...Array(5)].map((_,i) => (
+          <div key={i} style={{ position:"absolute",
+            left:`${15+i*18}%`, top:`${10+i*15}%`,
+            width:`${80+i*30}px`, height:`${80+i*30}px`,
+            borderRadius:"50%", border:`1px solid rgba(184,149,90,${.04+i*.01})`,
+            animation:`breathe ${4+i}s ease-in-out ${i*.5}s infinite` }} />
+        ))}
+      </div>
 
-    // ÉTAPE 4 : Assemblage
-    setProgress(95, 'Assemblage du fichier WAV...');
-    log('→ Assemblage final...');
-    const tot = bufs.reduce((s,b) => s+b.length, 0);
-    const comb = actx.createBuffer(1, tot, sr);
-    const ch = comb.getChannelData(0);
-    let off = 0;
-    for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-    const wavBlob = bufferToWav(comb, sr);
-    const url = URL.createObjectURL(wavBlob);
+      <div style={{ position:"relative", zIndex:1, width:"100%",
+        display:"flex", flexDirection:"column", alignItems:"center" }}>
 
-    setProgress(100, '✅ Terminé !');
-    log('✓ Fichier WAV prêt : ' + fname, 'ok');
+        {step === "landing" && <Landing onStart={handleLandingNext} onMentions={() => setShowMentions(true)} />}
+        {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
+        {step === "mbti" && <QuizMBTI prenom={userData.prenom} onComplete={handleMBTINext} />}
+        {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
+        {step === "profil" && (
+          <ProfilResult prenom={userData.prenom} mbti={userData.mbti}
+            vakogResult={userData.vakogResult} onNext={handleProfilNext} />
+        )}
+        {step === "seance" && (
+          <SeancePlayer userData={{ ...userData }} onRestart={handleRestart} />
+        )}
 
-    // Afficher résultat
-    document.getElementById('resultsCard').style.display = 'block';
-    const grid = document.getElementById('audioGrid');
-    const div = document.createElement('div');
-    div.className = 'audio-card';
-    div.innerHTML = `
-      <h3>${fname}</h3>
-      <audio controls src="${url}"></audio>
-      <a class="dl-btn" href="${url}" download="${fname}">⬇ Télécharger ${fname}</a>
-      <p style="font-size:10px;color:#7a9ea0;margin-top:6px;">Taille estimée : ~50 MB · Uploadez via le bouton Upload sur Vercel Blob</p>
-    `;
-    grid.appendChild(div);
-
-    // Cocher la checklist
-    const chkId = `chk-${selVakog}-${selDir}`;
-    const chk = document.getElementById(chkId);
-    if (chk) { chk.textContent = '✅ ' + fname; chk.style.background = 'rgba(74,222,128,.1)'; chk.style.color = '#4ade80'; }
-
-  } catch(e) {
-    log('❌ Erreur : ' + e.message, 'err');
-    setProgress(0, 'Erreur — voir le log');
-  }
-
-  document.getElementById('genBtn').disabled = false;
+        <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
+          flexWrap:"wrap", justifyContent:"center" }}>
+          <p style={{ fontSize:"10px", color:C.hint, textAlign:"center",
+            fontFamily:"'Raleway', sans-serif", letterSpacing:"1px" }}>
+            EUREKA Thérapie · Sophrologie · Protocole personnalisé
+          </p>
+          <button onClick={() => setShowMentions(true)}
+            style={{ background:"transparent", border:"none", color:C.hint, fontSize:"10px",
+              cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
+              letterSpacing:"1px", padding:0 }}>
+            Mentions légales
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
 </script>
 </body>
 </html>
