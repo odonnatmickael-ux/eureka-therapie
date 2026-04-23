@@ -1,25 +1,35 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { system, user, tokens } = req.body;
+  const { text, voiceId } = req.body;
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.CLAUDE_API_KEY,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: tokens || 4096,
-        system: system,
-        messages: [{ role: "user", content: user }]
-      })
-    });
-    const data = await r.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    const text = data.content?.[0]?.text || "";
-    return res.status(200).json({ text });
+    const r = await fetch(
+      "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "xi-api-key": process.env.ELEVEN_API_KEY
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.90,
+            similarity_boost: 0.75,
+            style: 0.05,
+            use_speaker_boost: false,
+            speed: 0.78
+          }
+        })
+      }
+    );
+    if (!r.ok) {
+      const err = await r.text();
+      return res.status(500).json({ error: err });
+    }
+    const buffer = await r.arrayBuffer();
+    res.setHeader("Content-Type", "audio/mpeg");
+    return res.status(200).send(Buffer.from(buffer));
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
