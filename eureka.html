@@ -1270,7 +1270,6 @@ function SeancePlayer({ userData, onRestart }) {
     setFullGenMsg("Préparation de votre séance complète...");
     try {
       const actx = new (window.AudioContext || window.webkitAudioContext)();
-      await actx.resume();
       const sr = actx.sampleRate;
       const bufs = [];
       const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
