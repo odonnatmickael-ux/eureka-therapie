@@ -14,9 +14,9 @@ export default async function handler(req, res) {
           text: text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.90,
-            similarity_boost: 0.75,
-            style: 0.05,
+            stability: 0.80,
+            similarity_boost: 0.70,
+            style: 0.08,
             use_speaker_boost: false,
             speed: 0.78
           }
