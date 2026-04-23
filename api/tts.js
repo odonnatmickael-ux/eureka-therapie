@@ -2,6 +2,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const { text, voiceId } = req.body;
   try {
+    // Préfixe doux pour amorcer Brian sans brusquerie
+    const softStart = "... ";
+    const finalText = softStart + text;
+
     const r = await fetch(
       "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId,
       {
@@ -11,12 +15,12 @@ export default async function handler(req, res) {
           "xi-api-key": process.env.ELEVEN_API_KEY
         },
         body: JSON.stringify({
-          text: text,
+          text: finalText,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.90,
-            similarity_boost: 0.75,
-            style: 0.05,
+            stability: 0.95,
+            similarity_boost: 0.65,
+            style: 0.00,
             use_speaker_boost: false,
             speed: 0.78
           }
