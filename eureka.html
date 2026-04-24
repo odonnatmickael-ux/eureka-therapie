@@ -1230,12 +1230,19 @@ function SeancePlayer({ userData, onRestart }) {
 
       setScript(clean);
 
-      // AUDIO — chargement depuis Vercel Blob selon profil
+      // AUDIO — chargement depuis Vercel Blob selon voix + profil
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const dir = relaxDir === "TF" ? "tf" : "ft";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + canal + "_" + dir + ".wav";
+      const VOICE_NAMES = {
+        "4RZ84U1b4WCqpu57LvIq": "bella",
+        "9BWtsMINqrJLrRacOk9x": "aria",
+        "pNInz6obpgDQGcFmaJgB": "adam",
+        "nPczCjzI2devNBz1zQrb": "brian"
+      };
+      const voiceName = VOICE_NAMES[selectedVoice] || "bella";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + canal + "_" + dir + ".wav";
       setAudioUrl(blobUrl);
 
       // EMAIL
