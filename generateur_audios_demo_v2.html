@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — BRIAN</title>
+<title>EUREKA — Générateur Audios DÉMO — BELLA</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,9 +54,9 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · BRIAN · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · BELLA · Usage interne uniquement</p>
 
-  <div class="voice-badge" style="background:rgba(42,138,143,.1);border-color:#2a8a8f;color:#2a8a8f">🎙️ Voix : Brian (nPczCjzI2devNBz1zQrb) · Posé, neutre · Speed : 0.72</div>
+  <div class="voice-badge">🎙️ Voix : Bella (4RZ84U1b4WCqpu57LvIq) · Speed : 0.78 via tts.js</div>
 
   <div class="warning">
     ⚠️ Cet outil génère les 8 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
@@ -102,20 +102,20 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 8 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-V-TF" class="badge">⬜ demo_brian_visuel_tf.wav</div>
-      <div id="chk-V-FT" class="badge">⬜ demo_brian_visuel_ft.wav</div>
-      <div id="chk-A-TF" class="badge">⬜ demo_brian_auditif_tf.wav</div>
-      <div id="chk-A-FT" class="badge">⬜ demo_brian_auditif_ft.wav</div>
-      <div id="chk-K-TF" class="badge">⬜ demo_brian_kinesth_tf.wav</div>
-      <div id="chk-K-FT" class="badge">⬜ demo_brian_kinesth_ft.wav</div>
-      <div id="chk-R-TF" class="badge">⬜ demo_brian_rationnel_tf.wav</div>
-      <div id="chk-R-FT" class="badge">⬜ demo_brian_rationnel_ft.wav</div>
+      <div id="chk-V-TF" class="badge">⬜ demo_visuel_tf.wav</div>
+      <div id="chk-V-FT" class="badge">⬜ demo_visuel_ft.wav</div>
+      <div id="chk-A-TF" class="badge">⬜ demo_auditif_tf.wav</div>
+      <div id="chk-A-FT" class="badge">⬜ demo_auditif_ft.wav</div>
+      <div id="chk-K-TF" class="badge">⬜ demo_kinesth_tf.wav</div>
+      <div id="chk-K-FT" class="badge">⬜ demo_kinesth_ft.wav</div>
+      <div id="chk-R-TF" class="badge">⬜ demo_rationnel_tf.wav</div>
+      <div id="chk-R-FT" class="badge">⬜ demo_rationnel_ft.wav</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "nPczCjzI2devNBz1zQrb"; // Brian
+const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
 let selVakog = null, selDir = null;
 
 function selectOpt(type, el) {
@@ -223,7 +223,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_brian_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
+  const fname = `demo_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
