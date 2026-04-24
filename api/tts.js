@@ -3,7 +3,44 @@ export default async function handler(req, res) {
 
   const { text, voiceId } = req.body;
 
-  // ID par défaut : Bella (douce, enveloppante — recommandée pour sophrologie)
+  // ─── Réglages adaptés selon la voix ───────────────────────────────────────
+  const VOICE_SETTINGS = {
+
+    // ── Voix féminines ────────────────────────────────────────────────────────
+    "4RZ84U1b4WCqpu57LvIq": { // Bella — douce, enveloppante
+      stability: 0.65,
+      similarity_boost: 0.70,
+      style: 0.20,
+      use_speaker_boost: false,
+      speed: 0.72
+    },
+    "9BWtsMINqrJLrRacOk9x": { // Aria — apaisante, claire
+      stability: 0.68,
+      similarity_boost: 0.70,
+      style: 0.15,
+      use_speaker_boost: false,
+      speed: 0.74
+    },
+
+    // ── Voix masculines ───────────────────────────────────────────────────────
+    "pNInz6obpgDQGcFmaJgB": { // Adam — grave, rassurant
+      stability: 0.78,
+      similarity_boost: 0.60,
+      style: 0.08,
+      use_speaker_boost: false,
+      speed: 0.70
+    },
+    "nPczCjzI2devNBz1zQrb": { // Brian — posé, neutre
+      stability: 0.70,
+      similarity_boost: 0.68,
+      style: 0.10,
+      use_speaker_boost: false,
+      speed: 0.72
+    },
+  };
+
+  // Réglages par défaut si voix inconnue (Bella)
+  const settings = VOICE_SETTINGS[voiceId] || VOICE_SETTINGS["4RZ84U1b4WCqpu57LvIq"];
   const voice = voiceId || "4RZ84U1b4WCqpu57LvIq";
 
   try {
@@ -18,19 +55,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           text: text,
           model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            // ─── Réglages validés pour effet hypnotique / sophrologie ───
-            // stability        : 0.65 = légère variation naturelle, pas robotique
-            // similarity_boost : 0.70 = fidélité à la voix source
-            // style            : 0.20 = légère expressivité — chaleur sans dynamisme commercial
-            // speaker_boost    : false — désactiver la brillance studio
-            // speed            : 0.72 = rythme lent enveloppant
-            stability: 0.65,
-            similarity_boost: 0.70,
-            style: 0.20,
-            use_speaker_boost: false,
-            speed: 0.72
-          }
+          voice_settings: settings
         })
       }
     );
