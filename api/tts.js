@@ -15,20 +15,20 @@ export default async function handler(req, res) {
       speed: 0.72
     },
     "9BWtsMINqrJLrRacOk9x": { // Aria — apaisante, claire
-      stability: 0.68,
+      stability: 0.75,
       similarity_boost: 0.70,
       style: 0.15,
       use_speaker_boost: false,
-      speed: 0.74
+      speed: 0.70
     },
 
     // ── Voix masculines ───────────────────────────────────────────────────────
     "pNInz6obpgDQGcFmaJgB": { // Adam — grave, rassurant
-      stability: 0.78,
+      stability: 0.82,
       similarity_boost: 0.60,
       style: 0.08,
       use_speaker_boost: false,
-      speed: 0.70
+      speed: 0.68
     },
     "nPczCjzI2devNBz1zQrb": { // Brian — posé, neutre
       stability: 0.70,
@@ -36,6 +36,36 @@ export default async function handler(req, res) {
       style: 0.10,
       use_speaker_boost: false,
       speed: 0.72
+    },
+
+    // ── Voix masculines supplémentaires ──────────────────────────────────────
+    "YV28ox2c5Cuh5rim0LrW": { // Marcel — chaleureux, profond
+      stability: 0.80,
+      similarity_boost: 0.65,
+      style: 0.10,
+      use_speaker_boost: false,
+      speed: 0.70
+    },
+    "cQVn2FWawJsxa2z9X3l1": { // Valentin — chuchoté, apaisant
+      stability: 0.82,
+      similarity_boost: 0.65,
+      style: 0.08,
+      use_speaker_boost: false,
+      speed: 0.68
+    },
+    "5l4ttmr4SKNgi0HnOelT": { // Paul K — chaleureux, rassurant
+      stability: 0.78,
+      similarity_boost: 0.65,
+      style: 0.10,
+      use_speaker_boost: false,
+      speed: 0.70
+    },
+    "HeQxwrjIb6zvCa1bt1EE": { // Ludovic — méditatif, sérénité
+      stability: 0.80,
+      similarity_boost: 0.65,
+      style: 0.08,
+      use_speaker_boost: false,
+      speed: 0.70
     },
   };
 
