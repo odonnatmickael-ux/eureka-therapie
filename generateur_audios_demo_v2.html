@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — BELLA</title>
+<title>EUREKA — Générateur Audios DÉMO — ADAM</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,12 +54,12 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · BELLA · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · ADAM · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Bella (4RZ84U1b4WCqpu57LvIq) · Douce, enveloppante · Speed : 0.72</div>
+  <div class="voice-badge" style="background:rgba(42,138,143,.1);border-color:#2a8a8f;color:#2a8a8f">🎙️ Voix : Adam (pNInz6obpgDQGcFmaJgB) · Grave, rassurant · Speed : 0.70</div>
 
   <div class="warning">
-    ⚠️ Cet outil génère les 8 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
+    ⚠️ Cet outil génère les 8 fichiers WAV de démonstration VOIX ADAM à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
   </div>
 
   <div class="card">
@@ -102,20 +102,20 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 8 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-V-TF" class="badge">⬜ demo_bella_visuel_tf.wav</div>
-      <div id="chk-V-FT" class="badge">⬜ demo_bella_visuel_ft.wav</div>
-      <div id="chk-A-TF" class="badge">⬜ demo_bella_auditif_tf.wav</div>
-      <div id="chk-A-FT" class="badge">⬜ demo_bella_auditif_ft.wav</div>
-      <div id="chk-K-TF" class="badge">⬜ demo_bella_kinesth_tf.wav</div>
-      <div id="chk-K-FT" class="badge">⬜ demo_bella_kinesth_ft.wav</div>
-      <div id="chk-R-TF" class="badge">⬜ demo_bella_rationnel_tf.wav</div>
-      <div id="chk-R-FT" class="badge">⬜ demo_bella_rationnel_ft.wav</div>
+      <div id="chk-V-TF" class="badge">⬜ demo_adam_visuel_tf.wav</div>
+      <div id="chk-V-FT" class="badge">⬜ demo_adam_visuel_ft.wav</div>
+      <div id="chk-A-TF" class="badge">⬜ demo_adam_auditif_tf.wav</div>
+      <div id="chk-A-FT" class="badge">⬜ demo_adam_auditif_ft.wav</div>
+      <div id="chk-K-TF" class="badge">⬜ demo_adam_kinesth_tf.wav</div>
+      <div id="chk-K-FT" class="badge">⬜ demo_adam_kinesth_ft.wav</div>
+      <div id="chk-R-TF" class="badge">⬜ demo_adam_rationnel_tf.wav</div>
+      <div id="chk-R-FT" class="badge">⬜ demo_adam_rationnel_ft.wav</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
+const VOICE_ID = "pNInz6obpgDQGcFmaJgB"; // Adam
 let selVakog = null, selDir = null;
 
 function selectOpt(type, el) {
@@ -223,7 +223,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_bella_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
+  const fname = `demo_adam_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
