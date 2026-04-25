@@ -352,123 +352,12 @@ function buildSystemPrompt(data) {
     "Puis affirmations amour, paix, transformation, gratitude." :
     "Puis affirmations ressources interieures, courage, progression.";
 
-  // ── Profils MBTI — langage d'influence adapté aux 16 types ────────────────
-  const MBTI_PROFILES = {
-    // GROUPE 1 — Analystes (NT)
-    "INTJ": {
-      mots: "maitrise, strategie, vision, perfection, independance, efficacite",
-      ton: "sobre, precis, aucune fioriture sentimentale",
-      phrases: "Votre esprit strategique enregistre cette transformation... Vous optimisez votre etat interieur... Cette methode est precise et efficace...",
-      eviter: "epanchements emotionnels, metaphores trop poetiques, injonctions collectives"
-    },
-    "INTP": {
-      mots: "comprendre, analyser, decouvrir, theorie, possible, explorer, logique",
-      ton: "curieux, ouvert, intellectuellement stimulant",
-      phrases: "Votre cerveau explore maintenant de nouvelles connexions... Ce processus est fascinant a observer... Chaque respiration ouvre une nouvelle comprehension...",
-      eviter: "dogmatisme, certitudes absolues, langage emotionnel excessif"
-    },
-    "ENTJ": {
-      mots: "leadership, resultat, puissance, objectif, victoire, decision, excellence",
-      ton: "direct, ambitieux, oriente resultat",
-      phrases: "Vous prenez le controle de votre etat interieur... Cette transformation renforce votre puissance... Vous avancez vers votre meilleure version...",
-      eviter: "passivite, langage de soumission, trop de douceur"
-    },
-    "ENTP": {
-      mots: "innovation, possibilite, different, challenger, creer, liberte, unique",
-      ton: "stimulant, provocateur en douceur, original",
-      phrases: "Votre esprit decouvre une nouvelle facon d etre... Cette experience est unique et inedite... Vous repoussez vos propres limites interieures...",
-      eviter: "routine, langage trop conventionnel, repetition sans variation"
-    },
-    // GROUPE 2 — Diplomates (NF)
-    "INFJ": {
-      mots: "sens, mission, ame, profondeur, transformation, rare, destinee, lumiere",
-      ton: "mystique, profond, charge de sens",
-      phrases: "Votre ame reconnait ce chemin... Cette transformation est votre mission profonde... Vous etes exactement la ou vous devez etre...",
-      eviter: "superficialite, langage commercial, logique froide"
-    },
-    "INFP": {
-      mots: "authenticite, valeurs, ideal, sensibilite, reve, beaute, harmonie, liberte",
-      ton: "poetique, doux, respectueux de l interiorite",
-      phrases: "Votre monde interieur s epanouit... Cette paix est authentiquement la votre... Vous honorez votre sensibilite profonde...",
-      eviter: "pression, performance, langage trop rationnel"
-    },
-    "ENFJ": {
-      mots: "connexion, inspirer, grandir, ensemble, rayonner, impact, amour, guider",
-      ton: "chaleureux, collectif, inspirant",
-      phrases: "En vous transformant vous transformez le monde autour de vous... Votre lumiere rayonne naturellement... Vous etes une source d inspiration...",
-      eviter: "isolement, langage trop solitaire, froideur"
-    },
-    "ENFP": {
-      mots: "passion, possibilites, enthousiasme, creer, connexion, spontane, vivant, joie",
-      ton: "enthousiaste, colore, plein d energie douce",
-      phrases: "Chaque instant est une nouvelle possibilite... Votre energie se renouvelle profondement... Vous vous reconnectez a votre joie naturelle...",
-      eviter: "rigidite, contrainte, langage trop structure"
-    },
-    // GROUPE 3 — Sentinelles (SJ)
-    "ISTJ": {
-      mots: "fiabilite, ordre, devoir, methode, concret, eprouve, responsabilite, solidite",
-      ton: "structure, rassurant, ancre dans le reel",
-      phrases: "Etape par etape votre corps se detend... Ce processus est eprouve et fiable... Vous avancez methodiquement vers le calme...",
-      eviter: "improvisation, metaphores trop abstraites, langage flou"
-    },
-    "ISFJ": {
-      mots: "protection, soin, famille, stabilite, devouement, harmonie, douceur, securite",
-      ton: "maternel, protecteur, enveloppant",
-      phrases: "Vous prenez soin de vous maintenant... Vous meritez ce moment de paix... Votre corps est en securite et protege...",
-      eviter: "pression de performance, langage froid, individualisme excessif"
-    },
-    "ESTJ": {
-      mots: "efficacite, ordre, resultat, concret, structure, maitrise, realiser, progresser",
-      ton: "direct, pratique, oriente action concrete",
-      phrases: "Votre corps accomplit maintenant ce travail de recuperation... Vous gerez efficacement votre etat interieur... Chaque etape produit un resultat concret...",
-      eviter: "ambiguite, langage vague, trop de poesie"
-    },
-    "ESFJ": {
-      mots: "harmonie, partage, bienveillance, communaute, chaleur, reconnaissance, appartenance",
-      ton: "chaleureux, social, bienveillant",
-      phrases: "Vous rayonnez de bienveillance... Cette paix vous rend encore plus present pour les autres... Vous meritez cet amour que vous donnez si genereu sement...",
-      eviter: "isolement, langage trop introspec tif, froideur analytique"
-    },
-    // GROUPE 4 — Explorateurs (SP)
-    "ISTP": {
-      mots: "maitrise, technique, precision, independance, efficace, concret, sensation, action",
-      ton: "sobre, direct, ancre dans le corps",
-      phrases: "Votre corps fonctionne avec une precision remarquable... Vous maitrisez maintenant cet etat de calme... Chaque muscle repond parfaitement...",
-      eviter: "sentimentalisme, discours abstrait, trop de metaphores"
-    },
-    "ISFP": {
-      mots: "beaute, sensation, liberte, present, nature, authenticite, art, douceur",
-      ton: "sensoriel, poetique, respectueux du silence",
-      phrases: "Votre corps ressent cette beaute interieure... Vous vivez pleinement cet instant... La nature de votre etre s exprime librement...",
-      eviter: "pression, structure rigide, langage trop analytique"
-    },
-    "ESTP": {
-      mots: "action, energie, present, concret, impact, challenge, resultat, spontane",
-      ton: "dynamique mais apaise, ancre dans le corps, direct",
-      phrases: "Votre energie se recharge puissamment... Vous agissez sur votre etat interieur maintenant... Ce moment produit un impact reel et immediat...",
-      eviter: "abstraction, lenteur excessive, langage trop contemplatif"
-    },
-    "ESFP": {
-      mots: "plaisir, energie, partage, enthousiasme, present, celebrer, vivant, lumiere",
-      ton: "joyeux, sensoriel, chaleureux, celebrant la vie",
-      phrases: "Votre energie rayonne et se renouvelle... Vous celebrez cet instant de paix... Votre corps vibre de bien-etre...",
-      eviter: "lourdeur, tristesse, langage trop introspec tif ou sombre"
-    },
-  };
-
-  const mbtiProfile = MBTI_PROFILES[mbti] || MBTI_PROFILES["INFP"];
-
   return "Tu es un sophrologue expert. Tu generes un script audio de seance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
     "CLIENT: " + prenom + " | MBTI: " + mbti + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
     "PROBLEMES: " + problem + "\n" +
     "OBJECTIFS: " + objectif + "\n" +
     "SPIRITUALITE: " + beliefSystem + "\n\n" +
-    "PROFIL MBTI " + mbti + " — ADAPTER TOUT LE SCRIPT A CE PROFIL:\n" +
-    "Mots d influence a utiliser frequemment: " + mbtiProfile.mots + "\n" +
-    "Ton obligatoire: " + mbtiProfile.ton + "\n" +
-    "Exemples de phrases adaptees: " + mbtiProfile.phrases + "\n" +
-    "A eviter absolument: " + mbtiProfile.eviter + "\n\n" +
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
@@ -1434,18 +1323,7 @@ function SeancePlayer({ userData, onRestart }) {
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const dir = relaxDir === "TF" ? "tf" : "ft";
-      const VOICE_NAMES = {
-        "4RZ84U1b4WCqpu57LvIq": "bella",
-        "9BWtsMINqrJLrRacOk9x": "aria",
-        "pNInz6obpgDQGcFmaJgB": "adam",
-        "nPczCjzI2devNBz1zQrb": "brian",
-        "YV28ox2c5Cuh5rim0LrW": "marcel",
-        "cQVn2FWawJsxa2z9X3l1": "valentin",
-        "5l4ttmr4SKNgi0HnOelT": "paulk",
-        "HeQxwrjIb6zvCa1bt1EE": "ludovic"
-      };
-      const voiceName = VOICE_NAMES[selectedVoice] || "bella";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + canal + "_" + dir + ".mp3";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + canal + "_" + dir + ".wav";
       setAudioUrl(blobUrl);
 
       // EMAIL
