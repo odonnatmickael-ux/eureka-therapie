@@ -83,94 +83,17 @@ function computeNewStreak() {
 
 // Catalogue de voix ElevenLabs disponibles
 const VOICES = [
-  { id:"4RZ84U1b4WCqpu57LvIq", name:"Bella",   desc:"Voix féminine, douce et enveloppante (recommandée)", gender:"F",
-    preview:"" },
-  { id:"9BWtsMINqrJLrRacOk9x", name:"Aria",    desc:"Voix féminine, apaisante et claire", gender:"F",
-    preview:"" },
-  { id:"pNInz6obpgDQGcFmaJgB", name:"Adam",    desc:"Voix masculine, profonde et rassurante", gender:"M",
-    preview:"" },
-  { id:"nPczCjzI2devNBz1zQrb", name:"Brian",   desc:"Voix masculine, posée et neutre", gender:"M",
-    preview:"" },
+  { id:"4RZ84U1b4WCqpu57LvIq", name:"Bella",    desc:"Voix féminine, douce et enveloppante", gender:"F", preview:"" },
+  { id:"9BWtsMINqrJLrRacOk9x", name:"Aria",     desc:"Voix féminine, apaisante et claire", gender:"F", preview:"" },
+  { id:"pNInz6obpgDQGcFmaJgB", name:"Adam",     desc:"Voix masculine, profonde et rassurante", gender:"M", preview:"" },
+  { id:"nPczCjzI2devNBz1zQrb", name:"Brian",    desc:"Voix masculine, posée et neutre", gender:"M", preview:"" },
+  { id:"YV28ox2c5Cuh5rim0LrW", name:"Marcel",   desc:"Voix masculine, chaleureuse et poétique", gender:"M", preview:"" },
+  { id:"cQVn2FWawJsxa2z9X3l1", name:"Valentin", desc:"Voix masculine, chuchotée et apaisante", gender:"M", preview:"" },
+  { id:"5l4ttmr4SKNgi0HnOelT", name:"Paul K",   desc:"Voix masculine, chaleureuse et rassurante", gender:"M", preview:"" },
+  { id:"HeQxwrjIb6zvCa1bt1EE", name:"Ludovic",  desc:"Voix masculine, méditative et sereine", gender:"M", preview:"" },
 ];
 </script>
 
-<!-- ╔═══════════════════════════════════════════════╗ -->
-<!-- ║           PRE-LANDING HTML (avant React)       ║ -->
-<!-- ╚═══════════════════════════════════════════════╝ -->
-<div id="prelanding" style="
-  min-height:100vh;
-  background:#08191a;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:2rem;
-  font-family:'Raleway',sans-serif;
-  text-align:center;
-">
-  <div style="max-width:500px;width:100%;animation:fadeUp .6s ease">
-    <!-- Orbe décoratif -->
-    <div style="width:70px;height:70px;border-radius:50%;border:1.5px solid rgba(184,149,90,.6);
-      display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;
-      background:radial-gradient(circle,rgba(42,138,143,.25) 0%,transparent 70%);
-      animation:breathe 3s ease-in-out infinite">
-      <span style="font-family:'Cormorant Garamond',serif;font-size:28px;color:#b8955a">◈</span>
-    </div>
-
-    <p style="font-size:10px;letter-spacing:5px;color:#b8955a;text-transform:uppercase;margin-bottom:8px">Méthode</p>
-    <h1 style="font-family:'Cormorant Garamond',serif;font-size:clamp(38px,9vw,56px);
-      font-weight:300;letter-spacing:6px;color:#f0e8d8;margin:0 0 6px">EUREKA</h1>
-    <p style="font-size:11px;color:#7a9ea0;letter-spacing:3px;margin-bottom:2rem">Sophrologie · Transformation</p>
-
-    <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,5vw,30px);
-      font-weight:300;color:#f0e8d8;line-height:1.4;margin-bottom:8px">
-      Et si ton mental pouvait<br>enfin ralentir…
-    </h2>
-    <p style="color:#b8955a;font-size:15px;margin-bottom:1rem;font-style:italic">en 21 jours seulement</p>
-
-    <p style="color:#7a9ea0;font-size:14px;line-height:1.7;margin-bottom:1.5rem">
-      Une séance audio <strong style="color:#f0e8d8">personnalisée</strong> créée pour toi,<br>
-      selon ton fonctionnement mental unique.
-    </p>
-
-    <!-- Badges de réassurance conversion -->
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem">
-      <span style="padding:5px 12px;background:rgba(42,138,143,.15);border:1px solid rgba(42,138,143,.3);
-        border-radius:20px;font-size:12px;color:#7a9ea0">⏱ 2 minutes pour créer ta séance</span>
-      <span style="padding:5px 12px;background:rgba(184,149,90,.1);border:1px solid rgba(184,149,90,.25);
-        border-radius:20px;font-size:12px;color:#b8955a">✦ 100% personnalisée</span>
-      <span style="padding:5px 12px;background:rgba(42,138,143,.15);border:1px solid rgba(42,138,143,.3);
-        border-radius:20px;font-size:12px;color:#7a9ea0">🌙 21 jours de transformation</span>
-    </div>
-
-    <button onclick="startApp()" style="
-      display:block;width:100%;padding:1.125rem 1.5rem;
-      border:none;border-radius:14px;
-      background:linear-gradient(135deg,#b8955a,#9a7a40);
-      color:#1a0e00;font-family:'Raleway',sans-serif;
-      font-size:12px;font-weight:600;letter-spacing:2.5px;
-      text-transform:uppercase;cursor:pointer;
-      box-shadow:0 8px 30px rgba(184,149,90,.3);
-      transition:opacity .2s;margin-bottom:1rem">
-      Créer ma séance personnalisée →
-    </button>
-
-    <p style="font-size:11px;color:#4a6e70">🎧 Écouter avec un casque pour une immersion optimale</p>
-
-    <div style="margin-top:2rem;padding:.875rem 1rem;
-      background:rgba(184,149,90,.05);border-radius:12px;
-      border:1px solid rgba(184,149,90,.15)">
-      <p style="font-size:11px;color:#4a6e70;line-height:1.65">
-        ⚕️ Ce service propose des séances de sophrologie guidée. Il ne remplace pas un suivi médical ou thérapeutique professionnel.
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- ╔═══════════════════════════════════════════════╗ -->
-<!-- ║              APP REACT (cachée au départ)      ║ -->
-<!-- ╚═══════════════════════════════════════════════╝ -->
-<div id="app" style="display:none">
 <div id="root"></div>
 
 <script type="text/babel">
@@ -352,12 +275,37 @@ function buildSystemPrompt(data) {
     "Puis affirmations amour, paix, transformation, gratitude." :
     "Puis affirmations ressources interieures, courage, progression.";
 
+  const MBTI_PROFILES = {
+    "INTJ": { mots:"maitrise, strategie, vision, perfection, independance, efficacite", ton:"sobre, precis, aucune fioriture sentimentale", phrases:"Votre esprit strategique enregistre cette transformation... Vous optimisez votre etat interieur... Cette methode est precise et efficace...", eviter:"epanchements emotionnels, metaphores trop poetiques, injonctions collectives" },
+    "INTP": { mots:"comprendre, analyser, decouvrir, theorie, possible, explorer, logique", ton:"curieux, ouvert, intellectuellement stimulant", phrases:"Votre cerveau explore maintenant de nouvelles connexions... Ce processus est fascinant a observer... Chaque respiration ouvre une nouvelle comprehension...", eviter:"dogmatisme, certitudes absolues, langage emotionnel excessif" },
+    "ENTJ": { mots:"leadership, resultat, puissance, objectif, victoire, decision, excellence", ton:"direct, ambitieux, oriente resultat", phrases:"Vous prenez le controle de votre etat interieur... Cette transformation renforce votre puissance... Vous avancez vers votre meilleure version...", eviter:"passivite, langage de soumission, trop de douceur" },
+    "ENTP": { mots:"innovation, possibilite, different, challenger, creer, liberte, unique", ton:"stimulant, provocateur en douceur, original", phrases:"Votre esprit decouvre une nouvelle facon d etre... Cette experience est unique et inedite... Vous repoussez vos propres limites interieures...", eviter:"routine, langage trop conventionnel, repetition sans variation" },
+    "INFJ": { mots:"sens, mission, ame, profondeur, transformation, rare, destinee, lumiere", ton:"mystique, profond, charge de sens", phrases:"Votre ame reconnait ce chemin... Cette transformation est votre mission profonde... Vous etes exactement la ou vous devez etre...", eviter:"superficialite, langage commercial, logique froide" },
+    "INFP": { mots:"authenticite, valeurs, ideal, sensibilite, reve, beaute, harmonie, liberte", ton:"poetique, doux, respectueux de l interiorite", phrases:"Votre monde interieur s epanouit... Cette paix est authentiquement la votre... Vous honorez votre sensibilite profonde...", eviter:"pression, performance, langage trop rationnel" },
+    "ENFJ": { mots:"connexion, inspirer, grandir, ensemble, rayonner, impact, amour, guider", ton:"chaleureux, collectif, inspirant", phrases:"En vous transformant vous transformez le monde autour de vous... Votre lumiere rayonne naturellement... Vous etes une source d inspiration...", eviter:"isolement, langage trop solitaire, froideur" },
+    "ENFP": { mots:"passion, possibilites, enthousiasme, creer, connexion, spontane, vivant, joie", ton:"enthousiaste, colore, plein d energie douce", phrases:"Chaque instant est une nouvelle possibilite... Votre energie se renouvelle profondement... Vous vous reconnectez a votre joie naturelle...", eviter:"rigidite, contrainte, langage trop structure" },
+    "ISTJ": { mots:"fiabilite, ordre, devoir, methode, concret, eprouve, responsabilite, solidite", ton:"structure, rassurant, ancre dans le reel", phrases:"Etape par etape votre corps se detend... Ce processus est eprouve et fiable... Vous avancez methodiquement vers le calme...", eviter:"improvisation, metaphores trop abstraites, langage flou" },
+    "ISFJ": { mots:"protection, soin, famille, stabilite, devouement, harmonie, douceur, securite", ton:"maternel, protecteur, enveloppant", phrases:"Vous prenez soin de vous maintenant... Vous meritez ce moment de paix... Votre corps est en securite et protege...", eviter:"pression de performance, langage froid, individualisme excessif" },
+    "ESTJ": { mots:"efficacite, ordre, resultat, concret, structure, maitrise, realiser, progresser", ton:"direct, pratique, oriente action concrete", phrases:"Votre corps accomplit maintenant ce travail de recuperation... Vous gerez efficacement votre etat interieur... Chaque etape produit un resultat concret...", eviter:"ambiguite, langage vague, trop de poesie" },
+    "ESFJ": { mots:"harmonie, partage, bienveillance, communaute, chaleur, reconnaissance, appartenance", ton:"chaleureux, social, bienveillant", phrases:"Vous rayonnez de bienveillance... Cette paix vous rend encore plus present pour les autres... Vous meritez cet amour que vous donnez si generousement...", eviter:"isolement, langage trop introspectif, froideur analytique" },
+    "ISTP": { mots:"maitrise, technique, precision, independance, efficace, concret, sensation, action", ton:"sobre, direct, ancre dans le corps", phrases:"Votre corps fonctionne avec une precision remarquable... Vous maitrisez maintenant cet etat de calme... Chaque muscle repond parfaitement...", eviter:"sentimentalisme, discours abstrait, trop de metaphores" },
+    "ISFP": { mots:"beaute, sensation, liberte, present, nature, authenticite, art, douceur", ton:"sensoriel, poetique, respectueux du silence", phrases:"Votre corps ressent cette beaute interieure... Vous vivez pleinement cet instant... La nature de votre etre s exprime librement...", eviter:"pression, structure rigide, langage trop analytique" },
+    "ESTP": { mots:"action, energie, present, concret, impact, challenge, resultat, spontane", ton:"dynamique mais apaise, ancre dans le corps, direct", phrases:"Votre energie se recharge puissamment... Vous agissez sur votre etat interieur maintenant... Ce moment produit un impact reel et immediat...", eviter:"abstraction, lenteur excessive, langage trop contemplatif" },
+    "ESFP": { mots:"plaisir, energie, partage, enthousiasme, present, celebrer, vivant, lumiere", ton:"joyeux, sensoriel, chaleureux, celebrant la vie", phrases:"Votre energie rayonne et se renouvelle... Vous celebrez cet instant de paix... Votre corps vibre de bien-etre...", eviter:"lourdeur, tristesse, langage trop introspectif ou sombre" },
+  };
+  const mbtiProfile = MBTI_PROFILES[mbti] || MBTI_PROFILES["INFP"];
+
   return "Tu es un sophrologue expert. Tu generes un script audio de seance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
     "CLIENT: " + prenom + " | MBTI: " + mbti + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
     "PROBLEMES: " + problem + "\n" +
     "OBJECTIFS: " + objectif + "\n" +
     "SPIRITUALITE: " + beliefSystem + "\n\n" +
+    "PROFIL MBTI " + mbti + " — ADAPTER TOUT LE SCRIPT:\n" +
+    "Mots d influence: " + mbtiProfile.mots + "\n" +
+    "Ton obligatoire: " + mbtiProfile.ton + "\n" +
+    "Exemples de phrases: " + mbtiProfile.phrases + "\n" +
+    "A eviter absolument: " + mbtiProfile.eviter + "\n\n" +
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
@@ -1323,7 +1271,18 @@ function SeancePlayer({ userData, onRestart }) {
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const dir = relaxDir === "TF" ? "tf" : "ft";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + canal + "_" + dir + ".wav";
+      const VOICE_NAMES = {
+        "4RZ84U1b4WCqpu57LvIq": "bella",
+        "9BWtsMINqrJLrRacOk9x": "aria",
+        "pNInz6obpgDQGcFmaJgB": "adam",
+        "nPczCjzI2devNBz1zQrb": "brian",
+        "YV28ox2c5Cuh5rim0LrW": "marcel",
+        "cQVn2FWawJsxa2z9X3l1": "valentin",
+        "5l4ttmr4SKNgi0HnOelT": "paulk",
+        "HeQxwrjIb6zvCa1bt1EE": "ludovic"
+      };
+      const voiceName = VOICE_NAMES[selectedVoice] || "bella";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + canal + "_" + dir + ".mp3";
       setAudioUrl(blobUrl);
 
       // EMAIL
@@ -1781,14 +1740,6 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
-</script>
-</div><!-- /#app -->
-
-<script>
-function startApp() {
-  document.getElementById("prelanding").style.display = "none";
-  document.getElementById("app").style.display = "block";
-}
 </script>
 </body>
 </html>
