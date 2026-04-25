@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       similarity_boost: 0.60,
       style: 0.08,
       use_speaker_boost: false,
-      speed: 0.68
+      speed: 0.70
     },
     "nPczCjzI2devNBz1zQrb": { // Brian — posé, neutre
       stability: 0.70,
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       similarity_boost: 0.65,
       style: 0.08,
       use_speaker_boost: false,
-      speed: 0.68
+      speed: 0.70
     },
     "5l4ttmr4SKNgi0HnOelT": { // Paul K — chaleureux, rassurant
       stability: 0.78,
