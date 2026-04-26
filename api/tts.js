@@ -44,14 +44,14 @@ export default async function handler(req, res) {
       similarity_boost: 0.65,
       style: 0.10,
       use_speaker_boost: false,
-      speed: 1.0
+      speed: 0.70
     },
     "cQVn2FWawJsxa2z9X3l1": { // Valentin — chuchoté, apaisant
       stability: 0.82,
       similarity_boost: 0.65,
       style: 0.08,
       use_speaker_boost: false,
-      speed: 1.0
+      speed: 0.70
     },
     "5l4ttmr4SKNgi0HnOelT": { // Paul K — chaleureux, rassurant
       stability: 0.78,
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       similarity_boost: 0.75,
       style: 0.10,
       use_speaker_boost: false,
-      speed: 1.0
+      speed: 0.75
     },
   };
 
