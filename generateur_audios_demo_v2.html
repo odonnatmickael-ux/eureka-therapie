@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — MICKAEL</title>
+<title>EUREKA — Générateur Audios DÉMO — MICKAËL SPEED1</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,12 +54,12 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · MICKAEL · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · MICKAËL SPEED1 · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Mickael (D8YqJ6FEIaP09qWQcZuN) · Speed : 0.75</div>
+  <div class="voice-badge">🎙️ Voix : Mickaël Speed1 (D8YqJ6FEIaP09qWQcZuN) · Personnelle, vitesse normale · Speed : 1.0</div>
 
   <div class="warning">
-    ⚠️ Cet outil génère les 8 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
+    ⚠️ Cet outil génère les 16 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
   </div>
 
   <div class="card">
@@ -78,10 +78,12 @@ input:focus { border-color: #b8955a; }
       <div class="opt" data-val="K" onclick="selectOpt('vakog',this)">🤲 Kinesthésique</div>
       <div class="opt" data-val="R" onclick="selectOpt('vakog',this)">🧠 Rationnel</div>
     </div>
-    <label>Direction de relaxation</label>
+    <label>Bloc de personnalité MBTI</label>
     <div class="grid" id="dirGrid">
-      <div class="opt" data-val="TF" onclick="selectOpt('dir',this)">⬇️ Tête → Pieds</div>
-      <div class="opt" data-val="FT" onclick="selectOpt('dir',this)">⬆️ Pieds → Tête</div>
+      <div class="opt" data-val="analystes" onclick="selectOpt('dir',this)">🧠 Analystes (NT)</div>
+      <div class="opt" data-val="diplomates" onclick="selectOpt('dir',this)">💫 Diplomates (NF)</div>
+      <div class="opt" data-val="sentinelles" onclick="selectOpt('dir',this)">🛡️ Sentinelles (SJ)</div>
+      <div class="opt" data-val="explorateurs" onclick="selectOpt('dir',this)">⚡ Explorateurs (SP)</div>
     </div>
     <button class="btn btn-gold" id="genBtn" onclick="generer()" disabled>Générer cet audio →</button>
   </div>
@@ -102,20 +104,28 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 8 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-V-TF" class="badge">⬜ demo_mickael_visuel_tf.wav</div>
-      <div id="chk-V-FT" class="badge">⬜ demo_mickael_visuel_ft.wav</div>
-      <div id="chk-A-TF" class="badge">⬜ demo_mickael_auditif_tf.wav</div>
-      <div id="chk-A-FT" class="badge">⬜ demo_mickael_auditif_ft.wav</div>
-      <div id="chk-K-TF" class="badge">⬜ demo_mickael_kinesth_tf.wav</div>
-      <div id="chk-K-FT" class="badge">⬜ demo_mickael_kinesth_ft.wav</div>
-      <div id="chk-R-TF" class="badge">⬜ demo_mickael_rationnel_tf.wav</div>
-      <div id="chk-R-FT" class="badge">⬜ demo_mickael_rationnel_ft.wav</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_mickael_speed1_analystes_visuel.wav</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_mickael_speed1_analystes_auditif.wav</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_mickael_speed1_analystes_kinesth.wav</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_mickael_speed1_analystes_rationnel.wav</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_mickael_speed1_diplomates_visuel.wav</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_mickael_speed1_diplomates_auditif.wav</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_mickael_speed1_diplomates_kinesth.wav</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_mickael_speed1_diplomates_rationnel.wav</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_mickael_speed1_sentinelles_visuel.wav</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_mickael_speed1_sentinelles_auditif.wav</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_mickael_speed1_sentinelles_kinesth.wav</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_mickael_speed1_sentinelles_rationnel.wav</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_mickael_speed1_explorateurs_visuel.wav</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_mickael_speed1_explorateurs_auditif.wav</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_mickael_speed1_explorateurs_kinesth.wav</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_mickael_speed1_explorateurs_rationnel.wav</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "D8YqJ6FEIaP09qWQcZuN"; // Mickael
+const VOICE_ID = "D8YqJ6FEIaP09qWQcZuN"; // Mickaël Speed1
 let selVakog = null, selDir = null;
 
 function selectOpt(type, el) {
@@ -213,7 +223,7 @@ function bufferToWav(buffer, sampleRate) {
 }
 
 const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
-const DIR_NOMS = { TF:'tf', FT:'ft' };
+const DIR_NOMS = { analystes:'analystes', diplomates:'diplomates', sentinelles:'sentinelles', explorateurs:'explorateurs' };
 
 async function generer() {
   const elevenKey = document.getElementById('elevenKey').value.trim();
@@ -223,7 +233,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_mickael_${VAKOG_NOMS[selVakog]}_${DIR_NOMS[selDir]}.wav`;
+  const fname = `demo_mickael_speed1_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.wav`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
@@ -291,6 +301,7 @@ async function generer() {
       const ab = await callTTS(p.c);
       const decoded = await actx.decodeAudioData(ab);
       bufs.push(decoded);
+      bufs.push(sil(0.3));
       log(`✓ Segment ${done} OK`, 'ok');
     }
 
@@ -318,7 +329,7 @@ async function generer() {
     `;
     grid.appendChild(div);
 
-    const chk = document.getElementById(`chk-${selVakog}-${selDir}`);
+    const chk = document.getElementById(`chk-${selDir.substring(0,3).toUpperCase()}-${selVakog.substring(0,3).toUpperCase()}`);
     if (chk) { chk.textContent = '✅ ' + fname; chk.style.background = 'rgba(74,222,128,.1)'; chk.style.color = '#4ade80'; }
 
   } catch(e) {
