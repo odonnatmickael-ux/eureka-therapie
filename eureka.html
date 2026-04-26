@@ -1109,7 +1109,7 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
         {/* Note discrète sous les extraits */}
         <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.75rem", lineHeight:"1.6",
           fontStyle:"italic", paddingLeft:"4px" }}>
-          Les extraits sont en vitesse standard. La séance finale sera plus lente et adaptée à la relaxation.
+          Les extraits de découverte sont proposés avec nos voix de référence Bella et Marcel. Votre voix choisie sera utilisée pour votre séance complète personnalisée.
         </p>
       </div>
 
@@ -1266,19 +1266,22 @@ function SeancePlayer({ userData, onRestart }) {
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
-      const dir = relaxDir === "TF" ? "tf" : "ft";
+      const MBTI_BLOCS = {
+        "INTJ":"analystes","INTP":"analystes","ENTJ":"analystes","ENTP":"analystes",
+        "INFJ":"diplomates","INFP":"diplomates","ENFJ":"diplomates","ENFP":"diplomates",
+        "ISTJ":"sentinelles","ISFJ":"sentinelles","ESTJ":"sentinelles","ESFJ":"sentinelles",
+        "ISTP":"explorateurs","ISFP":"explorateurs","ESTP":"explorateurs","ESFP":"explorateurs"
+      };
+      const bloc = MBTI_BLOCS[mbti] || "diplomates";
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "9BWtsMINqrJLrRacOk9x": "bella",
-        "pNInz6obpgDQGcFmaJgB": "brian",
-        "nPczCjzI2devNBz1zQrb": "brian",
-        "YV28ox2c5Cuh5rim0LrW": "brian",
-        "cQVn2FWawJsxa2z9X3l1": "brian",
-        "5l4ttmr4SKNgi0HnOelT": "brian",
-        "HeQxwrjIb6zvCa1bt1EE": "brian"
+        "YV28ox2c5Cuh5rim0LrW": "marcel",
+        "cQVn2FWawJsxa2z9X3l1": "marcel",
+        "D8YqJ6FEIaP09qWQcZuN": "marcel"
       };
       const voiceName = VOICE_NAMES[selectedVoice] || "bella";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + canal + "_" + dir + ".mp3";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3";
       setAudioUrl(blobUrl);
 
       // EMAIL
