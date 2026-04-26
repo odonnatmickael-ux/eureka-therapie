@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — VALENTIN</title>
+<title>EUREKA — Générateur Audios DÉMO — MICKAËL</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,9 +54,9 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · VALENTIN · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · MICKAËL · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Valentin (cQVn2FWawJsxa2z9X3l1) · Chuchotée, apaisante · Speed : 0.70</div>
+  <div class="voice-badge">🎙️ Voix : Mickaël (D8YqJ6FEIaP09qWQcZuN) · Personnelle, apaisante · Speed : 0.75</div>
 
   <div class="warning">
     ⚠️ Cet outil génère les 16 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
@@ -104,28 +104,28 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 8 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_valentin_analystes_visuel.wav</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_valentin_analystes_auditif.wav</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_valentin_analystes_kinesth.wav</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_valentin_analystes_rationnel.wav</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_valentin_diplomates_visuel.wav</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_valentin_diplomates_auditif.wav</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_valentin_diplomates_kinesth.wav</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_valentin_diplomates_rationnel.wav</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_valentin_sentinelles_visuel.wav</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_valentin_sentinelles_auditif.wav</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_valentin_sentinelles_kinesth.wav</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_valentin_sentinelles_rationnel.wav</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_valentin_explorateurs_visuel.wav</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_valentin_explorateurs_auditif.wav</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_valentin_explorateurs_kinesth.wav</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_valentin_explorateurs_rationnel.wav</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_mickael_analystes_visuel.wav</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_mickael_analystes_auditif.wav</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_mickael_analystes_kinesth.wav</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_mickael_analystes_rationnel.wav</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_mickael_diplomates_visuel.wav</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_mickael_diplomates_auditif.wav</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_mickael_diplomates_kinesth.wav</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_mickael_diplomates_rationnel.wav</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_mickael_sentinelles_visuel.wav</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_mickael_sentinelles_auditif.wav</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_mickael_sentinelles_kinesth.wav</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_mickael_sentinelles_rationnel.wav</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_mickael_explorateurs_visuel.wav</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_mickael_explorateurs_auditif.wav</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_mickael_explorateurs_kinesth.wav</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_mickael_explorateurs_rationnel.wav</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "cQVn2FWawJsxa2z9X3l1"; // Valentin
+const VOICE_ID = "D8YqJ6FEIaP09qWQcZuN"; // Mickaël
 let selVakog = null, selDir = null;
 
 function selectOpt(type, el) {
@@ -234,7 +234,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_valentin_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.wav`;
+  const fname = `demo_mickael_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.wav`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
