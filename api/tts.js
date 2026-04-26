@@ -67,6 +67,13 @@ export default async function handler(req, res) {
       use_speaker_boost: false,
       speed: 0.70
     },
+    "D8YqJ6FEIaP09qWQcZuN": { // Mickaël — voix personnelle, apaisante
+      stability: 0.80,
+      similarity_boost: 0.75,
+      style: 0.10,
+      use_speaker_boost: false,
+      speed: 0.75
+    },
   };
 
   // Réglages par défaut si voix inconnue (Bella)
