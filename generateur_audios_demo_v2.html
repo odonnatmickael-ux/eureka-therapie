@@ -178,7 +178,7 @@ function buildPromptSysteme(vakog, dir) {
     "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "5. PAUSE ENTRE PHRASES: apres chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite a vous installer... [PAUSE_1s] Laissez votre corps s abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
-    "GROUPES MUSCULAIRES:\n" + (dir === 'TF' ? groupesTF : groupesFT);
+    "GROUPES MUSCULAIRES:\n" + groupesTF;
 }
 
 async function callClaude(system, user, tokens) {
