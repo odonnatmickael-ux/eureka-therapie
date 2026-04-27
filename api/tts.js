@@ -4,7 +4,7 @@ export default async function handler(req, res) {
 
   const VOICE_SETTINGS = {
     "4RZ84U1b4WCqpu57LvIq": { // Bella
-      stability: 0.80, similarity_boost: 0.70, style: 0.08, use_speaker_boost: false, speed: 0.78
+      stability: 0.65, similarity_boost: 0.70, style: 0.20, use_speaker_boost: false, speed: 0.78
     },
     "9BWtsMINqrJLrRacOk9x": { // Aria
       stability: 0.75, similarity_boost: 0.70, style: 0.15, use_speaker_boost: false, speed: 0.78
