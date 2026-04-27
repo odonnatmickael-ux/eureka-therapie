@@ -35,8 +35,7 @@ export default async function handler(req, res) {
   const settings = VOICE_SETTINGS[voiceId] || VOICE_SETTINGS["4RZ84U1b4WCqpu57LvIq"];
   const voice = voiceId || "4RZ84U1b4WCqpu57LvIq";
 
-  const slowStart = "… doucement… tranquillement… ";
-  const finalText = slowStart + text;
+
 
   try {
     const r = await fetch(
@@ -48,7 +47,7 @@ export default async function handler(req, res) {
           "xi-api-key": process.env.ELEVEN_API_KEY
         },
         body: JSON.stringify({
-          text: finalText,
+          text: text,
           model_id: "eleven_multilingual_v2",
           voice_settings: settings
         })
