@@ -305,7 +305,7 @@ function buildSystemPrompt(data) {
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
-    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... un... [PAUSE_1s] deux... [PAUSE_1s] trois... [PAUSE_1s] quatre... Bloquez doucement... un... [PAUSE_1s] deux... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... un... … deux... … trois... … quatre... Bloquez doucement... un... … deux... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
     "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
@@ -1318,9 +1318,9 @@ function SeancePlayer({ userData, onRestart }) {
       const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
       const VOICE_SETTINGS_CLIENT = {
         "4RZ84U1b4WCqpu57LvIq": { stability:0.65, similarity_boost:0.70, style:0.20, use_speaker_boost:false, speed:0.72 },
-        "YV28ox2c5Cuh5rim0LrW": { stability:0.80, similarity_boost:0.65, style:0.10, use_speaker_boost:false, speed:1.0 },
-        "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:1.0 },
-        "D8YqJ6FEIaP09qWQcZuN": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:1.0 },
+        "YV28ox2c5Cuh5rim0LrW": { stability:0.80, similarity_boost:0.65, style:0.10, use_speaker_boost:false, speed:0.70 },
+        "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:0.70 },
+        "D8YqJ6FEIaP09qWQcZuN": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.75 },
       };
       const ttsClient = async (txt) => {
         if (!txt.trim()) return null;
