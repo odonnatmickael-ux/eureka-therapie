@@ -578,47 +578,6 @@ function ReminderPanel() {
 // ══════════════════════════════════════════════════════════════════
 // COMPOSANT : MODAL MENTIONS LÉGALES
 // ══════════════════════════════════════════════════════════════════
-function TutorielModal({ onClose }) {
-  const steps = [
-    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au quiz MBTI (personnalité) et VAKOG (sensorialité). Ces 28 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
-    { icon:"🎯", title:"2. Votre situation", desc:"Décrivez ce que vous traversez et votre objectif. Plus vous êtes précis, plus la séance sera puissante et personnalisée." },
-    { icon:"🎙️", title:"3. Votre environnement", desc:"Choisissez votre voix, votre ambiance sonore et votre direction de relaxation. Tout est adapté à votre profil." },
-    { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, allongez-vous et laissez la transformation opérer." },
-  ];
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
-      display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}
-      onClick={onClose}>
-      <div style={{ background:"#112e30", borderRadius:"20px", padding:"2rem",
-        border:"1px solid #1a4548", maxWidth:"500px", width:"100%", maxHeight:"85vh", overflowY:"auto" }}
-        onClick={e => e.stopPropagation()}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:"#f0e8d8", fontWeight:"400" }}>
-            Comment fonctionne EUREKA ?
-          </h2>
-          <button onClick={onClose} style={{ background:"transparent", border:"none", color:"#7a9ea0", fontSize:"20px", cursor:"pointer" }}>✕</button>
-        </div>
-        {steps.map((s,i) => (
-          <div key={i} style={{ display:"flex", gap:"1rem", marginBottom:"1.25rem", paddingBottom:"1.25rem",
-            borderBottom:"1px solid #1a4548" }}>
-            <span style={{ fontSize:"28px", flexShrink:0 }}>{s.icon}</span>
-            <div>
-              <p style={{ fontSize:"14px", color:"#b8955a", fontWeight:"600", marginBottom:"4px",
-                fontFamily:"'Raleway',sans-serif" }}>{s.title}</p>
-              <p style={{ fontSize:"13px", color:"#7a9ea0", lineHeight:"1.7" }}>{s.desc}</p>
-            </div>
-          </div>
-        ))}
-        <button onClick={onClose} style={{ display:"block", width:"100%", padding:"0.875rem",
-          background:"linear-gradient(135deg,#2a8a8f,#1e6668)", border:"none", borderRadius:"10px",
-          color:"#f0e8d8", fontSize:"13px", cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
-          Commencer ma séance →
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function MentionsModal({ onClose }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
@@ -668,7 +627,7 @@ function MentionsModal({ onClose }) {
 // ══════════════════════════════════════════════════════════════════
 
 // ÉTAPE 0 : Landing
-function Landing({ onStart, onMentions, onTutorial }) {
+function Landing({ onStart, onMentions }) {
   return (
     <div style={{ textAlign:"center", maxWidth:"600px", width:"100%", animation:"fadeUp .6s ease" }}>
       <BreathingOrb />
@@ -714,11 +673,6 @@ function Landing({ onStart, onMentions, onTutorial }) {
         Commencer ma séance personnalisée →
       </button>
       <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>Durée : environ 8 minutes de personnalisation</p>
-      <button onClick={() => onTutorial()} style={{ background:"transparent", border:"none",
-        color:C.muted, fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
-        textDecoration:"underline", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
-        ❓ Comment ça marche ?
-      </button>
 
       {/* Avertissement médical */}
       <div style={{ marginTop:"1.5rem", padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
@@ -1227,7 +1181,6 @@ function SeancePlayer({ userData, onRestart }) {
   const [elevenClientKey, setElevenClientKey] = useState("");
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
-  const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
 
   useEffect(() => { generateSession(); }, []);
 
@@ -1284,7 +1237,7 @@ function SeancePlayer({ userData, onRestart }) {
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
-      const annonces7 = [
+      const annonces = [
         "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
         "Nous recommençons une deuxième fois...",
         "Une troisième fois...",
@@ -1293,15 +1246,8 @@ function SeancePlayer({ userData, onRestart }) {
         "Une sixième fois...",
         "Une dernière fois... pour sceller cette transformation dans les profondeurs de votre être..."
       ];
-      const annonces3 = [
-        "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
-        "Nous recommençons une deuxième fois...",
-        "Une dernière fois... pour ancrer cette transformation..."
-      ];
-      const annonces = mode === "beta" ? annonces3 : annonces7;
-      const nbCycles = mode === "beta" ? 3 : 7;
       let cycles = "";
-      for (let i = 0; i < nbCycles; i++) {
+      for (let i = 0; i < 7; i++) {
         cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
       }
 
@@ -1370,12 +1316,11 @@ function SeancePlayer({ userData, onRestart }) {
   };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  const generateFullAudio = async (mode) => {
+  const generateFullAudio = async () => {
     const key = elevenClientKey.trim();
     if (!key) return;
-    setFullGenMode(mode);
     setFullGenPhase("generating");
-    setFullGenMsg(mode === "beta" ? "Préparation de votre séance découverte..." : "Préparation de votre séance complète...");
+    setFullGenMsg("Préparation de votre séance complète...");
     try {
       const actx = new (window.AudioContext || window.webkitAudioContext)();
       const sr = actx.sampleRate;
@@ -1441,52 +1386,7 @@ function SeancePlayer({ userData, onRestart }) {
         const ch = comb.getChannelData(0);
         let off = 0;
         for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-        // Normalisation du volume
-        const rawCh = comb.getChannelData(0);
-        let maxVal = 0;
-        for (let i = 0; i < rawCh.length; i++) { if (Math.abs(rawCh[i]) > maxVal) maxVal = Math.abs(rawCh[i]); }
-        if (maxVal > 0 && maxVal < 1) { const gain = 0.95 / maxVal; for (let i = 0; i < rawCh.length; i++) { rawCh[i] = Math.max(-1, Math.min(1, rawCh[i] * gain)); } }
-
-        // Mixage musique de fond
-        const MUSIC_URLS = {
-          tambour: "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_tambour.mp3",
-          coeur:   "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_coeur.mp3",
-          nature:  "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_nature.mp3",
-          relaxation: "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_nature.mp3",
-        };
-
-        const musicUrl = MUSIC_URLS[userData?.musicChoice || musicChoice];
-        if (musicUrl) {
-          try {
-            setFullGenMsg("Chargement de la musique de fond...");
-            const musicResp = await fetch(musicUrl);
-            const musicBuf = await actx.decodeAudioData(await musicResp.arrayBuffer());
-
-            // Créer un buffer musique de la même durée que la voix en bouclant
-            const mixBuf = actx.createBuffer(1, tot, sr);
-            const mixCh = mixBuf.getChannelData(0);
-            const musicData = musicBuf.getChannelData(0);
-            for (let i = 0; i < tot; i++) {
-              mixCh[i] = musicData[i % musicData.length];
-            }
-
-            // Mixer voix (100%) + musique (20%)
-            setFullGenMsg("Mixage voix et musique...");
-            const finalBuf = actx.createBuffer(1, tot, sr);
-            const finalCh = finalBuf.getChannelData(0);
-            const voiceCh = comb.getChannelData(0);
-            for (let i = 0; i < tot; i++) {
-              finalCh[i] = Math.max(-1, Math.min(1, voiceCh[i] + mixCh[i] * 0.20));
-            }
-            setAudioUrl(URL.createObjectURL(bufferToWav(finalBuf, sr)));
-          } catch(e) {
-            // Si la musique échoue, on livre l'audio voix seule
-            setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
-          }
-        } else {
-          setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
-        }
-
+        setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
         setFullGenPhase("done");
         setFullGenMsg("Votre séance complète est prête !");
       }
@@ -1612,7 +1512,7 @@ function SeancePlayer({ userData, onRestart }) {
             fontWeight:"400", marginBottom:"0.75rem" }}>✦ Générer ma séance complète personnalisée</h3>
           <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75", marginBottom:"1rem",
             fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
-            Votre séance personnalisée inclut votre prénom, vos problèmes précis et des cycles de transformation profonde. Choisissez le format selon votre plan ElevenLabs.
+            Cette démo vous offre une relaxation générique selon votre profil. La séance complète inclut votre prénom, vos problèmes précis et 7 cycles de transformation profonde.
           </p>
           <div style={{ background:C.bg, borderRadius:"12px", padding:"1rem 1.25rem",
             border:`1px solid ${C.border}`, marginBottom:"1rem" }}>
@@ -1621,7 +1521,7 @@ function SeancePlayer({ userData, onRestart }) {
               1. Créez un compte gratuit sur <strong style={{color:C.cream}}>elevenlabs.io</strong><br/>
               2. Allez dans "Profile" → "API Key"<br/>
               3. Copiez votre clé et collez-la ci-dessous<br/>
-              4. Le plan gratuit suffit pour la séance découverte (3 cycles)
+              4. Le plan gratuit suffit pour plusieurs séances
             </p>
           </div>
           <input type="password" value={elevenClientKey}
@@ -1649,36 +1549,11 @@ function SeancePlayer({ userData, onRestart }) {
               ✕ {fullGenMsg}
             </div>
           )}
-          <div style={{ display:"grid", gap:"0.75rem" }}>
-            <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
-              border:"1px solid rgba(184,149,90,.3)" }}>
-              <p style={{ fontSize:"11px", color:"#d4b483", marginBottom:"6px", fontWeight:"600" }}>
-                ✦ Séance EUREKA Complète — Protocole original 7 cycles
-              </p>
-              <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
-                Plan Starter ElevenLabs recommandé (5€/mois — 30 000 caractères)
-              </p>
-              <Btn onClick={() => generateFullAudio("complete")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
-                variant="gold" style={{ marginTop:0 }}>
-                {fullGenPhase === "generating" && fullGenMode === "complete" ? "Génération en cours..." : "Générer la séance complète →"}
-              </Btn>
-            </div>
-            <div style={{ background:"rgba(42,138,143,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
-              border:"1px solid rgba(42,138,143,.3)" }}>
-              <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"6px", fontWeight:"600" }}>
-                ◈ Séance Découverte — Version bêta 3 cycles
-              </p>
-              <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
-                Plan gratuit ElevenLabs suffit (10 000 caractères)
-              </p>
-              <Btn onClick={() => generateFullAudio("beta")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
-                variant="primary" style={{ marginTop:0 }}>
-                {fullGenPhase === "generating" && fullGenMode === "beta" ? "Génération en cours..." : "Générer la séance découverte →"}
-              </Btn>
-            </div>
-          </div>
+          <Btn onClick={generateFullAudio}
+            disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
+            variant="gold">
+            {fullGenPhase === "generating" ? "Génération en cours..." : "Générer ma séance complète →"}
+          </Btn>
         </div>
 
         {/* Script */}
@@ -1792,7 +1667,6 @@ function App() {
   const [step, setStep] = useState("landing");
   const [userData, setUserData] = useState({});
   const [showMentions, setShowMentions] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
 
   const STEP_LABELS = ["Accueil","Profil","Sensorialité","Personnalisation","Séance"];
 
@@ -1831,7 +1705,6 @@ function App() {
       padding:"clamp(1rem,3vw,2rem)" }}>
 
       {showMentions && <MentionsModal onClose={() => setShowMentions(false)} />}
-      {showTutorial && <TutorielModal onClose={() => setShowTutorial(false)} />}
 
       {/* Fond décoratif */}
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
@@ -1847,7 +1720,7 @@ function App() {
       <div style={{ position:"relative", zIndex:1, width:"100%",
         display:"flex", flexDirection:"column", alignItems:"center" }}>
 
-        {step === "landing" && <Landing onStart={handleLandingNext} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} />}
+        {step === "landing" && <Landing onStart={handleLandingNext} onMentions={() => setShowMentions(true)} />}
         {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
         {step === "mbti" && <QuizMBTI prenom={userData.prenom} onComplete={handleMBTINext} />}
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
