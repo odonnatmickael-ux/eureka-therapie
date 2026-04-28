@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — BELLA</title>
+<title>EUREKA — Générateur Audios DÉMO — MARCEL</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <style>
@@ -55,9 +55,9 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · BELLA · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · MARCEL · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Bella (4RZ84U1b4WCqpu57LvIq) · Douce, enveloppante · Speed : 0.78</div>
+  <div class="voice-badge">🎙️ Voix : Marcel (YV28ox2c5Cuh5rim0LrW) · Chaleureux, poétique · Speed : 0.78</div>
 
   <div class="warning">
     ⚠️ Cet outil génère les 16 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
@@ -105,28 +105,28 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_bella_analystes_visuel.wav</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_bella_analystes_auditif.wav</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_bella_analystes_kinesth.wav</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_bella_analystes_rationnel.wav</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_bella_diplomates_visuel.wav</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_bella_diplomates_auditif.wav</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_bella_diplomates_kinesth.wav</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_bella_diplomates_rationnel.wav</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_bella_sentinelles_visuel.wav</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_bella_sentinelles_auditif.wav</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_bella_sentinelles_kinesth.wav</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_bella_sentinelles_rationnel.wav</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_bella_explorateurs_visuel.wav</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_bella_explorateurs_auditif.wav</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_bella_explorateurs_kinesth.wav</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_bella_explorateurs_rationnel.wav</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_marcel_analystes_visuel.wav</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_marcel_analystes_auditif.wav</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_marcel_analystes_kinesth.wav</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_marcel_analystes_rationnel.wav</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_marcel_diplomates_visuel.wav</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_marcel_diplomates_auditif.wav</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_marcel_diplomates_kinesth.wav</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_marcel_diplomates_rationnel.wav</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_marcel_sentinelles_visuel.wav</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_marcel_sentinelles_auditif.wav</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_marcel_sentinelles_kinesth.wav</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_marcel_sentinelles_rationnel.wav</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_marcel_explorateurs_visuel.wav</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_marcel_explorateurs_auditif.wav</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_marcel_explorateurs_kinesth.wav</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_marcel_explorateurs_rationnel.wav</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
+const VOICE_ID = "YV28ox2c5Cuh5rim0LrW"; // Marcel
 let selVakog = null, selDir = null;
 
 function selectOpt(type, el) {
@@ -175,7 +175,7 @@ function buildPromptSysteme(vakog, dir) {
     "VAKOG: " + vakog + " (" + vakogStyle + ")\n\n" +
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction.\n" +
-    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... 1... 2... 3... 4... Bloquez doucement... 1... 2... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... un... [PAUSE_0.5s] deux... [PAUSE_0.5s] trois... [PAUSE_0.5s] quatre... Bloquez doucement... un... [PAUSE_0.5s] deux... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
     "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "5. PAUSE ENTRE PHRASES: apres chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite a vous installer... [PAUSE_1s] Laissez votre corps s abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
@@ -235,7 +235,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_bella_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
+  const fname = `demo_marcel_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
@@ -314,8 +314,6 @@ async function generer() {
     const ch = comb.getChannelData(0);
     let off = 0;
     for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-
-    // Encode MP3 64kbps via lamejs
     const mp3enc = new lamejs.Mp3Encoder(1, sr, 64);
     const samples = comb.getChannelData(0);
     const int16 = new Int16Array(samples.length);
