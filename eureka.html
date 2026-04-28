@@ -608,13 +608,7 @@ function MentionsModal({ onClose }) {
           </div>
         ))}
 
-        {!isPremium && (
-          <div style={{ background:`rgba(184,149,90,.08)`, borderRadius:"12px",
-            padding:"1rem", border:`1px solid ${C.border}`, textAlign:"center" }}>
-            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
-            <p style={{ fontSize:"11px", color:C.muted, marginTop:"4px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
-          </div>
-        )}
+
 
         <button onClick={onClose}
           style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1.5rem",
@@ -949,10 +943,10 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
   const recommendedDir = isIntrovert || isIntuitive ? "TF" : "FT";
 
   const MUSIQUES = [
-    { id:"tambour", icon:"🥁", name:"Tambour chamanique", desc:"Rythme profond, 4-7 Hz, ancrage puissant" },
+    { id:"tambour", icon:"🥁", name:"Tambour chamanique", desc:"200 BPM, Ondes Thêta, voyage intérieur" },
     { id:"coeur", icon:"💓", name:"Battement de cœur", desc:"50 BPM, rythme sophrologique profond, sécurité" },
-    { id:"binaural", icon:"🎧", name:"Battements binauraux", desc:"Ondes alpha 8-12 Hz, état sophrologique optimal" },
-    { id:"relaxation", icon:"🎵", name:"Musique de relaxation", desc:"Bol tibétain, piano ambiant, nature" },
+    { id:"binaural", icon:"🎧", name:"Battements binauraux", desc:"8 Hz Alpha, état sophrologique profond — casque obligatoire" },
+    { id:"relaxation", icon:"🎵", name:"Musique de relaxation", desc:"Selon vos goûts — recherche libre sur YouTube" },
     { id:"perso", icon:"🎶", name:"Ma propre musique", desc:"Jouez votre musique en fond pendant la séance" },
   ];
 
@@ -1573,15 +1567,14 @@ function SeancePlayer({ userData, onRestart }) {
               { label:"Battement de coeur 50 BPM - 1 heure", url:"https://www.youtube.com/watch?v=awP2UQXFA48" },
             ],
             binaural: [
-              { label:"Ondes alpha 10Hz etat sophrologique", url:"https://www.youtube.com/results?search_query=binaural+beats+alpha+10hz+meditation" },
-              { label:"Battements binauraux relaxation profonde", url:"https://www.youtube.com/results?search_query=binaural+beats+deep+relaxation+alpha" },
+              { label:"MyNoise — Générateur Binaural Pur (sélectionner 8 Hz • Alpha | Relaxed)", url:"https://mynoise.net/NoiseMachines/binauralBrainwaveGenerator.php" },
             ],
             relaxation: [
               { label:"Rechercher votre musique de relaxation préférée", url:"https://www.youtube.com/results?search_query=musique+relaxation+meditation" },
             ],
           };
           const names = { tambour:"Tambour chamanique", coeur:"Battement de coeur", binaural:"Battements binauraux", relaxation:"Musique de relaxation" };
-          const loopNote = (mc === "tambour" || mc === "coeur") ? "💡 Astuce : clic droit sur la vidéo → Mettre en boucle pour une lecture continue pendant toute la séance." : null;
+          const loopNote = mc === "tambour" ? "💡 Astuce : clic droit sur la vidéo → Mettre en boucle pour une lecture continue pendant toute la séance." : mc === "coeur" ? "💡 Astuce : clic droit sur la vidéo → Mettre en boucle pour une lecture continue pendant toute la séance." : mc === "binaural" ? "🎧 Casque obligatoire — mettez votre casque AVANT de lancer. Sélectionnez 8 Hz • Alpha | Relaxed. Le site tourne en continu, pas besoin de boucle." : null;
           const links = LINKS[mc];
           if (!links) return null;
           return (
@@ -1617,14 +1610,7 @@ function SeancePlayer({ userData, onRestart }) {
         </div>
 
         {/* Premium teaser */}
-        {!isPremium && (
-          <div style={{ padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
-            borderRadius:"12px", border:`1px solid rgba(184,149,90,.2)`,
-            marginBottom:"0.75rem", textAlign:"center" }}>
-            <p style={{ fontSize:"12px", color:C.goldLight }}>✦ Version premium disponible prochainement</p>
-            <p style={{ fontSize:"11px", color:C.hint, marginTop:"3px" }}>Séances illimitées · Suivi avancé · Support personnalisé</p>
-          </div>
-        )}
+
 
         <div style={{ marginTop:"1rem", padding:"1rem", background:C.panel,
           borderRadius:"12px", border:`1px solid ${C.border}` }}>
