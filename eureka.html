@@ -942,6 +942,17 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
   // Recommandation auto de la direction de relaxation
   const recommendedDir = isIntrovert || isIntuitive ? "TF" : "FT";
 
+  // Recommandation auto de la musique selon le problème
+  const recommendMusic = (prob) => {
+    const p = (prob || "").toLowerCase();
+    if (/stress|anxi|panique|peur|inqui|nervos|agit|tendu|tension/.test(p)) return "binaural";
+    if (/deuil|perte|solitude|abandon|seul|rupture|manque|vide|chagrin/.test(p)) return "coeur";
+    if (/ancr|dispers|perdu|focus|concentr|flott|instable/.test(p)) return "tambour";
+    if (/fatigue|épuis|déprim|dépression|tristesse|mélanc|énergie|burn/.test(p)) return "relaxation";
+    return "binaural";
+  };
+  const recommendedMusic = recommendMusic(problem);
+
   const MUSIQUES = [
     { id:"tambour", icon:"🥁", name:"Tambour chamanique", desc:"200 BPM, Ondes Thêta, voyage intérieur" },
     { id:"coeur", icon:"💓", name:"Battement de cœur", desc:"50 BPM, rythme sophrologique profond, sécurité" },
@@ -1112,8 +1123,11 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
       <div style={{ marginBottom:"2rem" }}>
         <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
           fontWeight:"400", marginBottom:"0.5rem" }}>Ambiance sonore</h3>
-        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"0.5rem" }}>
           Vous pouvez diffuser votre propre musique en parallèle si vous préférez.
+        </p>
+        <p style={{ fontSize:"12px", color:C.goldLight, marginBottom:"1rem", fontStyle:"italic" }}>
+          ⭐ D'après ce que vous traversez, nous vous recommandons : <strong style={{ color:C.gold }}>{MUSIQUES.find(m => m.id === recommendedMusic)?.name}</strong>
         </p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
           {MUSIQUES.map(m => (
@@ -1122,7 +1136,9 @@ function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
                 border:`1.5px solid ${musicChoice===m.id ? C.teal : C.border}`, borderRadius:"12px",
                 cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
               <p style={{ fontSize:"20px", marginBottom:"4px" }}>{m.icon}</p>
-              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{m.name}</p>
+              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>
+                {m.name} {m.id === recommendedMusic ? "⭐" : ""}
+              </p>
               <p style={{ fontSize:"10px", color:C.muted, lineHeight:"1.4" }}>{m.desc}</p>
             </button>
           ))}
