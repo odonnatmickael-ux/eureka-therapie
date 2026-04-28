@@ -295,6 +295,19 @@ async function generer() {
     const tc = fp.filter(p => p.type === "t").length;
     let done = 0;
 
+    // ─── Normalisation par segment (élimine les sauts de volume entre segments TTS) ───
+    const normalizeBuffer = (buf) => {
+      const ch = buf.getChannelData(0);
+      let peak = 0;
+      for (let i = 0; i < ch.length; i++) {
+        if (Math.abs(ch[i]) > peak) peak = Math.abs(ch[i]);
+      }
+      if (peak > 0.0001) {
+        const gain = 0.92 / peak;
+        for (let i = 0; i < ch.length; i++) ch[i] *= gain;
+      }
+    };
+
     for (const p of fp) {
       if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
       done++;
@@ -302,6 +315,7 @@ async function generer() {
       log(`→ TTS segment ${done}/${tc}...`);
       const ab = await callTTS(p.c);
       const decoded = await actx.decodeAudioData(ab);
+      normalizeBuffer(decoded); // ← normalisation avant assemblage
       bufs.push(decoded);
       bufs.push(sil(0.3));
       log(`✓ Segment ${done} OK`, 'ok');
