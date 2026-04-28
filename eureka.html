@@ -1056,7 +1056,7 @@ function QuizVAKOG({ prenom, onComplete }) {
 }
 
 // ÉTAPE 4 : Résultats profil + choix techniques
-function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
+function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
   const [relaxDir, setRelaxDir] = useState("");
   const [beliefSystem, setBeliefSystem] = useState("");
   const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
@@ -1988,7 +1988,7 @@ function App() {
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
         {step === "profil" && (
           <ProfilResult prenom={userData.prenom} mbti={userData.mbti}
-            vakogResult={userData.vakogResult} onNext={handleProfilNext} />
+            vakogResult={userData.vakogResult} problem={userData.problem} onNext={handleProfilNext} />
         )}
         {step === "seance" && (
           <SeancePlayer userData={{ ...userData }} onRestart={handleRestart} />
