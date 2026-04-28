@@ -10,6 +10,7 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; overflow-x: hidden; }
@@ -244,6 +245,18 @@ const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 function buildSystemPrompt(data) {
   const { mbti, mbtiName, vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom } = data;
 
+  // ─── RYTHME RESPIRATOIRE adapté au profil MBTI ─────────────────────
+  // Pressés (4-2-6) | Standard (4-2-8) | Contemplatifs (5-2-10)
+  const RAPID_MBTI = ["ENTJ","ESTJ","ESTP","ENTP"];
+  const CONTEMPLATIVE_MBTI = ["INFP","INFJ","ISFP","ISFJ","ENFP","ESFP"];
+  const breath = RAPID_MBTI.includes(mbti) ? { inspire:4, hold:2, expire:6 }
+               : CONTEMPLATIVE_MBTI.includes(mbti) ? { inspire:5, hold:2, expire:10 }
+               : { inspire:4, hold:2, expire:8 };
+  const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
+  const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
+  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "...").join(" [PAUSE_0.5s] ");
+  const expirePauseSec = Math.max(6, breath.expire - 2);
+
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
     vakog === 'K' ? "Metaphores KINESTH.: sensations, chaleur, poids, fluidite" :
@@ -305,18 +318,18 @@ function buildSystemPrompt(data) {
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
-    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... un... [PAUSE_0.5s] deux... [PAUSE_0.5s] trois... [PAUSE_0.5s] quatre... Bloquez doucement... un... [PAUSE_0.5s] deux... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en " + NUM_FR[breath.inspire] + " temps... " + buildCount(breath.inspire) + " Bloquez doucement... " + buildCount(breath.hold) + " Et expirez... tout doucement... en " + NUM_FR[breath.expire] + " temps... laissez partir toutes les tensions... [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
     "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "7. PAUSE ENTRE PHRASES: apres chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite a vous installer... [PAUSE_1s] Laissez votre corps s abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
-    "7. PHRASES COURTES - maximum 10 mots par phrase. Jamais de longue phrase explicative.\n" +
-    "8. RYTHME BRISE - une idee par ligne. Espace entre chaque pensee. Laisser le silence travailler.\n" +
-    "9. LANGAGE SENSORIEL - utiliser le canal " + vakog + " a chaque etape. Faire RESSENTIR, pas expliquer.\n" +
-    "10. REPETITION HYPNOTIQUE - les mots cles reviennent... encore... et encore... comme une vague.\n" +
-    "11. PRESENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous etes'.\n" +
-    "12. VERBES D ACTION LENTS - fondre, glisser, lacher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
+    "8. PHRASES COURTES - maximum 10 mots par phrase. Jamais de longue phrase explicative.\n" +
+    "9. RYTHME BRISE - une idee par ligne. Espace entre chaque pensee. Laisser le silence travailler.\n" +
+    "10. LANGAGE SENSORIEL - utiliser le canal " + vakog + " a chaque etape. Faire RESSENTIR, pas expliquer.\n" +
+    "11. REPETITION HYPNOTIQUE - les mots cles reviennent... encore... et encore... comme une vague.\n" +
+    "12. PRESENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous etes'.\n" +
+    "13. VERBES D ACTION LENTS - fondre, glisser, lacher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
     "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
     "SPIRITUALITE:\n" +
     "Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
@@ -625,7 +638,7 @@ function MentionsModal({ onClose }) {
       display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}
       onClick={onClose}>
       <div style={{ background:C.card, borderRadius:"20px", padding:"2rem",
-        border:`1px solid ${C.border}`, maxWidth:"560px", width:"100%",
+        border:`1px solid ${C.border}`, maxWidth:"600px", width:"100%",
         maxHeight:"85vh", overflowY:"auto" }}
         onClick={e => e.stopPropagation()}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
@@ -636,20 +649,85 @@ function MentionsModal({ onClose }) {
             style={{ background:"transparent", border:"none", color:C.muted, fontSize:"20px", cursor:"pointer" }}>✕</button>
         </div>
 
-        {[
-          { title:"⚕️ Avertissement médical", text:"Ce service propose des séances de relaxation et de sophrologie générées par intelligence artificielle. Il ne remplace en aucun cas un suivi médical, psychologique ou thérapeutique professionnel. En cas de trouble sérieux, veuillez consulter un professionnel de santé." },
-          { title:"🔒 Données personnelles (RGPD)", text:"Les informations saisies (email, réponses au questionnaire) sont utilisées uniquement pour générer votre séance personnalisée en temps réel. Elles ne sont pas stockées ni conservées sur nos serveurs." },
-          { title:"📋 Conditions d'utilisation", text:"Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service." },
-        ].map(({ title, text }) => (
-          <div key={title} style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem",
-            borderBottom:`1px solid ${C.border}` }}>
-            <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
-              fontFamily:"'Raleway',sans-serif" }}>{title}</p>
-            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>{text}</p>
-          </div>
-        ))}
+        {/* 1. Avertissement médical */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>⚕️ Avertissement médical</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
+            Ce service propose des séances de relaxation et de sophrologie générées par intelligence artificielle. Il ne remplace en aucun cas un suivi médical, psychologique ou thérapeutique professionnel. En cas de trouble sérieux, veuillez consulter un professionnel de santé.
+            <br/><br/>
+            <strong style={{ color:C.cream }}>Contre-indications :</strong> épilepsie, état psychotique aigu, troubles dissociatifs sévères, prise de substances psychotropes sans avis médical.
+          </p>
+        </div>
 
+        {/* 2. Données personnelles RGPD */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>🔒 Données personnelles (RGPD)</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
+            EUREKA Thérapie ne stocke aucune donnée utilisateur sur ses serveurs. Les informations saisies (prénom, email, problème, objectif, profil MBTI/VAKOG) sont traitées uniquement en temps réel pour générer votre séance personnalisée, puis effacées dès la fin de la session.
+            <br/><br/>
+            Les informations relatives à votre état émotionnel ou ressenti sont considérées comme données de santé au sens de l'article 9 du RGPD. Elles bénéficient d'une protection renforcée et sont traitées sur la base de votre consentement explicite.
+          </p>
+        </div>
 
+        {/* 3. Sous-traitants techniques */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>🤝 Sous-traitants techniques</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
+            Pour générer votre séance, vos données transitent par des prestataires techniques avec qui des accords de traitement (DPA) sont en place :
+          </p>
+          <ul style={{ fontSize:"12px", color:C.muted, lineHeight:"1.85", paddingLeft:"1.25rem", marginTop:"0.5rem" }}>
+            <li><strong style={{ color:C.cream }}>Anthropic</strong> (Claude API) — génération du script. Logs anonymisés sous 30 jours.</li>
+            <li><strong style={{ color:C.cream }}>ElevenLabs</strong> — synthèse vocale du script. Logs sous 30 jours.</li>
+            <li><strong style={{ color:C.cream }}>EmailJS</strong> — envoi de l'email récapitulatif. Logs entre 30 et 90 jours.</li>
+            <li><strong style={{ color:C.cream }}>Vercel</strong> — hébergement du site (Frankfurt, Allemagne — UE).</li>
+          </ul>
+        </div>
+
+        {/* 4. Vos droits RGPD */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>⚖️ Vos droits RGPD</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>Conformément au RGPD, vous disposez de 6 droits sur vos données :</p>
+          <ul style={{ fontSize:"12px", color:C.muted, lineHeight:"1.85", paddingLeft:"1.25rem", marginTop:"0.5rem" }}>
+            <li><strong style={{ color:C.cream }}>Accès</strong> — savoir quelles données nous avons sur vous</li>
+            <li><strong style={{ color:C.cream }}>Rectification</strong> — corriger une donnée inexacte</li>
+            <li><strong style={{ color:C.cream }}>Effacement</strong> — demander la suppression de vos données</li>
+            <li><strong style={{ color:C.cream }}>Limitation</strong> — restreindre temporairement le traitement</li>
+            <li><strong style={{ color:C.cream }}>Portabilité</strong> — récupérer vos données dans un format réutilisable</li>
+            <li><strong style={{ color:C.cream }}>Opposition</strong> — vous opposer au traitement</li>
+          </ul>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginTop:"0.75rem" }}>
+            Pour exercer ces droits, écrivez à{" "}
+            <a href="mailto:eureka.therapie@gmail.com" style={{ color:C.gold, textDecoration:"underline" }}>
+              eureka.therapie@gmail.com
+            </a>. Nous répondons sous 30 jours maximum.
+            <br/><br/>
+            En cas de désaccord, vous pouvez saisir la <strong style={{ color:C.cream }}>CNIL</strong> (cnil.fr).
+          </p>
+        </div>
+
+        {/* 5. FAQ */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.75rem", fontFamily:"'Raleway',sans-serif" }}>❓ Questions fréquentes</p>
+          {[
+            { q:"Quelles données conservez-vous sur moi ?", r:"Aucune sur nos serveurs. Vos données sont utilisées en temps réel pour générer votre séance et ne sont pas stockées chez nous." },
+            { q:"Et l'email que je reçois après ma séance ?", r:"Il est envoyé via EmailJS, qui conserve les logs d'envoi entre 30 et 90 jours selon leur politique standard, puis les supprime automatiquement." },
+            { q:"Comment supprimer mes données ?", r:"Il n'y a rien à supprimer chez nous puisque nous ne stockons rien. Pour les sous-traitants techniques (Anthropic, ElevenLabs, EmailJS), les rétentions sont courtes (30-90 jours) et automatiques." },
+            { q:"Comment exercer mes autres droits RGPD ?", r:"Écrivez à eureka.therapie@gmail.com — nous répondons sous 30 jours maximum." },
+          ].map(({ q, r }, i) => (
+            <div key={i} style={{ marginBottom:"0.875rem" }}>
+              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"4px" }}>{q}</p>
+              <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7" }}>{r}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 6. Conditions d'utilisation */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem" }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>📋 Conditions d'utilisation</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
+            Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service et des décisions prises sur la base de celui-ci. EUREKA Thérapie ne saurait être tenu responsable d'un usage non conforme aux contre-indications listées ci-dessus.
+          </p>
+        </div>
 
         <button onClick={onClose}
           style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1.5rem",
@@ -676,8 +754,14 @@ function Landing({ onStart, onMentions, onTutorial }) {
         color:C.gold, textTransform:"uppercase", marginBottom:"12px" }}>Méthode</p>
       <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"clamp(42px,8vw,60px)",
         color:C.cream, fontWeight:"300", letterSpacing:"6px", margin:"0 0 8px" }}>EUREKA</h1>
-      <p style={{ fontSize:"12px", color:C.muted, letterSpacing:"3px", marginBottom:"2rem",
+      <p style={{ fontSize:"12px", color:C.muted, letterSpacing:"3px", marginBottom:"1.25rem",
         fontFamily:"'Raleway', sans-serif" }}>Sophrologie · Transformation</p>
+
+      <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"clamp(18px,4vw,22px)",
+        color:C.goldLight, fontWeight:"400", fontStyle:"italic", lineHeight:"1.5",
+        maxWidth:"500px", margin:"0 auto 2rem", padding:"0 1rem" }}>
+        « Le seul accompagnement sophrologique qui parle votre langage. »
+      </p>
 
       <div style={{ background:C.card, borderRadius:"20px", padding:"2rem 2.5rem",
         border:`1px solid ${C.border}`, marginBottom:"2rem", textAlign:"left" }}>
@@ -808,8 +892,8 @@ function Anamnese({ onNext }) {
           <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
             style={{ marginTop:"3px", accentColor:C.gold }} />
           <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
-            J'accepte que mes données (email, réponses au questionnaire) soient utilisées pour personnaliser ma séance.
-            Ces données sont utilisées uniquement en temps réel et <strong style={{ color:C.cream }}>ne sont pas conservées sur nos serveurs</strong>.
+            J'accepte que mes données — y compris des informations sur mon état émotionnel ou mon ressenti — soient utilisées pour générer ma séance personnalisée.
+            Ces données ne sont <strong style={{ color:C.cream }}>pas conservées sur nos serveurs</strong> et sont traitées uniquement en temps réel (RGPD article 9).
           </span>
         </label>
 
@@ -972,7 +1056,7 @@ function QuizVAKOG({ prenom, onComplete }) {
 }
 
 // ÉTAPE 4 : Résultats profil + choix techniques
-function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
+function ProfilResult({ prenom, mbti, vakogResult, onNext }) {
   const [relaxDir, setRelaxDir] = useState("");
   const [beliefSystem, setBeliefSystem] = useState("");
   const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
@@ -1228,6 +1312,7 @@ function SeancePlayer({ userData, onRestart }) {
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
   const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
+  const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
 
   useEffect(() => { generateSession(); }, []);
 
@@ -1298,10 +1383,9 @@ function SeancePlayer({ userData, onRestart }) {
         "Nous recommençons une deuxième fois...",
         "Une dernière fois... pour ancrer cette transformation..."
       ];
-      const annonces = mode === "beta" ? annonces3 : annonces7;
-      const nbCycles = mode === "beta" ? 3 : 7;
+      const annonces = annonces7;
       let cycles = "";
-      for (let i = 0; i < nbCycles; i++) {
+      for (let i = 0; i < 7; i++) {
         cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
       }
 
@@ -1316,7 +1400,7 @@ function SeancePlayer({ userData, onRestart }) {
 
       // Assembler et nettoyer les titres residuels
       const raw = part1 + cycles + "\n\n" + part3;
-      const clean = raw
+      const cleaner = (txt) => txt
         .replace(/\[VOIX[^\]]*\]/gi, "")
         .replace(/^#+\s.*$/gm, "")
         .replace(/\*\*[^*]+\*\*/g, "")
@@ -1324,8 +1408,17 @@ function SeancePlayer({ userData, onRestart }) {
         .replace(/CYCLE\s*\d[^\n]*/gi, "")
         .replace(/Phase\s*\d[^\n]*/gi, "")
         .trim();
+      const clean = cleaner(raw);
 
       setScript(clean);
+      // Stockage des sections pour permettre la reconstruction selon le mode (bêta 3 cycles / complète 7 cycles)
+      setScriptParts({
+        intro: cleaner(part1),
+        scenes: cleaner(scenes),
+        cloture: cleaner(part3),
+        annonces7: annonces7,
+        annonces3: annonces3
+      });
 
       // AUDIO — chargement depuis Vercel Blob selon profil
       setLoadMsg("Chargement de votre audio personnalisé...");
@@ -1340,7 +1433,6 @@ function SeancePlayer({ userData, onRestart }) {
       const bloc = MBTI_BLOCS[mbti] || "diplomates";
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
-        "9BWtsMINqrJLrRacOk9x": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
         "cQVn2FWawJsxa2z9X3l1": "marcel",
         "D8YqJ6FEIaP09qWQcZuN": "marcel"
@@ -1377,6 +1469,20 @@ function SeancePlayer({ userData, onRestart }) {
     setFullGenPhase("generating");
     setFullGenMsg(mode === "beta" ? "Préparation de votre séance découverte..." : "Préparation de votre séance complète...");
     try {
+      // ─── Reconstruction du script selon le mode ──────────────────
+      // bêta = 3 cycles (annonces3) ; complète = 7 cycles (annonces7)
+      let activeScript = script;
+      if (scriptParts) {
+        const annonces = mode === "beta" ? scriptParts.annonces3 : scriptParts.annonces7;
+        let cycles = "";
+        for (let i = 0; i < annonces.length; i++) {
+          cycles += "\n\n" + annonces[i] + "\n\n" + scriptParts.scenes;
+        }
+        activeScript = scriptParts.intro + cycles + "\n\n" + scriptParts.cloture;
+        // On synchronise l'affichage pour que ce que l'utilisateur lit corresponde à ce qu'il entend
+        setScript(activeScript);
+      }
+
       const actx = new (window.AudioContext || window.webkitAudioContext)();
       const sr = actx.sampleRate;
       const bufs = [];
@@ -1405,13 +1511,13 @@ function SeancePlayer({ userData, onRestart }) {
       const pat = /\[PAUSE_([\d.]+)s\]/gi;
       const parts = [];
       let li = 0, mx;
-      while ((mx = pat.exec(script)) !== null) {
-        const t = script.slice(li, mx.index).trim();
+      while ((mx = pat.exec(activeScript)) !== null) {
+        const t = activeScript.slice(li, mx.index).trim();
         if (t) parts.push({ type:"t", c:t });
         parts.push({ type:"s", sec:parseFloat(mx[1]) });
         li = mx.index + mx[0].length;
       }
-      const rem = script.slice(li).trim();
+      const rem = activeScript.slice(li).trim();
       if (rem) parts.push({ type:"t", c:rem });
       const fp = [];
       for (const p of parts) {
@@ -1441,51 +1547,9 @@ function SeancePlayer({ userData, onRestart }) {
         const ch = comb.getChannelData(0);
         let off = 0;
         for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-        // Normalisation du volume
-        const rawCh = comb.getChannelData(0);
-        let maxVal = 0;
-        for (let i = 0; i < rawCh.length; i++) { if (Math.abs(rawCh[i]) > maxVal) maxVal = Math.abs(rawCh[i]); }
-        if (maxVal > 0 && maxVal < 1) { const gain = 0.95 / maxVal; for (let i = 0; i < rawCh.length; i++) { rawCh[i] = Math.max(-1, Math.min(1, rawCh[i] * gain)); } }
 
-        // Mixage musique de fond
-        const MUSIC_URLS = {
-          tambour: "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_tambour.mp3",
-          coeur:   "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_coeur.mp3",
-          nature:  "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_nature.mp3",
-          relaxation: "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/music_nature.mp3",
-        };
-
-        const musicUrl = MUSIC_URLS[userData?.musicChoice || musicChoice];
-        if (musicUrl) {
-          try {
-            setFullGenMsg("Chargement de la musique de fond...");
-            const musicResp = await fetch(musicUrl);
-            const musicBuf = await actx.decodeAudioData(await musicResp.arrayBuffer());
-
-            // Créer un buffer musique de la même durée que la voix en bouclant
-            const mixBuf = actx.createBuffer(1, tot, sr);
-            const mixCh = mixBuf.getChannelData(0);
-            const musicData = musicBuf.getChannelData(0);
-            for (let i = 0; i < tot; i++) {
-              mixCh[i] = musicData[i % musicData.length];
-            }
-
-            // Mixer voix (100%) + musique (20%)
-            setFullGenMsg("Mixage voix et musique...");
-            const finalBuf = actx.createBuffer(1, tot, sr);
-            const finalCh = finalBuf.getChannelData(0);
-            const voiceCh = comb.getChannelData(0);
-            for (let i = 0; i < tot; i++) {
-              finalCh[i] = Math.max(-1, Math.min(1, voiceCh[i] + mixCh[i] * 0.20));
-            }
-            setAudioUrl(URL.createObjectURL(bufferToWav(finalBuf, sr)));
-          } catch(e) {
-            // Si la musique échoue, on livre l'audio voix seule
-            setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
-          }
-        } else {
-          setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
-        }
+        // Audio voix seule (la musique de fond reste à diffuser séparément côté client : YouTube, MyNoise, etc.)
+        setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
 
         setFullGenPhase("done");
         setFullGenMsg("Votre séance complète est prête !");
@@ -1503,6 +1567,74 @@ function SeancePlayer({ userData, onRestart }) {
     a.href = URL.createObjectURL(blob);
     a.download = `eureka_seance${seanceNum}_${prenom}_${mbti}.txt`;
     a.click();
+  };
+
+  const downloadPDF = () => {
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("Le module PDF n'est pas encore chargé. Réessayez dans quelques secondes.");
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:"mm", format:"a4" });
+      const W = 210, M = 18, lineH = 5.5;
+      let y = M;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor(184, 149, 90);
+      doc.text("EUREKA Thérapie", W/2, y, { align:"center" });
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(120, 120, 120);
+      doc.text("Sophrologie · Transformation personnalisée", W/2, y, { align:"center" });
+      y += 10;
+      doc.setDrawColor(184, 149, 90);
+      doc.setLineWidth(0.3);
+      doc.line(M, y, W - M, y);
+      y += 6;
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.setFont("helvetica", "bold");
+      doc.text("Prénom : ", M, y); doc.setFont("helvetica", "normal"); doc.text(prenom, M + 22, y);
+      doc.setFont("helvetica", "bold");
+      doc.text("Date : ", M + 100, y); doc.setFont("helvetica", "normal"); doc.text(new Date().toLocaleDateString("fr-FR"), M + 113, y);
+      y += lineH;
+      doc.setFont("helvetica", "bold");
+      doc.text("Profil MBTI : ", M, y); doc.setFont("helvetica", "normal"); doc.text(`${mbti} — ${mbtiName}`, M + 26, y);
+      y += lineH;
+      doc.setFont("helvetica", "bold");
+      doc.text("Canal sensoriel : ", M, y); doc.setFont("helvetica", "normal"); doc.text(VAKOG_NAMES[vakog] || vakog, M + 32, y);
+      y += lineH;
+      doc.setFont("helvetica", "bold");
+      doc.text("Séance n° : ", M, y); doc.setFont("helvetica", "normal"); doc.text(String(seanceNum), M + 22, y);
+      y += 4;
+      doc.line(M, y, W - M, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      const cleanScript = (script || "").replace(/\[PAUSE_[\d.]+s\]/gi, "  ⏸  ");
+      const lines = doc.splitTextToSize(cleanScript, W - 2 * M);
+      const lineHeight = 4.5;
+      for (const ln of lines) {
+        if (y > 280) { doc.addPage(); y = M; }
+        doc.text(ln, M, y);
+        y += lineHeight;
+      }
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.setFont("helvetica", "italic");
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.text(`EUREKA Thérapie — Document personnel — Page ${p}/${totalPages}`, W/2, 290, { align:"center" });
+      }
+      doc.save(`eureka_seance${seanceNum}_${prenom}_${mbti}.pdf`);
+    } catch(e) {
+      console.error(e);
+      alert("Erreur lors de la création du PDF : " + e.message);
+    }
   };
 
   if (phase === "generating") {
@@ -1743,7 +1875,10 @@ function SeancePlayer({ userData, onRestart }) {
           );
         })()}
 
-        <Btn onClick={downloadScript} variant="ghost">⬇ Télécharger le script (.txt)</Btn>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem" }}>
+          <Btn onClick={downloadScript} variant="ghost">⬇ Script (.txt)</Btn>
+          <Btn onClick={downloadPDF} variant="ghost">📄 PDF</Btn>
+        </div>
 
         {/* Rappels */}
         <div style={{ marginTop:"1.5rem" }}>
@@ -1853,7 +1988,7 @@ function App() {
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
         {step === "profil" && (
           <ProfilResult prenom={userData.prenom} mbti={userData.mbti}
-            vakogResult={userData.vakogResult} problem={userData.problem} onNext={handleProfilNext} />
+            vakogResult={userData.vakogResult} onNext={handleProfilNext} />
         )}
         {step === "seance" && (
           <SeancePlayer userData={{ ...userData }} onRestart={handleRestart} />
