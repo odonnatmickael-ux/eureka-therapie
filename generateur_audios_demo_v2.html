@@ -346,6 +346,16 @@ async function generer() {
       }
     };
 
+    // ─── Fade-in / Fade-out 10ms (élimine les clics de jonction) ────────
+    const applyFade = (buf) => {
+      const ch = buf.getChannelData(0);
+      const fadeSamples = Math.min(Math.floor(sr * 0.01), Math.floor(ch.length / 4)); // 10ms
+      for (let i = 0; i < fadeSamples; i++) {
+        ch[i] *= i / fadeSamples;                          // fade-in
+        ch[ch.length - 1 - i] *= i / fadeSamples;         // fade-out
+      }
+    };
+
     for (const p of fp) {
       if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
       done++;
@@ -359,6 +369,7 @@ async function generer() {
       const ab = await callTTS(p.c, prevText, nextText);
       const decoded = await actx.decodeAudioData(ab);
       normalizeBuffer(decoded); // ← normalisation avant assemblage
+      applyFade(decoded);       // ← fade-in/fade-out 10ms anti-clic
       bufs.push(decoded);
       bufs.push(sil(0.3));
       log(`✓ Segment ${done} OK`, 'ok');
