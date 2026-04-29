@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { text, voiceId } = req.body;
+  const { text, voiceId, previous_text, next_text } = req.body;
 
   const SPEEDS = {
     "4RZ84U1b4WCqpu57LvIq": 0.78,  // Bella
@@ -29,7 +29,9 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           text: text,
           model_id: "eleven_multilingual_v2",
-          voice_settings: { speed: speed }
+          voice_settings: { speed: speed },
+          ...(previous_text && { previous_text }),
+          ...(next_text && { next_text })
         })
       }
     );
