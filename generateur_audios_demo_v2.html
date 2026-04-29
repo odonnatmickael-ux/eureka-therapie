@@ -193,14 +193,18 @@ async function callClaude(system, user, tokens) {
   return d.text || "";
 }
 
-async function callTTS(text) {
+async function callTTS(text, prevText = "", nextText = "") {
+  const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 1000);
+  const body = {
+    text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
+    voiceId: VOICE_ID
+  };
+  if (prevText) body.previous_text = cleanCtx(prevText);
+  if (nextText) body.next_text = cleanCtx(nextText);
   const r = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      text: text.replace(/\[PAUSE_\d+s\]/gi, "").trim().substring(0, 4800),
-      voiceId: VOICE_ID
-    })
+    body: JSON.stringify(body)
   });
   if (!r.ok) throw new Error("ElevenLabs error: " + r.status);
   return await r.arrayBuffer();
@@ -347,7 +351,12 @@ async function generer() {
       done++;
       setProgress(30 + Math.round((done/tc)*60), `Audio ${done} / ${tc} segments...`);
       log(`→ TTS segment ${done}/${tc}...`);
-      const ab = await callTTS(p.c);
+      // Contexte vocal : segment précédent et suivant pour cohérence ElevenLabs
+      const allText = fp.filter(x => x.type === "t");
+      const idx = allText.indexOf(p);
+      const prevText = idx > 0 ? allText[idx-1].c : "";
+      const nextText = idx < allText.length-1 ? allText[idx+1].c : "";
+      const ab = await callTTS(p.c, prevText, nextText);
       const decoded = await actx.decodeAudioData(ab);
       normalizeBuffer(decoded); // ← normalisation avant assemblage
       bufs.push(decoded);
