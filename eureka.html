@@ -729,6 +729,16 @@ function MentionsModal({ onClose }) {
           </p>
         </div>
 
+        {/* 7. Éditeur du site */}
+        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>👤 Éditeur du site</p>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
+            EUREKA Thérapie est édité par <strong style={{ color:C.cream }}>Mickaël Odonnat</strong>, Praticien Sophrologue certifié (Centre Français de Formation en Sophrologie, 2017) et praticien certifié de la Méthode Silva (Mindvalley, 2020).
+            <br/><br/>
+            Contact : <a href="mailto:eureka.therapie@gmail.com" style={{ color:C.gold, textDecoration:"underline" }}>eureka.therapie@gmail.com</a>
+          </p>
+        </div>
+
         <button onClick={onClose}
           style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1.5rem",
             background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
@@ -823,9 +833,10 @@ function Anamnese({ onNext }) {
   const [problem, setProblem] = useState("");
   const [objectif, setObjectif] = useState("");
   const [consentement, setConsentement] = useState(false);
+  const [hasSupport, setHasSupport] = useState(null); // null=non répondu, false=non, true=oui
   const emailErr = emailTouched && !isValidEmail(email);
 
-  const canSubmit = prenom.trim() && isValidEmail(email) && problem.trim().length > 15 && objectif.trim().length > 10 && consentement;
+  const canSubmit = prenom.trim() && isValidEmail(email) && problem.trim().length > 15 && objectif.trim().length > 10 && consentement && hasSupport !== null;
 
   return (
     <Card>
@@ -887,6 +898,37 @@ function Anamnese({ onNext }) {
             onBlur={e => e.target.style.borderColor=C.border} />
         </div>
 
+        {/* Question de détection — suivi professionnel en cours */}
+        <div style={{ marginBottom:"1.25rem" }}>
+          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
+            textTransform:"uppercase", marginBottom:"10px" }}>
+            Êtes-vous actuellement suivi(e) par un professionnel de santé pour un trouble psychologique sérieux ?
+          </label>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.625rem" }}>
+            <button type="button" onClick={() => setHasSupport(false)}
+              style={{ padding:"0.75rem", background: hasSupport === false ? `rgba(42,138,143,.20)` : C.panel,
+                border:`1.5px solid ${hasSupport === false ? C.teal : C.border}`,
+                borderRadius:"10px", fontSize:"13px", fontFamily:"'Raleway', sans-serif",
+                color: hasSupport === false ? C.cream : C.muted, cursor:"pointer",
+                transition:"all .2s" }}>Non</button>
+            <button type="button" onClick={() => setHasSupport(true)}
+              style={{ padding:"0.75rem", background: hasSupport === true ? `rgba(184,149,90,.15)` : C.panel,
+                border:`1.5px solid ${hasSupport === true ? C.gold : C.border}`,
+                borderRadius:"10px", fontSize:"13px", fontFamily:"'Raleway', sans-serif",
+                color: hasSupport === true ? C.cream : C.muted, cursor:"pointer",
+                transition:"all .2s" }}>Oui</button>
+          </div>
+          {hasSupport === true && (
+            <div style={{ marginTop:"0.875rem", padding:"0.875rem 1rem",
+              background:"rgba(184,149,90,.08)", borderRadius:"10px",
+              border:`1px solid ${C.gold}` }}>
+              <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.7" }}>
+                💛 Ce service est conçu comme un complément de bien-être, pas comme un substitut à votre suivi professionnel. Nous vous encourageons à continuer votre suivi en cours. Vous pouvez utiliser ces séances en accord avec votre praticien, qui reste votre référent principal.
+              </p>
+            </div>
+          )}
+        </div>
+
         <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer",
           marginBottom:"1rem" }}>
           <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
@@ -916,16 +958,34 @@ function Anamnese({ onNext }) {
 
 // ÉTAPE 2 : Quiz MBTI
 function QuizMBTI({ prenom, onComplete }) {
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState({});
+  // ─── Sauvegarde quiz : restaure depuis localStorage si présent ───
+  const [current, setCurrent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eureka_quiz_mbti');
+      return saved ? (JSON.parse(saved).current || 0) : 0;
+    } catch { return 0; }
+  });
+  const [answers, setAnswers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eureka_quiz_mbti');
+      return saved ? (JSON.parse(saved).answers || {}) : {};
+    } catch { return {}; }
+  });
   const pct = Math.round((current / QUIZ_MBTI.length) * 100);
+
+  const persist = (cur, ans) => {
+    try { localStorage.setItem('eureka_quiz_mbti', JSON.stringify({ current: cur, answers: ans })); } catch {}
+  };
 
   const handleAnswer = (idx) => {
     const newAns = { ...answers, [current]: idx };
     setAnswers(newAns);
     if (current < QUIZ_MBTI.length - 1) {
-      setCurrent(c => c + 1);
+      const newCur = current + 1;
+      setCurrent(newCur);
+      persist(newCur, newAns);
     } else {
+      try { localStorage.removeItem('eureka_quiz_mbti'); } catch {}
       const type = scoreMBTI(newAns);
       onComplete(type);
     }
@@ -970,7 +1030,11 @@ function QuizMBTI({ prenom, onComplete }) {
         </div>
 
         {current > 0 && (
-          <button className="back-btn" onClick={() => setCurrent(c => c-1)}
+          <button className="back-btn" onClick={() => {
+              const newCur = current - 1;
+              setCurrent(newCur);
+              persist(newCur, answers);
+            }}
             style={{ display:"block", width:"100%", padding:"0.75rem", background:"transparent",
               border:"none", color:C.hint, fontSize:"12px", cursor:"pointer",
               marginTop:"0.75rem", fontFamily:"'Raleway', sans-serif", transition:"color .2s" }}>
@@ -984,17 +1048,35 @@ function QuizMBTI({ prenom, onComplete }) {
 
 // ÉTAPE 3 : Quiz VAKOG
 function QuizVAKOG({ prenom, onComplete }) {
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState([]);
+  // ─── Sauvegarde quiz : restaure depuis localStorage si présent ───
+  const [current, setCurrent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eureka_quiz_vakog');
+      return saved ? (JSON.parse(saved).current || 0) : 0;
+    } catch { return 0; }
+  });
+  const [answers, setAnswers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eureka_quiz_vakog');
+      return saved ? (JSON.parse(saved).answers || []) : [];
+    } catch { return []; }
+  });
   const pct = Math.round((current / QUIZ_VAKOG.length) * 100);
+
+  const persist = (cur, ans) => {
+    try { localStorage.setItem('eureka_quiz_vakog', JSON.stringify({ current: cur, answers: ans })); } catch {}
+  };
 
   const handleAnswer = (modality) => {
     const newAns = [...answers];
     newAns[current] = modality;
     setAnswers(newAns);
     if (current < QUIZ_VAKOG.length - 1) {
-      setCurrent(c => c + 1);
+      const newCur = current + 1;
+      setCurrent(newCur);
+      persist(newCur, newAns);
     } else {
+      try { localStorage.removeItem('eureka_quiz_vakog'); } catch {}
       const result = scoreVAKOG(newAns);
       onComplete(result);
     }
@@ -1043,7 +1125,11 @@ function QuizVAKOG({ prenom, onComplete }) {
         </div>
 
         {current > 0 && (
-          <button className="back-btn" onClick={() => { setCurrent(c => c-1); }}
+          <button className="back-btn" onClick={() => {
+              const newCur = current - 1;
+              setCurrent(newCur);
+              persist(newCur, answers);
+            }}
             style={{ display:"block", width:"100%", padding:"0.75rem", background:"transparent",
               border:"none", color:C.hint, fontSize:"12px", cursor:"pointer",
               marginTop:"0.75rem", fontFamily:"'Raleway', sans-serif", transition:"color .2s" }}>
@@ -1493,32 +1579,89 @@ function SeancePlayer({ userData, onRestart }) {
         "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:0.90 },
         "D8YqJ6FEIaP09qWQcZuN": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
       };
-      const ttsClient = async (txt) => {
+      const ttsClient = async (txt, prevText = "", nextText = "") => {
         if (!txt.trim()) return null;
         const vsettings = VOICE_SETTINGS_CLIENT[selectedVoice] || VOICE_SETTINGS_CLIENT["4RZ84U1b4WCqpu57LvIq"];
+        const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 1000);
+        const body = {
+          text: txt.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
+          model_id: "eleven_multilingual_v2",
+          voice_settings: vsettings
+        };
+        if (prevText) body.previous_text = cleanCtx(prevText);
+        if (nextText) body.next_text = cleanCtx(nextText);
         const r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
           method: "POST",
           headers: { "Content-Type": "application/json", "xi-api-key": key },
-          body: JSON.stringify({
-            text: txt.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
-            model_id: "eleven_multilingual_v2",
-            voice_settings: vsettings
-          })
+          body: JSON.stringify(body)
         });
         if (!r.ok) throw new Error("Clé invalide ou crédits insuffisants (" + r.status + ")");
         return await actx.decodeAudioData(await r.arrayBuffer());
       };
+
+      // ─── Normalisation par segment (volume uniforme à 0.92 peak) ───
+      const normalizeBuffer = (buf) => {
+        const ch = buf.getChannelData(0);
+        let peak = 0;
+        for (let i = 0; i < ch.length; i++) {
+          if (Math.abs(ch[i]) > peak) peak = Math.abs(ch[i]);
+        }
+        if (peak > 0.0001) {
+          const gain = 0.92 / peak;
+          for (let i = 0; i < ch.length; i++) ch[i] *= gain;
+        }
+      };
+
+      // ─── Fade-in/Fade-out 10ms anti-clic de jonction ───
+      const applyFade = (buf) => {
+        const ch = buf.getChannelData(0);
+        const fadeSamples = Math.min(Math.floor(sr * 0.01), Math.floor(ch.length / 4));
+        for (let i = 0; i < fadeSamples; i++) {
+          ch[i] *= i / fadeSamples;
+          ch[ch.length - 1 - i] *= i / fadeSamples;
+        }
+      };
+
+      // ─── Parser : ne découper qu'aux pauses longues (>= 2s) ───
+      // Les pauses courtes (0.5s, 1s) restent dans le même appel TTS
+      const SPLIT_THRESHOLD = 2.0;
       const pat = /\[PAUSE_([\d.]+)s\]/gi;
-      const parts = [];
+      const rawParts = [];
       let li = 0, mx;
       while ((mx = pat.exec(activeScript)) !== null) {
         const t = activeScript.slice(li, mx.index).trim();
-        if (t) parts.push({ type:"t", c:t });
-        parts.push({ type:"s", sec:parseFloat(mx[1]) });
+        if (t) rawParts.push({ type:"t", c:t });
+        rawParts.push({ type:"s", sec:parseFloat(mx[1]) });
         li = mx.index + mx[0].length;
       }
       const rem = activeScript.slice(li).trim();
-      if (rem) parts.push({ type:"t", c:rem });
+      if (rem) rawParts.push({ type:"t", c:rem });
+      // Fusionner les textes séparés par des pauses courtes
+      const parts = [];
+      let mi = 0;
+      while (mi < rawParts.length) {
+        if (rawParts[mi].type === "t") {
+          let merged = rawParts[mi].c;
+          let mj = mi + 1;
+          while (mj < rawParts.length) {
+            if (rawParts[mj].type === "s" && rawParts[mj].sec < SPLIT_THRESHOLD) {
+              if (mj + 1 < rawParts.length && rawParts[mj+1].type === "t") {
+                merged += " " + rawParts[mj+1].c;
+                mj += 2;
+              } else { break; }
+            } else { break; }
+          }
+          parts.push({ type:"t", c:merged });
+          while (mj < rawParts.length && rawParts[mj].type === "s") {
+            parts.push(rawParts[mj]);
+            mj++;
+          }
+          mi = mj;
+        } else {
+          parts.push(rawParts[mi]);
+          mi++;
+        }
+      }
       const fp = [];
       for (const p of parts) {
         if (p.type === "s") { fp.push(p); continue; }
@@ -1534,12 +1677,21 @@ function SeancePlayer({ userData, onRestart }) {
       }
       const tc = fp.filter(p => p.type === "t").length;
       let done = 0;
+      const allText = fp.filter(p => p.type === "t");
       for (const p of fp) {
         if (p.type === "s") { bufs.push(sil(p.sec)); continue; }
         done++;
         setFullGenMsg("Audio " + done + " / " + tc + " segments...");
-        const b = await ttsClient(p.c);
-        if (b) bufs.push(b);
+        // Contexte vocal : segment précédent et suivant pour cohérence ElevenLabs
+        const idx = allText.indexOf(p);
+        const prevText = idx > 0 ? allText[idx-1].c : "";
+        const nextText = idx < allText.length-1 ? allText[idx+1].c : "";
+        const b = await ttsClient(p.c, prevText, nextText);
+        if (b) {
+          normalizeBuffer(b);
+          applyFade(b);
+          bufs.push(b);
+        }
       }
       if (bufs.length > 0) {
         const tot = bufs.reduce((s, b) => s + b.length, 0);
