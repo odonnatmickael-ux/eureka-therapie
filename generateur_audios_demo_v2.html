@@ -60,7 +60,7 @@ input:focus { border-color: #b8955a; }
   <div class="voice-badge">🎙️ Voix : Marcel (YV28ox2c5Cuh5rim0LrW) · Chaleureux, poétique · Speed : 0.78</div>
 
   <div class="warning">
-    ⚠️ Cet outil génère les 16 fichiers WAV de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
+    ⚠️ Cet outil génère les 16 fichiers MP3 de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
   </div>
 
   <div class="card">
@@ -105,22 +105,22 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_marcel_analystes_visuel.wav</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_marcel_analystes_auditif.wav</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_marcel_analystes_kinesth.wav</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_marcel_analystes_rationnel.wav</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_marcel_diplomates_visuel.wav</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_marcel_diplomates_auditif.wav</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_marcel_diplomates_kinesth.wav</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_marcel_diplomates_rationnel.wav</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_marcel_sentinelles_visuel.wav</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_marcel_sentinelles_auditif.wav</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_marcel_sentinelles_kinesth.wav</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_marcel_sentinelles_rationnel.wav</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_marcel_explorateurs_visuel.wav</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_marcel_explorateurs_auditif.wav</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_marcel_explorateurs_kinesth.wav</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_marcel_explorateurs_rationnel.wav</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_marcel_analystes_visuel.mp3</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_marcel_analystes_auditif.mp3</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_marcel_analystes_kinesth.mp3</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_marcel_analystes_rationnel.mp3</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_marcel_diplomates_visuel.mp3</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_marcel_diplomates_auditif.mp3</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_marcel_diplomates_kinesth.mp3</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_marcel_diplomates_rationnel.mp3</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_marcel_sentinelles_visuel.mp3</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_marcel_sentinelles_auditif.mp3</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_marcel_sentinelles_kinesth.mp3</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_marcel_sentinelles_rationnel.mp3</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_marcel_explorateurs_visuel.mp3</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_marcel_explorateurs_auditif.mp3</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_marcel_explorateurs_kinesth.mp3</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_marcel_explorateurs_rationnel.mp3</div>
     </div>
   </div>
 </div>
@@ -266,17 +266,51 @@ async function generer() {
     const bufs = [];
     const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
 
+    // ─── Parser : ne découper qu'aux pauses longues (≥ 2s) ─────────────
+    // Les pauses courtes (0.5s du décompte) restent dans le même appel TTS
+    // pour éviter les sauts de volume entre "un", "deux", "trois", "quatre"
+    const SPLIT_THRESHOLD = 2.0;
     const pat = /\[PAUSE_([\d.]+)s\]/gi;
-    const parts = [];
+    const rawParts = [];
     let li = 0, mx;
     while ((mx = pat.exec(clean)) !== null) {
       const t = clean.slice(li, mx.index).trim();
-      if (t) parts.push({ type:"t", c:t });
-      parts.push({ type:"s", sec:parseFloat(mx[1]) });
+      if (t) rawParts.push({ type:"t", c:t });
+      rawParts.push({ type:"s", sec:parseFloat(mx[1]) });
       li = mx.index + mx[0].length;
     }
     const rem = clean.slice(li).trim();
-    if (rem) parts.push({ type:"t", c:rem });
+    if (rem) rawParts.push({ type:"t", c:rem });
+    // Fusionner les textes séparés par des pauses courtes en un seul appel TTS
+    const parts = [];
+    let i = 0;
+    while (i < rawParts.length) {
+      if (rawParts[i].type === "t") {
+        let merged = rawParts[i].c;
+        let j = i + 1;
+        while (j < rawParts.length) {
+          if (rawParts[j].type === "s" && rawParts[j].sec < SPLIT_THRESHOLD) {
+            // Pause courte → on fusionne avec le texte suivant
+            if (j + 1 < rawParts.length && rawParts[j+1].type === "t") {
+              merged += " " + rawParts[j+1].c;
+              j += 2;
+            } else {
+              break;
+            }
+          } else { break; }
+        }
+        parts.push({ type:"t", c:merged });
+        // Ajouter les pauses longues qui suivent ce bloc texte
+        while (j < rawParts.length && rawParts[j].type === "s") {
+          parts.push(rawParts[j]);
+          j++;
+        }
+        i = j;
+      } else {
+        parts.push(rawParts[i]);
+        i++;
+      }
+    }
 
     const fp = [];
     for (const p of parts) {
@@ -347,7 +381,7 @@ async function generer() {
     const url = URL.createObjectURL(mp3Blob);
 
     setProgress(100, '✅ Terminé !');
-    log('✓ Fichier WAV prêt : ' + fname, 'ok');
+    log('✓ Fichier MP3 prêt : ' + fname, 'ok');
 
     document.getElementById('resultsCard').style.display = 'block';
     const grid = document.getElementById('audioGrid');
