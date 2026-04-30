@@ -55,6 +55,7 @@ const CONFIG = {
 const isPremium = false; // TODO: intégrer paiement (Stripe)
 
 // ── Utilitaires Streak 21 jours ────────────────────────────────────
+// Le streak compte les ÉCOUTES consécutives de la séance personnelle (pas les générations).
 function getToday() { return new Date().toISOString().slice(0, 10); }
 
 function loadStreak() {
@@ -69,17 +70,176 @@ function saveStreak(data) {
   try { localStorage.setItem('eureka_streak', JSON.stringify(data)); } catch {}
 }
 
-function computeNewStreak() {
+function incrementStreakOnPlay() {
   const today = getToday();
   const current = loadStreak();
   const { lastDate, streak } = current;
-  if (!lastDate) { const s = { lastDate: today, streak: 1 }; saveStreak(s); return s; }
   if (lastDate === today) return current;
+  if (!lastDate) { const s = { lastDate: today, streak: 1 }; saveStreak(s); return s; }
   const yest = new Date(today); yest.setDate(yest.getDate() - 1);
   const yestStr = yest.toISOString().slice(0, 10);
   const newStreak = lastDate === yestStr ? Math.min(streak + 1, 21) : 1;
   const s = { lastDate: today, streak: newStreak };
   saveStreak(s); return s;
+}
+
+function resetStreak() {
+  try { localStorage.removeItem('eureka_streak'); } catch {}
+}
+
+// ── IndexedDB : sauvegarde de la séance personnelle (audio + script + profil) ──
+const IDB_NAME = 'eureka_db';
+const IDB_STORE = 'sessions';
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function saveSession(data) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(data, 'current');
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  } catch (e) { console.warn('IDB save failed:', e); return false; }
+}
+async function loadSession() {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get('current');
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); resolve(null); };
+    });
+  } catch { return null; }
+}
+async function deleteSession() {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete('current');
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); resolve(false); };
+    });
+  } catch { return false; }
+}
+function setSessionFlag(present, meta) {
+  try {
+    if (present) localStorage.setItem('eureka_session_meta', JSON.stringify(meta || {}));
+    else localStorage.removeItem('eureka_session_meta');
+  } catch {}
+}
+function getSessionFlag() {
+  try {
+    const raw = localStorage.getItem('eureka_session_meta');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BIG FIVE — Modèle de personnalité scientifiquement validé (OCEAN)
+// Inventaire BFI-10 (Rammstedt & John, 2007)
+// 10 items, échelle Likert 1-5, 5 dimensions indépendantes
+// Validation interculturelle ~50 pays, héritabilité 40-60%, stabilité ~0.7 sur 30 ans.
+// ══════════════════════════════════════════════════════════════════
+const BFI10 = [
+  { dim: "E", reverse: true,  text: "Je me vois comme quelqu'un de réservé." },
+  { dim: "A", reverse: false, text: "Je me vois comme quelqu'un de naturellement confiant envers les autres." },
+  { dim: "C", reverse: true,  text: "Je me vois comme quelqu'un qui a tendance à être paresseux(se)." },
+  { dim: "N", reverse: true,  text: "Je me vois comme quelqu'un de détendu(e), qui gère bien le stress." },
+  { dim: "O", reverse: true,  text: "Je me vois comme quelqu'un qui s'intéresse peu à l'art ou aux expériences esthétiques." },
+  { dim: "E", reverse: false, text: "Je me vois comme quelqu'un d'extraverti(e), de sociable." },
+  { dim: "A", reverse: true,  text: "Je me vois comme quelqu'un qui critique facilement les autres." },
+  { dim: "C", reverse: false, text: "Je me vois comme quelqu'un de consciencieux(se), qui fait son travail à fond." },
+  { dim: "N", reverse: false, text: "Je me vois comme quelqu'un qui s'inquiète facilement, qui devient nerveux(se)." },
+  { dim: "O", reverse: false, text: "Je me vois comme quelqu'un d'imaginatif(ve), qui aime réfléchir." },
+];
+const LIKERT_LABELS = [
+  { v: 1, text: "Pas du tout d'accord" },
+  { v: 2, text: "Plutôt pas d'accord" },
+  { v: 3, text: "Neutre / sans avis" },
+  { v: 4, text: "Plutôt d'accord" },
+  { v: 5, text: "Tout à fait d'accord" },
+];
+const BIG_FIVE_NAMES = {
+  O: "Ouverture", C: "Conscienciosité", E: "Extraversion",
+  A: "Agréabilité", N: "Névrosisme"
+};
+const BIG_FIVE_DESC = {
+  O: "Ouverture aux idées, métaphores, abstractions et nouvelles expériences",
+  C: "Préférence pour la structure, la discipline, les protocoles précis",
+  E: "Énergie tirée du monde extérieur (vs introspection)",
+  A: "Tendance à la confiance, à la coopération, à la chaleur relationnelle",
+  N: "Sensibilité émotionnelle, tendance à l'anxiété, besoin de validation"
+};
+function scoreBigFive(answers) {
+  const dims = { O: [], C: [], E: [], A: [], N: [] };
+  BFI10.forEach((q, i) => {
+    const raw = answers[i];
+    if (raw == null) return;
+    const score = q.reverse ? (6 - raw) : raw;
+    dims[q.dim].push(score);
+  });
+  const result = {};
+  for (const k of ["O","C","E","A","N"]) {
+    if (dims[k].length === 0) { result[k] = 50; continue; }
+    const avg = dims[k].reduce((s,v) => s+v, 0) / dims[k].length;
+    result[k] = Math.round(((avg - 1) / 4) * 100);
+  }
+  return result;
+}
+function bigFiveLevel(score) {
+  if (score >= 70) return "Élevé";
+  if (score >= 55) return "Moyen-haut";
+  if (score >= 45) return "Moyen";
+  if (score >= 30) return "Moyen-bas";
+  return "Bas";
+}
+
+// 4 ARCHÉTYPES MÉMORABLES dérivés des scores Big Five
+// Chaque archétype mappe vers un des 4 audio blocs existants pour réutiliser
+// les MP3 démo de Vercel Blob (analystes/diplomates/sentinelles/explorateurs).
+const ARCHETYPES = {
+  pelerin: {
+    name: "Le Pèlerin", icon: "🌊",
+    desc: "Quête de sens, ouverture aux métaphores, voyage intérieur",
+    bloc: "diplomates"
+  },
+  batisseur: {
+    name: "Le Bâtisseur", icon: "🏛️",
+    desc: "Structure, discipline, protocole précis, résultats mesurables",
+    bloc: "analystes"
+  },
+  compagnon: {
+    name: "Le Compagnon", icon: "🤝",
+    desc: "Lien, chaleur, sécurité affective, harmonie",
+    bloc: "sentinelles"
+  },
+  voyageur: {
+    name: "Le Voyageur", icon: "🍃",
+    desc: "Énergie présente, sensoriel, action, spontanéité",
+    bloc: "explorateurs"
+  }
+};
+function archetypeFromBigFive(s) {
+  if (!s) return "compagnon";
+  if (s.O >= 60 && (s.A >= 50 || s.N >= 50)) return "pelerin";
+  if (s.C >= 60 && s.O <= 55) return "batisseur";
+  if (s.A >= 60 && s.E <= 60) return "compagnon";
+  if (s.E >= 60 && s.N <= 50) return "voyageur";
+  const top = Object.entries({O:s.O, C:s.C, E:s.E, A:s.A}).sort((a,b)=>b[1]-a[1])[0][0];
+  return { O:"pelerin", C:"batisseur", A:"compagnon", E:"voyageur" }[top] || "compagnon";
 }
 
 // Catalogue de voix ElevenLabs disponibles
@@ -242,20 +402,32 @@ const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 // ══════════════════════════════════════════════════════════════════
 // GÉNÉRATION DU PROMPT SYSTÈME (expertise sophro-hypnose)
 // ══════════════════════════════════════════════════════════════════
-function buildSystemPrompt(data) {
-  const { mbti, mbtiName, vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom } = data;
+// Voix ElevenLabs v3 (alpha) — supporte les balises expressives inline
+const V3_VOICES = ["19cV422MaCP4oU6N8AFm"]; // Mickaël uniquement
+const isV3Voice = (voiceId) => V3_VOICES.includes(voiceId);
+const V3_TAG_REGEX = /\[(whispers?|soft|calm|warm|breathing|slow|gentle)\]/gi;
 
-  // ─── RYTHME RESPIRATOIRE adapté au profil MBTI ─────────────────────
-  // Pressés (4-2-6) | Standard (4-2-8) | Contemplatifs (5-2-10)
-  const RAPID_MBTI = ["ENTJ","ESTJ","ESTP","ENTP"];
-  const CONTEMPLATIVE_MBTI = ["INFP","INFJ","ISFP","ISFJ","ENFP","ESFP"];
-  const breath = RAPID_MBTI.includes(mbti) ? { inspire:4, hold:2, expire:6 }
-               : CONTEMPLATIVE_MBTI.includes(mbti) ? { inspire:5, hold:2, expire:10 }
-               : { inspire:4, hold:2, expire:8 };
+function buildSystemPrompt(data) {
+  const { vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom, useV3Tags, bigFiveScores, archetypeKey } = data;
+  const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.compagnon;
+
+  // ─── RYTHME RESPIRATOIRE adapté au profil Big Five ─────────────────
+  // Logique : haute Conscienciosité + basse Névrose → rythme rapide (efficacité)
+  //          haute Névrose ou haute Ouverture → rythme contemplatif (apaisement)
+  //          sinon → rythme standard
+  const bf = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
+  let breath;
+  if (bf.C >= 65 && bf.N <= 45 && bf.E >= 55) breath = { inspire:4, hold:2, expire:6 }; // pressé/efficace
+  else if (bf.N >= 60 || bf.O >= 70) breath = { inspire:5, hold:2, expire:10 };          // contemplatif/apaisant
+  else breath = { inspire:4, hold:2, expire:8 };                                          // standard
   const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
-  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "...").join(" [PAUSE_0.5s] ");
+  // Fix bug : 6 ellipses force une pause d'environ 1s entre chaque mot dans ElevenLabs
+  // (les [PAUSE_0.5s] étaient supprimés par le parseur SPLIT_THRESHOLD=2.0)
+  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2);
+  // Fix bug "huit-e temps" : ellipse entre le nombre et "temps" pour casser la liaison TT
+  const inTemps = (n) => "en " + NUM_FR[n] + "... temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
@@ -284,41 +456,63 @@ function buildSystemPrompt(data) {
     "Puis affirmations amour, paix, transformation, gratitude." :
     "Puis affirmations ressources interieures, courage, progression.";
 
-  const MBTI_PROFILES = {
-    "INTJ": { mots:"maitrise, strategie, vision, perfection, independance, efficacite", ton:"sobre, precis, aucune fioriture sentimentale", phrases:"Votre esprit strategique enregistre cette transformation... Vous optimisez votre etat interieur... Cette methode est precise et efficace...", eviter:"epanchements emotionnels, metaphores trop poetiques, injonctions collectives" },
-    "INTP": { mots:"comprendre, analyser, decouvrir, theorie, possible, explorer, logique", ton:"curieux, ouvert, intellectuellement stimulant", phrases:"Votre cerveau explore maintenant de nouvelles connexions... Ce processus est fascinant a observer... Chaque respiration ouvre une nouvelle comprehension...", eviter:"dogmatisme, certitudes absolues, langage emotionnel excessif" },
-    "ENTJ": { mots:"leadership, resultat, puissance, objectif, victoire, decision, excellence", ton:"direct, ambitieux, oriente resultat", phrases:"Vous prenez le controle de votre etat interieur... Cette transformation renforce votre puissance... Vous avancez vers votre meilleure version...", eviter:"passivite, langage de soumission, trop de douceur" },
-    "ENTP": { mots:"innovation, possibilite, different, challenger, creer, liberte, unique", ton:"stimulant, provocateur en douceur, original", phrases:"Votre esprit decouvre une nouvelle facon d etre... Cette experience est unique et inedite... Vous repoussez vos propres limites interieures...", eviter:"routine, langage trop conventionnel, repetition sans variation" },
-    "INFJ": { mots:"sens, mission, ame, profondeur, transformation, rare, destinee, lumiere", ton:"mystique, profond, charge de sens", phrases:"Votre ame reconnait ce chemin... Cette transformation est votre mission profonde... Vous etes exactement la ou vous devez etre...", eviter:"superficialite, langage commercial, logique froide" },
-    "INFP": { mots:"authenticite, valeurs, ideal, sensibilite, reve, beaute, harmonie, liberte", ton:"poetique, doux, respectueux de l interiorite", phrases:"Votre monde interieur s epanouit... Cette paix est authentiquement la votre... Vous honorez votre sensibilite profonde...", eviter:"pression, performance, langage trop rationnel" },
-    "ENFJ": { mots:"connexion, inspirer, grandir, ensemble, rayonner, impact, amour, guider", ton:"chaleureux, collectif, inspirant", phrases:"En vous transformant vous transformez le monde autour de vous... Votre lumiere rayonne naturellement... Vous etes une source d inspiration...", eviter:"isolement, langage trop solitaire, froideur" },
-    "ENFP": { mots:"passion, possibilites, enthousiasme, creer, connexion, spontane, vivant, joie", ton:"enthousiaste, colore, plein d energie douce", phrases:"Chaque instant est une nouvelle possibilite... Votre energie se renouvelle profondement... Vous vous reconnectez a votre joie naturelle...", eviter:"rigidite, contrainte, langage trop structure" },
-    "ISTJ": { mots:"fiabilite, ordre, devoir, methode, concret, eprouve, responsabilite, solidite", ton:"structure, rassurant, ancre dans le reel", phrases:"Etape par etape votre corps se detend... Ce processus est eprouve et fiable... Vous avancez methodiquement vers le calme...", eviter:"improvisation, metaphores trop abstraites, langage flou" },
-    "ISFJ": { mots:"protection, soin, famille, stabilite, devouement, harmonie, douceur, securite", ton:"maternel, protecteur, enveloppant", phrases:"Vous prenez soin de vous maintenant... Vous meritez ce moment de paix... Votre corps est en securite et protege...", eviter:"pression de performance, langage froid, individualisme excessif" },
-    "ESTJ": { mots:"efficacite, ordre, resultat, concret, structure, maitrise, realiser, progresser", ton:"direct, pratique, oriente action concrete", phrases:"Votre corps accomplit maintenant ce travail de recuperation... Vous gerez efficacement votre etat interieur... Chaque etape produit un resultat concret...", eviter:"ambiguite, langage vague, trop de poesie" },
-    "ESFJ": { mots:"harmonie, partage, bienveillance, communaute, chaleur, reconnaissance, appartenance", ton:"chaleureux, social, bienveillant", phrases:"Vous rayonnez de bienveillance... Cette paix vous rend encore plus present pour les autres... Vous meritez cet amour que vous donnez si generousement...", eviter:"isolement, langage trop introspectif, froideur analytique" },
-    "ISTP": { mots:"maitrise, technique, precision, independance, efficace, concret, sensation, action", ton:"sobre, direct, ancre dans le corps", phrases:"Votre corps fonctionne avec une precision remarquable... Vous maitrisez maintenant cet etat de calme... Chaque muscle repond parfaitement...", eviter:"sentimentalisme, discours abstrait, trop de metaphores" },
-    "ISFP": { mots:"beaute, sensation, liberte, present, nature, authenticite, art, douceur", ton:"sensoriel, poetique, respectueux du silence", phrases:"Votre corps ressent cette beaute interieure... Vous vivez pleinement cet instant... La nature de votre etre s exprime librement...", eviter:"pression, structure rigide, langage trop analytique" },
-    "ESTP": { mots:"action, energie, present, concret, impact, challenge, resultat, spontane", ton:"dynamique mais apaise, ancre dans le corps, direct", phrases:"Votre energie se recharge puissamment... Vous agissez sur votre etat interieur maintenant... Ce moment produit un impact reel et immediat...", eviter:"abstraction, lenteur excessive, langage trop contemplatif" },
-    "ESFP": { mots:"plaisir, energie, partage, enthousiasme, present, celebrer, vivant, lumiere", ton:"joyeux, sensoriel, chaleureux, celebrant la vie", phrases:"Votre energie rayonne et se renouvelle... Vous celebrez cet instant de paix... Votre corps vibre de bien-etre...", eviter:"lourdeur, tristesse, langage trop introspectif ou sombre" },
-  };
-  const mbtiProfile = MBTI_PROFILES[mbti] || MBTI_PROFILES["INFP"];
+  // ─── PERSONNALISATION BIG FIVE — 5 leviers thérapeutiques indépendants ─
+  // Chaque dimension produit une instruction de personnalisation linguistique
+  // basée sur les conclusions empiriques de la psychologie de la personnalité.
+  const bigFiveDirectives = [];
+  if (bf.N >= 60) bigFiveDirectives.push("NÉVROSISME ÉLEVÉ (" + bf.N + "/100) → utilise systématiquement un langage VALIDANT et SÉCURISANT. Multiplie les rappels « vous êtes en sécurité ici », « tout va bien », « ne forcez rien », « à votre rythme ». ÉVITE tout ton injonctif. Désamorce l'anxiété avant chaque transition.");
+  else if (bf.N <= 40) bigFiveDirectives.push("NÉVROSISME BAS (" + bf.N + "/100) → la personne tolère bien la directivité. Tu peux utiliser des consignes FERMES et DIRECTES (« lâchez prise maintenant », « relâchez cette tension »). Pas besoin d'envelopper chaque consigne.");
+  else bigFiveDirectives.push("NÉVROSISME MOYEN (" + bf.N + "/100) → ton équilibré, ni trop directif, ni trop validant.");
+
+  if (bf.O >= 60) bigFiveDirectives.push("OUVERTURE ÉLEVÉE (" + bf.O + "/100) → utilise des MÉTAPHORES RICHES, images abstraites, voyage symbolique, transformation poétique. La personne aime explorer mentalement.");
+  else if (bf.O <= 40) bigFiveDirectives.push("OUVERTURE BASSE (" + bf.O + "/100) → utilise des images CONCRÈTES, sensations corporelles tangibles, langage simple et direct. ÉVITE les métaphores trop abstraites.");
+  else bigFiveDirectives.push("OUVERTURE MOYENNE (" + bf.O + "/100) → mélange équilibré entre images concrètes et symboliques.");
+
+  if (bf.C >= 60) bigFiveDirectives.push("CONSCIENCIOSITÉ ÉLEVÉE (" + bf.C + "/100) → insiste sur la STRUCTURE du protocole (« étape 1, étape 2 »), sur la régularité (« 21 jours consécutifs »), sur la précision des instructions. La personne aime un cadre clair et mesurable.");
+  else if (bf.C <= 40) bigFiveDirectives.push("CONSCIENCIOSITÉ BASSE (" + bf.C + "/100) → ÉVITE les injonctions de discipline. Privilégie un cadre SOUPLE (« quand vous le souhaitez », « comme cela vient »), sans rigidité. Pas de pression de performance.");
+  else bigFiveDirectives.push("CONSCIENCIOSITÉ MOYENNE (" + bf.C + "/100) → structure légère, sans rigidité.");
+
+  if (bf.E >= 60) bigFiveDirectives.push("EXTRAVERSION ÉLEVÉE (" + bf.E + "/100) → utilise des images d'ÉNERGIE, de DYNAMISME, de lumière qui rayonne, de mouvement, de chaleur active. ÉVITE les scènes trop introspectives ou silencieuses prolongées.");
+  else if (bf.E <= 40) bigFiveDirectives.push("EXTRAVERSION BASSE / INTROVERSION (" + bf.E + "/100) → utilise des images d'INTROSPECTION, de calme profond, de silence intérieur, de retraite. La personne se nourrit du dedans. Privilégie les pauses longues.");
+  else bigFiveDirectives.push("EXTRAVERSION MOYENNE (" + bf.E + "/100) → équilibre entre énergie et introspection.");
+
+  if (bf.A >= 60) bigFiveDirectives.push("AGRÉABILITÉ ÉLEVÉE (" + bf.A + "/100) → utilise un langage RELATIONNEL et CHALEUREUX (« vous méritez », « ensemble », « vous êtes aimé(e) », « vous comptez »). La personne répond à la connexion humaine.");
+  else if (bf.A <= 40) bigFiveDirectives.push("AGRÉABILITÉ BASSE (" + bf.A + "/100) → RESPECTE l'autonomie (« c'est votre choix », « vous décidez seul(e) »). ÉVITE les injonctions affectives ou les « nous » trop appuyés. La personne est plus autonome qu'affiliative.");
+  else bigFiveDirectives.push("AGRÉABILITÉ MOYENNE (" + bf.A + "/100) → chaleur mesurée, pas trop affective.");
+
+  // Ton général dérivé de l'archétype dominant
+  const archetypeTon = {
+    pelerin: "poétique, profond, métaphorique, exploration intérieure",
+    batisseur: "structuré, précis, méthodique, orienté résultat",
+    compagnon: "chaleureux, protecteur, enveloppant, sécurisant",
+    voyageur: "présent, sensoriel, vivant, ancré dans le corps"
+  }[archetypeKey] || "équilibré et apaisant";
+
+  // Bloc balises ElevenLabs v3 (uniquement si voix Mickaël v3 sélectionnée)
+  const v3TagsInstructions = useV3Tags ? (
+    "BALISES EXPRESSIVES V3 (à insérer AUX TRANSITIONS UNIQUEMENT, max 8-10 sur tout le script):\n" +
+    "- [soft] avant les invitations corporelles douces\n" +
+    "- [whispers] avant l'entrée en sophro-liminalité\n" +
+    "- [calm] avant la phase alpha et les scènes intérieures\n" +
+    "- [warm] avant les affirmations finales\n" +
+    "- [gentle] avant la désophronisation\n" +
+    "INTERDIT: balise sur chaque phrase. UNIQUEMENT les 5 balises ci-dessus. Place la balise EN DÉBUT de phrase, suivie d'un espace.\n\n"
+  ) : "";
 
   return "Tu es un sophrologue expert. Tu generes un script audio de seance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
-    "CLIENT: " + prenom + " | MBTI: " + mbti + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
+    "CLIENT: " + prenom + " | ARCHÉTYPE: " + archetype.name + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
     "PROBLEMES: " + problem + "\n" +
     "OBJECTIFS: " + objectif + "\n" +
     "SPIRITUALITE: " + beliefSystem + "\n\n" +
-    "PROFIL MBTI " + mbti + " — ADAPTER TOUT LE SCRIPT:\n" +
-    "Mots d influence: " + mbtiProfile.mots + "\n" +
-    "Ton obligatoire: " + mbtiProfile.ton + "\n" +
-    "Exemples de phrases: " + mbtiProfile.phrases + "\n" +
-    "A eviter absolument: " + mbtiProfile.eviter + "\n\n" +
+    "PROFIL BIG FIVE (BFI-10, validé scientifiquement) — ADAPTE TOUT LE SCRIPT EN FONCTION DE CHAQUE DIMENSION:\n" +
+    bigFiveDirectives.map(d => "- " + d).join("\n") + "\n\n" +
+    "ARCHÉTYPE DOMINANT: " + archetype.name + " (" + archetype.desc + ")\n" +
+    "Ton général de la séance: " + archetypeTon + "\n\n" +
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
-    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... en " + NUM_FR[breath.inspire] + " temps... " + buildCount(breath.inspire) + " Bloquez doucement... " + buildCount(breath.hold) + " Et expirez... tout doucement... en " + NUM_FR[breath.expire] + " temps... laissez partir toutes les tensions... [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " Bloquez doucement... " + buildCount(breath.hold) + " Et expirez... tout doucement... " + inTemps(breath.expire) + " laissez partir toutes les tensions... [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
     "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
@@ -331,6 +525,7 @@ function buildSystemPrompt(data) {
     "12. PRESENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous etes'.\n" +
     "13. VERBES D ACTION LENTS - fondre, glisser, lacher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
     "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
+    v3TagsInstructions +
     "SPIRITUALITE:\n" +
     "Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
     spirituel;
@@ -374,27 +569,28 @@ function Logo({ small }) {
 
 function StepIndicator({ current, total, labels }) {
   return (
-    <div style={{ marginBottom:"2rem" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+    <div style={{ marginBottom:"1.5rem", width:"100%", maxWidth:"600px" }}>
+      <div style={{ position:"relative", display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:"8px" }}>
+        <div style={{ position:"absolute", left:"12px", right:"12px", height:"1px",
+          background:C.border, top:"12px", zIndex:0 }} />
         {labels.map((l,i) => (
-          <div key={i} style={{ flex:1, textAlign:"center" }}>
+          <div key={i} style={{ flex:1, textAlign:"center", position:"relative", zIndex:1 }}>
             <div style={{ width:"24px", height:"24px", borderRadius:"50%", margin:"0 auto 4px",
-              background: i < current ? C.teal : i === current ? C.gold : C.border,
+              background: i < current ? C.teal : i === current ? C.gold : C.bg,
               display:"flex", alignItems:"center", justifyContent:"center",
               fontSize:"10px", color: i <= current ? C.bg : C.hint, fontWeight:"600",
-              transition:"all .3s", border: i === current ? `2px solid ${C.goldLight}` : "2px solid transparent" }}>
+              transition:"all .3s", border: i === current ? `2px solid ${C.goldLight}` : `2px solid ${C.border}` }}>
               {i < current ? "✓" : i+1}
             </div>
-            <p style={{ fontSize:"9px", color: i === current ? C.goldLight : C.hint,
+            <p style={{ fontSize:"9px", color: i === current ? C.goldLight : i < current ? C.muted : C.hint,
               fontFamily:"'Raleway', sans-serif", letterSpacing:"1px", textTransform:"uppercase" }}>{l}</p>
           </div>
         ))}
-        <div style={{ position:"absolute", left:"2rem", right:"2rem", height:"1px",
-          background:C.border, top:"12px", zIndex:0 }} />
       </div>
       <div style={{ height:"2px", background:C.border, borderRadius:"1px", overflow:"hidden" }}>
         <div style={{ height:"100%", background:`linear-gradient(90deg, ${C.teal}, ${C.gold})`,
-          width:`${(current/total)*100}%`, transition:"width .5s ease" }} />
+          width:`${(current/(total-1))*100}%`, transition:"width .5s ease" }} />
       </div>
     </div>
   );
@@ -593,7 +789,7 @@ function ReminderPanel() {
 // ══════════════════════════════════════════════════════════════════
 function TutorielModal({ onClose }) {
   const steps = [
-    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au quiz MBTI (personnalité) et VAKOG (sensorialité). Ces 28 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
+    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five (BFI-10, validé scientifiquement) et au quiz VAKOG (sensorialité). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
     { icon:"🎯", title:"2. Votre situation", desc:"Décrivez ce que vous traversez et votre objectif. Plus vous êtes précis, plus la séance sera puissante et personnalisée." },
     { icon:"🎙️", title:"3. Votre environnement", desc:"Choisissez votre voix, votre ambiance sonore et votre direction de relaxation. Tout est adapté à votre profil." },
     { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, allongez-vous et laissez la transformation opérer." },
@@ -663,7 +859,7 @@ function MentionsModal({ onClose }) {
         <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>🔒 Données personnelles (RGPD)</p>
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            EUREKA Thérapie ne stocke aucune donnée utilisateur sur ses serveurs. Les informations saisies (prénom, email, problème, objectif, profil MBTI/VAKOG) sont traitées uniquement en temps réel pour générer votre séance personnalisée, puis effacées dès la fin de la session.
+            EUREKA Thérapie ne stocke aucune donnée sur ses propres serveurs. Les informations saisies (prénom, email, problème, objectif, profil Big Five / VAKOG) transitent en temps réel par des sous-traitants techniques (listés ci-dessous) avec leurs propres durées de rétention courtes, pour générer votre séance personnalisée.
             <br/><br/>
             Les informations relatives à votre état émotionnel ou ressenti sont considérées comme données de santé au sens de l'article 9 du RGPD. Elles bénéficient d'une protection renforcée et sont traitées sur la base de votre consentement explicite.
           </p>
@@ -756,7 +952,9 @@ function MentionsModal({ onClose }) {
 // ══════════════════════════════════════════════════════════════════
 
 // ÉTAPE 0 : Landing
-function Landing({ onStart, onMentions, onTutorial }) {
+function Landing({ onStart, onResume, onMentions, onTutorial }) {
+  const savedMeta = getSessionFlag();
+  const streak = loadStreak();
   return (
     <div style={{ textAlign:"center", maxWidth:"600px", width:"100%", animation:"fadeUp .6s ease" }}>
       <BreathingOrb />
@@ -781,7 +979,7 @@ function Landing({ onStart, onMentions, onTutorial }) {
         </h2>
         <div style={{ display:"grid", gap:"1rem" }}>
           {[
-            ["🧬", "Analyse de votre profil", "MBTI + VAKOG pour personnaliser chaque séance"],
+            ["🧬", "Analyse de votre profil", "Big Five (BFI-10) + VAKOG — modèle de personnalité scientifiquement validé pour adapter chaque séance"],
             ["🎙️", "Voix et musique sur mesure", "Choisissez l'environnement sonore qui vous convient"],
             ["🌊", "Descente alpha profonde", "Protocole sophrologique avec pauses de consolidation"],
             ["✨", "Transformation intérieure", "Sophro-acceptation progressive — la victoire est déjà là"],
@@ -798,6 +996,35 @@ function Landing({ onStart, onMentions, onTutorial }) {
         </div>
       </div>
 
+      {savedMeta && (
+        <div style={{ background:`linear-gradient(135deg, rgba(42,138,143,.15), rgba(184,149,90,.10))`,
+          borderRadius:"16px", padding:"1.5rem", border:`1.5px solid ${C.teal}`,
+          marginBottom:"1.25rem", textAlign:"left" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            marginBottom:"0.75rem", flexWrap:"wrap", gap:"0.5rem" }}>
+            <p style={{ fontSize:"11px", color:C.teal, letterSpacing:"2px",
+              textTransform:"uppercase", fontWeight:"600" }}>
+              ✓ Votre séance personnelle est prête
+            </p>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"18px", color:C.gold }}>
+              Jour {streak.streak} <span style={{fontSize:"12px", color:C.muted}}>/ 21</span>
+            </span>
+          </div>
+          <p style={{ fontSize:"12px", color:C.cream, lineHeight:"1.6", marginBottom:"1rem" }}>
+            Bonjour {savedMeta.prenom || ""} — votre séance ({savedMeta.mbtiName}) vous attend.
+            Écoutez-la chaque jour pendant 21 jours pour ancrer la transformation.
+          </p>
+          <button onClick={onResume}
+            style={{ display:"block", width:"100%", padding:"1rem",
+              background:`linear-gradient(135deg, ${C.teal}, ${C.tealDark})`,
+              color:C.cream, border:"none", borderRadius:"12px",
+              fontSize:"12px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+              letterSpacing:"2px", textTransform:"uppercase", cursor:"pointer" }}>
+            ▶ Reprendre ma séance personnelle
+          </button>
+        </div>
+      )}
+
       <button className="step-btn" onClick={onStart}
         style={{ display:"block", width:"100%", padding:"1.25rem",
           background:`linear-gradient(135deg, ${C.gold}, #9a7a40)`,
@@ -805,9 +1032,13 @@ function Landing({ onStart, onMentions, onTutorial }) {
           fontSize:"12px", fontFamily:"'Raleway', sans-serif", fontWeight:"600",
           letterSpacing:"3px", textTransform:"uppercase", cursor:"pointer",
           boxShadow:`0 8px 30px rgba(184,149,90,.3)` }}>
-        Commencer ma séance personnalisée →
+        {savedMeta ? "Créer une nouvelle séance (reset streak)" : "Commencer ma séance personnalisée →"}
       </button>
-      <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>Durée : environ 8 minutes de personnalisation</p>
+      <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>
+        {savedMeta
+          ? "Une nouvelle séance remplacera l'actuelle et remettra le compteur à zéro."
+          : "Durée : environ 8 minutes de personnalisation"}
+      </p>
       <button onClick={() => onTutorial()} style={{ background:"transparent", border:"none",
         color:C.muted, fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
         textDecoration:"underline", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
@@ -956,42 +1187,42 @@ function Anamnese({ onNext }) {
   );
 }
 
-// ÉTAPE 2 : Quiz MBTI
-function QuizMBTI({ prenom, onComplete }) {
-  // ─── Sauvegarde quiz : restaure depuis localStorage si présent ───
+// ÉTAPE 2 : Quiz Big Five (BFI-10) — REMPLACE MBTI dans la version FULL
+// Inventaire scientifiquement validé, 10 questions, échelle Likert 1-5
+function QuizBigFive({ prenom, onComplete }) {
   const [current, setCurrent] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_mbti');
+      const saved = localStorage.getItem('eureka_quiz_bigfive');
       return saved ? (JSON.parse(saved).current || 0) : 0;
     } catch { return 0; }
   });
   const [answers, setAnswers] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_mbti');
+      const saved = localStorage.getItem('eureka_quiz_bigfive');
       return saved ? (JSON.parse(saved).answers || {}) : {};
     } catch { return {}; }
   });
-  const pct = Math.round((current / QUIZ_MBTI.length) * 100);
+  const pct = Math.round((current / BFI10.length) * 100);
 
   const persist = (cur, ans) => {
-    try { localStorage.setItem('eureka_quiz_mbti', JSON.stringify({ current: cur, answers: ans })); } catch {}
+    try { localStorage.setItem('eureka_quiz_bigfive', JSON.stringify({ current: cur, answers: ans })); } catch {}
   };
 
-  const handleAnswer = (idx) => {
-    const newAns = { ...answers, [current]: idx };
+  const handleAnswer = (likertValue) => {
+    const newAns = { ...answers, [current]: likertValue };
     setAnswers(newAns);
-    if (current < QUIZ_MBTI.length - 1) {
+    if (current < BFI10.length - 1) {
       const newCur = current + 1;
       setCurrent(newCur);
       persist(newCur, newAns);
     } else {
-      try { localStorage.removeItem('eureka_quiz_mbti'); } catch {}
-      const type = scoreMBTI(newAns);
-      onComplete(type);
+      try { localStorage.removeItem('eureka_quiz_bigfive'); } catch {}
+      const scores = scoreBigFive(newAns);
+      onComplete(scores);
     }
   };
 
-  const q = QUIZ_MBTI[current];
+  const q = BFI10[current];
 
   return (
     <Card>
@@ -1001,32 +1232,42 @@ function QuizMBTI({ prenom, onComplete }) {
           marginBottom:"1rem" }}>
           <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
             borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
-            textTransform:"uppercase" }}>Étape 2 — Personnalité</div>
-          <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {QUIZ_MBTI.length}</span>
+            textTransform:"uppercase" }}>Étape 2 — Profil Big Five</div>
+          <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {BFI10.length}</span>
         </div>
 
-        <div style={{ height:"3px", background:C.border, borderRadius:"2px", marginBottom:"1.75rem", overflow:"hidden" }}>
+        <div style={{ height:"3px", background:C.border, borderRadius:"2px", marginBottom:"1.5rem", overflow:"hidden" }}>
           <div style={{ height:"100%", background:`linear-gradient(90deg,${C.teal},${C.gold})`,
             width:`${pct}%`, transition:"width .4s ease", borderRadius:"2px" }} />
         </div>
 
-        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.cream,
-          fontWeight:"400", lineHeight:"1.45", marginBottom:"1.5rem" }}>
-          {prenom && <span style={{ color:C.goldLight }}>{prenom}, </span>}{q.q}
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px", color:C.cream,
+          fontWeight:"400", lineHeight:"1.4", marginBottom:"0.5rem" }}>
+          {prenom && <span style={{ color:C.goldLight }}>{prenom}, </span>}{q.text}
         </h2>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1.5rem", fontStyle:"italic" }}>
+          Réponse spontanée — il n'y a ni bonne ni mauvaise réponse.
+        </p>
 
-        <div style={{ display:"grid", gap:"0.6rem" }}>
-          {q.a.map((opt, i) => (
-            <button key={i} className="opt-card" onClick={() => handleAnswer(i)}
-              style={{ padding:"0.875rem 1.125rem", background:C.panel,
-                border:`1.5px solid ${C.border}`, borderRadius:"12px",
-                fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
-                cursor:"pointer", textAlign:"left", lineHeight:"1.5",
-                transition:"all .2s" }}>
-              <span style={{ color:C.gold, marginRight:"8px", fontWeight:"600" }}>{["A","B","C"][i]}.</span>
-              {opt}
-            </button>
-          ))}
+        <div style={{ display:"grid", gap:"0.5rem" }}>
+          {LIKERT_LABELS.map(opt => {
+            const selected = answers[current] === opt.v;
+            return (
+              <button key={opt.v} className="opt-card" onClick={() => handleAnswer(opt.v)}
+                style={{ padding:"0.875rem 1rem", background: selected ? `rgba(184,149,90,.15)` : C.panel,
+                  border:`1.5px solid ${selected ? C.gold : C.border}`, borderRadius:"12px",
+                  cursor:"pointer", textAlign:"left", display:"flex", gap:"12px", alignItems:"center",
+                  transition:"all .2s", color:C.cream, fontSize:"13px",
+                  fontFamily:"'Raleway',sans-serif" }}>
+                <span style={{ width:"28px", height:"28px", borderRadius:"50%",
+                  background: selected ? C.gold : C.tealDark,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:"12px", color: selected ? "#1a0e00" : C.cream, fontWeight:"700",
+                  flexShrink:0 }}>{opt.v}</span>
+                {opt.text}
+              </button>
+            );
+          })}
         </div>
 
         {current > 0 && (
@@ -1142,7 +1383,7 @@ function QuizVAKOG({ prenom, onComplete }) {
 }
 
 // ÉTAPE 4 : Résultats profil + choix techniques
-function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
+function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
   const [relaxDir, setRelaxDir] = useState("");
   const [beliefSystem, setBeliefSystem] = useState("");
   const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
@@ -1150,13 +1391,17 @@ function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
   const [playingPreview, setPlayingPreview] = useState(null);
   const audioRef = useRef(null);
 
-  const mbtiName = MBTI_NAMES[mbti] || mbti;
   const vakog = vakogResult.dominant;
-  const isIntrovert = mbti.startsWith("I");
-  const isIntuitive = mbti[1] === "N";
+  // Archétype dérivé des scores Big Five (Pèlerin / Bâtisseur / Compagnon / Voyageur)
+  const archetypeKey = archetypeFromBigFive(bigFiveScores);
+  const archetype = ARCHETYPES[archetypeKey];
 
-  // Recommandation auto de la direction de relaxation
-  const recommendedDir = isIntrovert || isIntuitive ? "TF" : "FT";
+  // Recommandation auto de la direction de relaxation, dérivée du Big Five
+  // - Haute Ouverture ou Introversion (faible E) → Tête-Pieds (mental d'abord)
+  // - Sinon → Pieds-Tête (ancrage corps puis élévation)
+  const isIntrovertBF = bigFiveScores ? bigFiveScores.E < 50 : false;
+  const isOpenBF = bigFiveScores ? bigFiveScores.O > 55 : false;
+  const recommendedDir = (isIntrovertBF || isOpenBF) ? "TF" : "FT";
 
   // Recommandation auto de la musique selon le problème
   const recommendMusic = (prob) => {
@@ -1217,15 +1462,16 @@ function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
       <Logo small />
       <audio ref={audioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
 
-      {/* Résultats profil */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"2rem" }}>
+      {/* Résultats profil — Archétype Big Five + Canal sensoriel */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"1.5rem" }}>
         <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
-          border:`1px solid ${C.border}`, textAlign:"center" }}>
+          border:`1.5px solid ${C.gold}`, textAlign:"center" }}>
           <p style={{ fontSize:"9px", color:C.muted, letterSpacing:"2px", textTransform:"uppercase",
-            marginBottom:"8px" }}>Personnalité MBTI</p>
-          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"36px", color:C.gold,
-            fontWeight:"300", lineHeight:1 }}>{mbti}</p>
-          <p style={{ fontSize:"12px", color:C.cream, marginTop:"4px" }}>{mbtiName}</p>
+            marginBottom:"8px" }}>Votre archétype</p>
+          <p style={{ fontSize:"36px", lineHeight:1, marginBottom:"4px" }}>{archetype.icon}</p>
+          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.gold,
+            fontWeight:"300", lineHeight:1.1 }}>{archetype.name}</p>
+          <p style={{ fontSize:"11px", color:C.muted, marginTop:"6px", lineHeight:"1.4" }}>{archetype.desc}</p>
         </div>
         <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
           border:`1px solid ${C.border}`, textAlign:"center" }}>
@@ -1240,20 +1486,57 @@ function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
       </div>
 
       <div style={{ background:C.panel, borderRadius:"12px", padding:"1rem 1.25rem",
-        border:`1px solid ${C.border}`, marginBottom:"2rem" }}>
+        border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
         <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.7", fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
           {VAKOG_DESC[vakog]}
         </p>
       </div>
+
+      {/* Détail des 5 dimensions Big Five */}
+      {bigFiveScores && (
+        <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem 1.5rem",
+          border:`1.5px solid ${C.gold}`, marginBottom:"2rem" }}>
+          <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px", textTransform:"uppercase",
+            fontWeight:"600", marginBottom:"0.75rem" }}>
+            Profil Big Five (BFI-10) · scientifiquement validé
+          </p>
+          <div style={{ display:"grid", gap:"0.5rem" }}>
+            {["O","C","E","A","N"].map(k => {
+              const score = bigFiveScores[k] ?? 50;
+              return (
+                <div key={k} style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
+                  <div style={{ flex:"0 0 110px", fontSize:"12px", color:C.cream }}>
+                    {BIG_FIVE_NAMES[k]}
+                  </div>
+                  <div style={{ flex:1, height:"6px", background:C.bg, borderRadius:"3px", overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${score}%`,
+                      background:`linear-gradient(90deg,${C.teal},${C.gold})`,
+                      transition:"width .6s ease" }} />
+                  </div>
+                  <div style={{ flex:"0 0 90px", textAlign:"right", fontSize:"11px",
+                    color:C.muted, fontFamily:"'Raleway',sans-serif" }}>
+                    {score}/100 · {bigFiveLevel(score)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.875rem", lineHeight:"1.5",
+            fontStyle:"italic" }}>
+            Ces 5 dimensions pilotent automatiquement le ton, le rythme et le niveau de validation de votre séance.
+            Test BFI-10 (Rammstedt &amp; John, 2007), validé en psychologie de la personnalité.
+          </p>
+        </div>
+      )}
 
       {/* Direction de relaxation */}
       <div style={{ marginBottom:"2rem" }}>
         <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
           fontWeight:"400", marginBottom:"0.5rem" }}>Direction de la relaxation</h3>
         <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem", lineHeight:"1.6" }}>
-          {isIntrovert || isIntuitive
-            ? `Recommandé pour votre profil ${mbti} : Tête → Pieds (relaxation classique sophrologique)`
-            : `Recommandé pour votre profil ${mbti} : Pieds → Tête (ancrage puis élévation)`}
+          {recommendedDir === "TF"
+            ? `Recommandé pour ${archetype.name} : Tête → Pieds (relaxation classique sophrologique)`
+            : `Recommandé pour ${archetype.name} : Pieds → Tête (ancrage puis élévation)`}
         </p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
           {[
@@ -1379,14 +1662,17 @@ function ProfilResult({ prenom, mbti, vakogResult, problem, onNext }) {
 }
 
 // ÉTAPE 5 : Génération & Player
-function SeancePlayer({ userData, onRestart }) {
-  const { prenom, email, problem, objectif, mbti, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
+function SeancePlayer({ userData, resumeData, onRestart }) {
+  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
   const vakog = vakogResult.dominant;
-  const mbtiName = MBTI_NAMES[mbti] || mbti;
+  // Archétype Big Five — remplace MBTI dans la version FULL
+  const archetypeKey = archetypeFromBigFive(bigFiveScores);
+  const archetype = ARCHETYPES[archetypeKey];
+  const isResume = !!(resumeData && resumeData.audioBlob);
 
-  const [phase, setPhase] = useState("generating"); // generating | ready | playing | done
-  const [script, setScript] = useState("");
-  const [audioUrl, setAudioUrl] = useState(null);
+  const [phase, setPhase] = useState(isResume ? "ready" : "generating"); // generating | ready
+  const [script, setScript] = useState(isResume ? (resumeData.script || "") : "");
+  const [audioUrl, setAudioUrl] = useState(isResume ? URL.createObjectURL(resumeData.audioBlob) : null);
   const [error, setError] = useState("");
   const [loadMsg, setLoadMsg] = useState("Analyse de votre profil…");
   const [emailStatus, setEmailStatus] = useState("");
@@ -1394,11 +1680,35 @@ function SeancePlayer({ userData, onRestart }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [elevenClientKey, setElevenClientKey] = useState("");
+  const [elevenClientKey, setElevenClientKey] = useState(() => {
+    try { return localStorage.getItem('eureka_eleven_key') || ""; } catch { return ""; }
+  });
+  useEffect(() => {
+    try {
+      if (elevenClientKey) localStorage.setItem('eureka_eleven_key', elevenClientKey);
+      else localStorage.removeItem('eureka_eleven_key');
+    } catch {}
+  }, [elevenClientKey]);
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
   const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
   const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
+
+  // ─── ELEVENLABS V3 (Mickaël uniquement) ─────────────────────────
+  const voiceIsV3Capable = isV3Voice(selectedVoice);
+  const [useV3Mode, setUseV3Mode] = useState(voiceIsV3Capable);
+
+  // ─── STREAK : incrémenter après 30s d'écoute de l'audio personnalisé ────
+  const streakCountedRef = useRef(false);
+  const handleAudioPlay = () => { setIsPlaying(true); };
+  const handleAudioTimeUpdate = (e) => {
+    setProgress(e.target.currentTime);
+    if (!streakCountedRef.current && (fullGenPhase === "done" || isResume) && e.target.currentTime >= 30) {
+      streakCountedRef.current = true;
+      const newStreak = incrementStreakOnPlay();
+      console.log("[EUREKA] Streak incrémenté :", newStreak.streak, "/ 21 jours");
+    }
+  };
 
   // ─── FEEDBACK (post-séance) ──────────────────────────────────────
   const [fbFeel, setFbFeel] = useState(null);          // mieux | pareil | pire
@@ -1421,8 +1731,8 @@ function SeancePlayer({ userData, onRestart }) {
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
           to_name: "EUREKA Feedback",
-          mbti_type: mbti || "?",
-          mbti_profile: "[FEEDBACK] " + (MBTI_NAMES[mbti] || mbti || "?"),
+          mbti_type: archetypeKey || "?",
+          mbti_profile: "[FEEDBACK] " + (archetype.name || "?"),
           vakog: VAKOG_NAMES[vakog] || vakog || "?",
           problem: "Ressenti : " + (fbFeel || "(non précisé)"),
           objectif: "Paierait : " + (fbPay || "(non précisé)"),
@@ -1443,7 +1753,14 @@ function SeancePlayer({ userData, onRestart }) {
     setFbSending(false);
   };
 
-  useEffect(() => { generateSession(); }, []);
+  useEffect(() => {
+    if (isResume) {
+      setFullGenPhase("done");
+      setFullGenMsg("Votre séance personnelle est chargée.");
+    } else {
+      generateSession();
+    }
+  }, []);
 
   const generateSession = async () => {
     try {
@@ -1451,12 +1768,14 @@ function SeancePlayer({ userData, onRestart }) {
       await sleep(500);
 
       const sysPrompt = buildSystemPrompt({
-        mbti, mbtiName, vakog, vagokDesc: VAKOG_DESC[vakog],
-        relaxDir, beliefSystem, problem, objectif, prenom
+        vakog, vagokDesc: VAKOG_DESC[vakog],
+        relaxDir, beliefSystem, problem, objectif, prenom,
+        useV3Tags: voiceIsV3Capable,
+        bigFiveScores, archetypeKey
       });
 
       const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
-        " | MBTI: " + mbti + " | VAKOG: " + vakog +
+        " | ARCHETYPE: " + archetype.name + " | VAKOG: " + vakog +
         " | Relaxation: " + (relaxDir === 'TF' ? 'Tete-Pieds' : 'Pieds-Tete') +
         " | Spiritualite: " + beliefSystem;
 
@@ -1519,13 +1838,21 @@ function SeancePlayer({ userData, onRestart }) {
       }
 
       // APPEL 3 : Cloture spirituelle + Desophronisation
+      // BUG FIX : tokens 1500 -> 2500 (les profils verbeux INTJ/INTP/ENTJ étaient tronqués).
+      // Phrase de fin imposée pour garantir une fin propre.
       setLoadMsg("Generation de la cloture...");
-      const part3 = await gpt(sysPrompt,
+      const FIN_PHRASE = "À très bientôt " + prenom + ".";
+      const part3Raw = await gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT la fin de seance - ZERO TITRE - commencer DIRECTEMENT:\n" +
         "1. Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
-        "2. Affirmations " + beliefSystem + "\n" +
+        "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes)\n" +
         "3. [PAUSE_15s]\n" +
-        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom, 1500);
+        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom + "\n" +
+        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de seance\n" +
+        "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'", 2500);
+
+      const endsCleanly = /[.!?]\s*$/.test(part3Raw.trim()) && part3Raw.includes(prenom);
+      const part3 = endsCleanly ? part3Raw : (part3Raw.trim().replace(/[,;:\s]+$/, "") + "...\n\nDoucement... ouvrez les yeux... étirez-vous tranquillement...\n\n" + FIN_PHRASE);
 
       // Assembler et nettoyer les titres residuels
       const raw = part1 + cycles + "\n\n" + part3;
@@ -1549,17 +1876,12 @@ function SeancePlayer({ userData, onRestart }) {
         annonces3: annonces3
       });
 
-      // AUDIO — chargement depuis Vercel Blob selon profil
+      // AUDIO — chargement depuis Vercel Blob selon archétype Big Five
+      // Les 4 archétypes Big Five mappent sur les 4 blocs audio existants (réutilisation des MP3 démo)
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
-      const MBTI_BLOCS = {
-        "INTJ":"analystes","INTP":"analystes","ENTJ":"analystes","ENTP":"analystes",
-        "INFJ":"diplomates","INFP":"diplomates","ENFJ":"diplomates","ENFP":"diplomates",
-        "ISTJ":"sentinelles","ISFJ":"sentinelles","ESTJ":"sentinelles","ESFJ":"sentinelles",
-        "ISTP":"explorateurs","ISFP":"explorateurs","ESTP":"explorateurs","ESFP":"explorateurs"
-      };
-      const bloc = MBTI_BLOCS[mbti] || "diplomates";
+      const bloc = archetype.bloc || "diplomates"; // mapping Pèlerin→diplomates, Bâtisseur→analystes, etc.
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
@@ -1575,16 +1897,15 @@ function SeancePlayer({ userData, onRestart }) {
       try {
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
-          to_email: email, to_name: prenom, mbti_type: mbti,
-          mbti_profile: MBTI_NAMES[mbti], vakog: VAKOG_NAMES[vakog],
+          to_email: email, to_name: prenom, mbti_type: archetypeKey,
+          mbti_profile: archetype.name, vakog: VAKOG_NAMES[vakog],
           problem, objectif, script: clean.substring(0, 8000),
           date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum
         });
         setEmailStatus("ok");
       } catch { setEmailStatus("fail"); }
 
-      // STREAK 21 JOURS
-      computeNewStreak();
+      // NB : pas d'incrément ici. Le streak compte les ÉCOUTES (>30s) de l'audio personnalisé.
 
       setPhase("ready");
     } catch (e) { console.error(e); setError("Erreur: " + e.message); setPhase("ready"); }
@@ -1616,20 +1937,29 @@ function SeancePlayer({ userData, onRestart }) {
       const sr = actx.sampleRate;
       const bufs = [];
       const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
-      const VOICE_SETTINGS_CLIENT = {
+      const VOICE_SETTINGS_V2 = {
         "4RZ84U1b4WCqpu57LvIq": { stability:0.65, similarity_boost:0.70, style:0.20, use_speaker_boost:false, speed:0.78 },
         "YV28ox2c5Cuh5rim0LrW": { stability:0.80, similarity_boost:0.65, style:0.10, use_speaker_boost:false, speed:0.78 },
         "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:0.90 },
         "19cV422MaCP4oU6N8AFm": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
       };
+      const VOICE_SETTINGS_V3 = {
+        "19cV422MaCP4oU6N8AFm": { stability:0.50, similarity_boost:0.75, style:0.30, use_speaker_boost:true, speed:0.90 },
+      };
+      const useV3 = voiceIsV3Capable && useV3Mode;
+      const effectiveModelId = useV3 ? "eleven_v3" : "eleven_multilingual_v2";
+      const effectiveSettings = useV3
+        ? (VOICE_SETTINGS_V3[selectedVoice] || VOICE_SETTINGS_V2[selectedVoice])
+        : (VOICE_SETTINGS_V2[selectedVoice] || VOICE_SETTINGS_V2["4RZ84U1b4WCqpu57LvIq"]);
+
       const ttsClient = async (txt, prevText = "", nextText = "") => {
         if (!txt.trim()) return null;
-        const vsettings = VOICE_SETTINGS_CLIENT[selectedVoice] || VOICE_SETTINGS_CLIENT["4RZ84U1b4WCqpu57LvIq"];
-        const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 1000);
+        const stripV3 = (t) => useV3 ? t : t.replace(V3_TAG_REGEX, "");
+        const cleanCtx = (t) => stripV3(t.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, 1000);
         const body = {
-          text: txt.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
-          model_id: "eleven_multilingual_v2",
-          voice_settings: vsettings
+          text: stripV3(txt.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, 4800),
+          model_id: effectiveModelId,
+          voice_settings: effectiveSettings
         };
         if (prevText) body.previous_text = cleanCtx(prevText);
         if (nextText) body.next_text = cleanCtx(nextText);
@@ -1744,10 +2074,12 @@ function SeancePlayer({ userData, onRestart }) {
         for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
 
         // Audio voix seule (la musique de fond reste à diffuser séparément côté client : YouTube, MyNoise, etc.)
-        setAudioUrl(URL.createObjectURL(bufferToWav(comb, sr)));
+        const wav = bufferToWav(comb, sr);
+        setAudioUrl(URL.createObjectURL(wav));
+        await persistPersonalSession(wav);
 
         setFullGenPhase("done");
-        setFullGenMsg("Votre séance complète est prête !");
+        setFullGenMsg("Votre séance complète est prête ! Écoutez-la chaque jour pour ancrer la transformation.");
       }
     } catch(e) {
       setFullGenPhase("error");
@@ -1755,12 +2087,38 @@ function SeancePlayer({ userData, onRestart }) {
     }
   };
 
+  // Sauvegarde la séance personnelle (audio + meta) dans IndexedDB
+  const persistPersonalSession = async (audioBlob) => {
+    try {
+      const meta = {
+        savedAt: new Date().toISOString(),
+        prenom,
+        archetypeKey,
+        archetypeName: archetype.name,
+        bigFiveScores,
+        // Compat avec l'affichage "savedMeta.mbtiName" sur la Landing :
+        mbtiName: archetype.name,
+        vakog,
+        voiceId: selectedVoice,
+        useV3Mode,
+        durationApprox: audioBlob.size / 22050 / 2
+      };
+      await saveSession({ audioBlob, script, userData, ...meta });
+      setSessionFlag(true, meta);
+    } catch (e) {
+      console.warn("Persist personal session failed:", e);
+    }
+  };
+
+  // Affichage / téléchargements : on retire les balises v3
+  const displayScript = (script || "").replace(V3_TAG_REGEX, "").replace(/  +/g, " ");
+
   const downloadScript = () => {
-    const content = `EUREKA THÉRAPIE — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nProfil : ${mbti} — ${mbtiName}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${script}`;
+    const content = `EUREKA THÉRAPIE — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nArchétype : ${archetype.icon} ${archetype.name}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${displayScript}`;
     const blob = new Blob([content], { type:"text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `eureka_seance${seanceNum}_${prenom}_${mbti}.txt`;
+    a.download = `eureka_seance${seanceNum}_${prenom}_${archetypeKey}.txt`;
     a.click();
   };
 
@@ -1796,7 +2154,7 @@ function SeancePlayer({ userData, onRestart }) {
       doc.text("Date : ", M + 100, y); doc.setFont("helvetica", "normal"); doc.text(new Date().toLocaleDateString("fr-FR"), M + 113, y);
       y += lineH;
       doc.setFont("helvetica", "bold");
-      doc.text("Profil MBTI : ", M, y); doc.setFont("helvetica", "normal"); doc.text(`${mbti} — ${mbtiName}`, M + 26, y);
+      doc.text("Archétype : ", M, y); doc.setFont("helvetica", "normal"); doc.text(`${archetype.name}`, M + 26, y);
       y += lineH;
       doc.setFont("helvetica", "bold");
       doc.text("Canal sensoriel : ", M, y); doc.setFont("helvetica", "normal"); doc.text(VAKOG_NAMES[vakog] || vakog, M + 32, y);
@@ -1809,7 +2167,7 @@ function SeancePlayer({ userData, onRestart }) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
-      const cleanScript = (script || "").replace(/\[PAUSE_[\d.]+s\]/gi, "  ⏸  ");
+      const cleanScript = displayScript.replace(/\[PAUSE_[\d.]+s\]/gi, "  ⏸  ");
       const lines = doc.splitTextToSize(cleanScript, W - 2 * M);
       const lineHeight = 4.5;
       for (const ln of lines) {
@@ -1825,7 +2183,7 @@ function SeancePlayer({ userData, onRestart }) {
         doc.setPage(p);
         doc.text(`EUREKA Thérapie — Document personnel — Page ${p}/${totalPages}`, W/2, 290, { align:"center" });
       }
-      doc.save(`eureka_seance${seanceNum}_${prenom}_${mbti}.pdf`);
+      doc.save(`eureka_seance${seanceNum}_${prenom}_${archetypeKey}.pdf`);
     } catch(e) {
       console.error(e);
       alert("Erreur lors de la création du PDF : " + e.message);
@@ -1868,7 +2226,7 @@ function SeancePlayer({ userData, onRestart }) {
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.cream,
               fontWeight:"400" }}>Séance n°{seanceNum} — {prenom}</h2>
             <span style={{ padding:"3px 10px", background:C.tealDark, borderRadius:"20px",
-              fontSize:"10px", color:C.goldLight, letterSpacing:"1.5px" }}>{mbti} · {VAKOG_NAMES[vakog]}</span>
+              fontSize:"10px", color:C.goldLight, letterSpacing:"1.5px" }}>{archetype.icon} {archetype.name} · {VAKOG_NAMES[vakog]}</span>
           </div>
           <p style={{ fontSize:"12px", color:C.muted }}>
             {new Date().toLocaleDateString("fr-FR", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}
@@ -1897,23 +2255,48 @@ function SeancePlayer({ userData, onRestart }) {
           </div>
         )}
 
-        {/* Player audio */}
-        {audioUrl ? (
+        {/* Player audio — distingue ÉCHANTILLON et SÉANCE PERSONNALISÉE */}
+        {audioUrl ? (() => {
+          const isPersonalized = fullGenPhase === "done";
+          const blocName = archetype.name;
+          return (
           <div style={{ background:C.bg, borderRadius:"16px", padding:"1.5rem",
-            border:`1px solid ${C.border}`, marginBottom:"1.5rem" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem" }}>
+            border:`1.5px solid ${isPersonalized ? C.teal : C.border}`, marginBottom:"1.5rem", position:"relative" }}>
+            <div style={{ position:"absolute", top:"12px", right:"12px",
+              padding:"3px 10px", borderRadius:"20px", fontSize:"9px", letterSpacing:"1.5px",
+              background: isPersonalized ? "rgba(42,138,143,.2)" : "rgba(184,149,90,.15)",
+              color: isPersonalized ? C.teal : C.gold,
+              border: `1px solid ${isPersonalized ? C.teal : C.gold}` }}>
+              {isPersonalized ? "✓ PERSONNALISÉ" : "ÉCHANTILLON"}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
               <div style={{ width:"48px", height:"48px", borderRadius:"50%",
                 background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
               <div>
-                <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>Votre séance audio</p>
-                <p style={{ fontSize:"12px", color:C.muted }}>Mettez un casque · Allongez-vous · Fermez les yeux</p>
+                <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>
+                  {isPersonalized ? "Votre séance personnalisée" : `Échantillon type — ${blocName} × ${VAKOG_NAMES[vakog]}`}
+                </p>
+                <p style={{ fontSize:"12px", color:C.muted }}>
+                  {isPersonalized
+                    ? "Avec votre prénom et vos problèmes · Casque · Allongé(e) · Yeux fermés"
+                    : "Avant-goût adapté à votre profil — sans votre prénom"}
+                </p>
               </div>
             </div>
             <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
-              onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)}
-              onTimeUpdate={e => setProgress(e.target.currentTime)}
+              onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
+              onTimeUpdate={handleAudioTimeUpdate}
               onLoadedMetadata={e => setDuration(e.target.duration)} />
+            {!isPersonalized && (
+              <div style={{ background:"rgba(184,149,90,.08)", borderRadius:"10px",
+                padding:"0.875rem 1rem", marginTop:"1rem", border:`1px dashed ${C.gold}` }}>
+                <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.6" }}>
+                  ✦ Pour entendre <strong>VOTRE séance complète</strong> avec votre prénom <strong>{prenom}</strong> et vos problèmes,
+                  voir « Générer ma séance complète » ci-dessous ↓
+                </p>
+              </div>
+            )}
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
@@ -1922,7 +2305,8 @@ function SeancePlayer({ userData, onRestart }) {
               </p>
             </div>
           </div>
-        ) : (
+          );
+        })() : (
           <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
             border:`1px solid ${C.border}`, marginBottom:"1.5rem", textAlign:"center" }}>
             <p style={{ fontSize:"13px", color:C.muted }}>
@@ -1932,7 +2316,8 @@ function SeancePlayer({ userData, onRestart }) {
         )}
 
 
-        {/* Guide séance complète */}
+        {/* Guide séance complète — masqué en mode reprise */}
+        {!isResume && (
         <div style={{ background:C.panel, borderRadius:"16px", padding:"1.5rem",
           border:`1.5px solid ${C.gold}`, marginBottom:"1.5rem" }}>
           <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px", color:C.gold,
@@ -1951,13 +2336,58 @@ function SeancePlayer({ userData, onRestart }) {
               4. Le plan gratuit suffit pour la séance découverte (3 cycles)
             </p>
           </div>
+          {voiceIsV3Capable && (
+            <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"12px",
+              padding:"0.875rem 1rem", border:`1px solid ${C.gold}`, marginBottom:"0.75rem" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                marginBottom:"0.5rem", flexWrap:"wrap", gap:"0.5rem" }}>
+                <span style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500" }}>
+                  ✨ Moteur vocal pour Mickaël
+                </span>
+                <button onClick={() => setUseV3Mode(!useV3Mode)}
+                  style={{ padding:"4px 10px", background: useV3Mode ? C.gold : "transparent",
+                    border:`1px solid ${C.gold}`, borderRadius:"20px",
+                    fontSize:"10px", color: useV3Mode ? "#1a0e00" : C.goldLight,
+                    cursor:"pointer", fontFamily:"'Raleway',sans-serif",
+                    letterSpacing:"1px", textTransform:"uppercase" }}>
+                  {useV3Mode ? "v3 (expressif)" : "v2 (bêta test)"}
+                </button>
+              </div>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.65" }}>
+                {useV3Mode ? (
+                  <>
+                    <strong style={{color:C.goldLight}}>v3 actif</strong> — voix plus expressive (chuchotement, douceur, chaleur).
+                    Consomme <strong style={{color:C.cream}}>2× plus de crédits</strong> et plus lent (~5-8 min pour 30 000 caractères).
+                    <br/><span style={{color:C.gold}}>Plan ElevenLabs Creator (22€/mois) recommandé pour la séance complète.</span>
+                  </>
+                ) : (
+                  <>
+                    <strong style={{color:C.cream}}>v2 actif (bêta test)</strong> — voix standard, économie de crédits.
+                    Le plan <strong style={{color:C.cream}}>Starter (5€/mois)</strong> suffit pour la séance complète.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
           <input type="password" value={elevenClientKey}
             onChange={e => setElevenClientKey(e.target.value)}
             placeholder="Votre clé ElevenLabs (sk_...)"
             style={{ width:"100%", padding:"0.875rem 1rem", background:C.bg,
               border:`1.5px solid ${elevenClientKey ? C.teal : C.border}`, borderRadius:"10px",
               fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
-              outline:"none", marginBottom:"0.75rem" }} />
+              outline:"none", marginBottom:"0.5rem" }} />
+          {elevenClientKey && (
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+              marginBottom:"0.75rem", fontSize:"10px" }}>
+              <span style={{ color:C.teal }}>✓ Clé mémorisée localement</span>
+              <button onClick={() => setElevenClientKey("")}
+                style={{ background:"transparent", border:"none", color:C.hint,
+                  cursor:"pointer", textDecoration:"underline",
+                  fontFamily:"'Raleway',sans-serif", fontSize:"10px" }}>
+                Effacer ma clé
+              </button>
+            </div>
+          )}
           {fullGenPhase === "generating" && (
             <div style={{ padding:"0.75rem 1rem", background:"rgba(42,138,143,.1)",
               borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:C.teal }}>
@@ -2007,6 +2437,19 @@ function SeancePlayer({ userData, onRestart }) {
             </div>
           </div>
         </div>
+        )}
+
+        {/* Bandeau d'info en mode reprise */}
+        {isResume && (
+          <div style={{ background:`linear-gradient(135deg, rgba(42,138,143,.1), rgba(184,149,90,.06))`,
+            borderRadius:"14px", padding:"1rem 1.25rem", border:`1px solid ${C.teal}`,
+            marginBottom:"1.5rem", textAlign:"center" }}>
+            <p style={{ fontSize:"12px", color:C.cream, lineHeight:"1.7" }}>
+              ✓ Vous écoutez votre séance personnelle sauvegardée. Le streak s'incrémente après 30 secondes d'écoute.
+              <br/>Pour créer une autre séance, cliquez sur « Nouvelle séance » en bas.
+            </p>
+          </div>
+        )}
 
         {/* Script */}
         {script && (
@@ -2017,7 +2460,7 @@ function SeancePlayer({ userData, onRestart }) {
               padding:"1.25rem 1.5rem", maxHeight:"280px", overflowY:"auto",
               fontSize:"13px", lineHeight:"1.9", color:C.cream,
               fontFamily:"'Cormorant Garamond', serif", whiteSpace:"pre-wrap" }}>
-              {script}
+              {displayScript}
             </div>
           </div>
         )}
@@ -2071,8 +2514,8 @@ function SeancePlayer({ userData, onRestart }) {
         })()}
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem" }}>
-          <Btn onClick={downloadScript} variant="ghost">⬇ Script (.txt)</Btn>
-          <Btn onClick={downloadPDF} variant="ghost">📄 PDF</Btn>
+          <Btn onClick={downloadScript} variant="ghost" disabled={!script}>⬇ Script (.txt)</Btn>
+          <Btn onClick={downloadPDF} variant="ghost" disabled={!script}>📄 PDF</Btn>
         </div>
 
         {/* Rappels */}
@@ -2128,7 +2571,7 @@ function SeancePlayer({ userData, onRestart }) {
               <div style={{ marginBottom:"1.25rem" }}>
                 <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
                   fontWeight:"500" }}>Comment te sens-tu ?</p>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.5rem" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))", gap:"0.5rem" }}>
                   {[
                     { v:"mieux",  emoji:"✦", label:"Mieux" },
                     { v:"pareil", emoji:"◯", label:"Pareil" },
@@ -2154,7 +2597,7 @@ function SeancePlayer({ userData, onRestart }) {
               <div style={{ marginBottom:"1.25rem" }}>
                 <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
                   fontWeight:"500" }}>Tu paierais pour ce type de séance ?</p>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.5rem" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))", gap:"0.5rem" }}>
                   {[
                     { v:"oui",       label:"Oui" },
                     { v:"peut-etre", label:"Peut-être" },
@@ -2208,6 +2651,13 @@ function SeancePlayer({ userData, onRestart }) {
                 variant="primary" style={{ marginTop:"0.5rem" }}>
                 {fbSending ? "Envoi…" : "Envoyer mon retour →"}
               </Btn>
+              <button onClick={() => setFbSent(true)}
+                style={{ display:"block", width:"100%", padding:"0.625rem",
+                  background:"transparent", border:"none", color:C.hint,
+                  fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
+                  fontFamily:"'Raleway',sans-serif", textDecoration:"underline" }}>
+                Passer sans répondre
+              </button>
               <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
                 marginTop:"0.75rem", textAlign:"center" }}>
                 100% anonyme · Aucune donnée personnelle collectée.
@@ -2216,7 +2666,15 @@ function SeancePlayer({ userData, onRestart }) {
           )}
         </div>
 
-        <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
+        {fbSent && (
+          <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
+        )}
+        {!fbSent && (
+          <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem", textAlign:"center",
+            fontStyle:"italic", lineHeight:"1.6" }}>
+            Réponds (ou passe) au feedback ci-dessus pour démarrer une nouvelle séance.
+          </p>
+        )}
       </div>
     </Card>
   );
@@ -2248,20 +2706,44 @@ function App() {
   const [userData, setUserData] = useState({});
   const [showMentions, setShowMentions] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [resumeData, setResumeData] = useState(null);
 
-  const STEP_LABELS = ["Accueil","Profil","Sensorialité","Personnalisation","Séance"];
+  const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Séance"];
+  const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, seance:5 };
 
   const updateUser = (data) => setUserData(d => ({ ...d, ...data }));
 
-  const handleLandingNext = () => setStep("anamnese");
+  const handleLandingNext = async () => {
+    if (getSessionFlag()) {
+      const confirmed = window.confirm(
+        "Une nouvelle séance va remplacer votre séance personnelle actuelle et remettre votre streak à zéro. Continuer ?"
+      );
+      if (!confirmed) return;
+      await deleteSession();
+      setSessionFlag(false);
+      resetStreak();
+    }
+    setStep("anamnese");
+  };
+
+  const handleLandingResume = async () => {
+    const data = await loadSession();
+    if (!data || !data.audioBlob) {
+      alert("Séance introuvable — elle a peut-être été effacée par votre navigateur.");
+      setSessionFlag(false);
+      return;
+    }
+    setResumeData(data);
+    setStep("seance");
+  };
 
   const handleAnamneseNext = (data) => {
     updateUser(data);
-    setStep("mbti");
+    setStep("bigfive");
   };
 
-  const handleMBTINext = (mbti) => {
-    updateUser({ mbti });
+  const handleBigFiveNext = (bigFiveScores) => {
+    updateUser({ bigFiveScores });
     setStep("vakog");
   };
 
@@ -2278,6 +2760,7 @@ function App() {
   const handleRestart = () => {
     setStep("landing");
     setUserData({});
+    setResumeData(null);
   };
 
   return (
@@ -2302,16 +2785,27 @@ function App() {
       <div style={{ position:"relative", zIndex:1, width:"100%",
         display:"flex", flexDirection:"column", alignItems:"center" }}>
 
-        {step === "landing" && <Landing onStart={handleLandingNext} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} />}
+        {step !== "landing" && (
+          <StepIndicator
+            current={STEP_INDEX[step] || 0}
+            total={STEP_LABELS.length}
+            labels={STEP_LABELS}
+          />
+        )}
+
+        {step === "landing" && <Landing onStart={handleLandingNext} onResume={handleLandingResume} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} />}
         {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
-        {step === "mbti" && <QuizMBTI prenom={userData.prenom} onComplete={handleMBTINext} />}
+        {step === "bigfive" && <QuizBigFive prenom={userData.prenom} onComplete={handleBigFiveNext} />}
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
         {step === "profil" && (
-          <ProfilResult prenom={userData.prenom} mbti={userData.mbti}
+          <ProfilResult prenom={userData.prenom} bigFiveScores={userData.bigFiveScores}
             vakogResult={userData.vakogResult} problem={userData.problem} onNext={handleProfilNext} />
         )}
         {step === "seance" && (
-          <SeancePlayer userData={{ ...userData }} onRestart={handleRestart} />
+          <SeancePlayer
+            userData={resumeData ? resumeData.userData : userData}
+            resumeData={resumeData}
+            onRestart={handleRestart} />
         )}
 
         <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
