@@ -1951,24 +1951,44 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const effectiveSettings = useV3
         ? (VOICE_SETTINGS_V3[selectedVoice] || VOICE_SETTINGS_V2[selectedVoice])
         : (VOICE_SETTINGS_V2[selectedVoice] || VOICE_SETTINGS_V2["4RZ84U1b4WCqpu57LvIq"]);
+      // Limite caractères par modèle : v3 = 3000 max → marge à 2800. v2 = 5000 max → marge à 4800.
+      const MAX_TTS_CHARS = useV3 ? 2800 : 4800;
+      const MAX_CTX_CHARS = useV3 ? 800 : 1000;
 
       const ttsClient = async (txt, prevText = "", nextText = "") => {
         if (!txt.trim()) return null;
         const stripV3 = (t) => useV3 ? t : t.replace(V3_TAG_REGEX, "");
-        const cleanCtx = (t) => stripV3(t.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, 1000);
+        const cleanCtx = (t) => stripV3(t.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, MAX_CTX_CHARS);
         const body = {
-          text: stripV3(txt.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, 4800),
+          text: stripV3(txt.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, MAX_TTS_CHARS),
           model_id: effectiveModelId,
           voice_settings: effectiveSettings
         };
         if (prevText) body.previous_text = cleanCtx(prevText);
         if (nextText) body.next_text = cleanCtx(nextText);
-        const r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "xi-api-key": key },
-          body: JSON.stringify(body)
-        });
-        if (!r.ok) throw new Error("Clé invalide ou crédits insuffisants (" + r.status + ")");
+        let r;
+        try {
+          r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "xi-api-key": key },
+            body: JSON.stringify(body)
+          });
+        } catch (netErr) {
+          // "Failed to fetch" = erreur réseau / CORS / endpoint inaccessible
+          throw new Error("Erreur réseau ElevenLabs (" + netErr.message + "). Modèle utilisé : " + effectiveModelId + ". Si v3 actif, vérifier que ta voix supporte v3 et que ton plan a accès à v3 alpha.");
+        }
+        if (!r.ok) {
+          // On essaie de lire le vrai message d'erreur ElevenLabs
+          let detail = "";
+          try {
+            const errBody = await r.text();
+            const errJson = JSON.parse(errBody);
+            detail = errJson?.detail?.message || errJson?.detail || errBody.substring(0, 200);
+          } catch {
+            detail = "(corps de réponse illisible)";
+          }
+          throw new Error("ElevenLabs " + r.status + " sur " + effectiveModelId + " — " + detail);
+        }
         return await actx.decodeAudioData(await r.arrayBuffer());
       };
 
@@ -2035,14 +2055,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           mi++;
         }
       }
+      // Découpage des segments en respectant la limite du modèle (v3=2800, v2=4800)
       const fp = [];
       for (const p of parts) {
         if (p.type === "s") { fp.push(p); continue; }
         let tx = p.c;
-        while (tx.length > 4800) {
-          let cut = tx.lastIndexOf("... ", 4800);
-          if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
-          if (cut < 500) cut = 4800;
+        while (tx.length > MAX_TTS_CHARS) {
+          let cut = tx.lastIndexOf("... ", MAX_TTS_CHARS);
+          if (cut < 500) cut = tx.lastIndexOf(". ", MAX_TTS_CHARS);
+          if (cut < 500) cut = MAX_TTS_CHARS;
           fp.push({ type:"t", c:tx.substring(0, cut+3) });
           tx = tx.substring(cut+3).trim();
         }
