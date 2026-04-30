@@ -411,23 +411,21 @@ function buildSystemPrompt(data) {
   const { vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom, useV3Tags, bigFiveScores, archetypeKey } = data;
   const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.compagnon;
 
-  // ─── RYTHME RESPIRATOIRE adapté au profil Big Five ─────────────────
-  // Logique : haute Conscienciosité + basse Névrose → rythme rapide (efficacité)
-  //          haute Névrose ou haute Ouverture → rythme contemplatif (apaisement)
-  //          sinon → rythme standard
+  // ─── RYTHME RESPIRATOIRE : Standard Caycedo 4-2-8 pour tous ─────────
+  // C'est le protocole sophrologique de référence, adapté à la grande
+  // majorité des profils. Pas de variation Big Five — on garde la pureté
+  // du protocole original.
   const bf = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
-  let breath;
-  if (bf.C >= 65 && bf.N <= 45 && bf.E >= 55) breath = { inspire:4, hold:2, expire:6 }; // pressé/efficace
-  else if (bf.N >= 60 || bf.O >= 70) breath = { inspire:5, hold:2, expire:10 };          // contemplatif/apaisant
-  else breath = { inspire:4, hold:2, expire:8 };                                          // standard
+  const breath = { inspire:4, hold:2, expire:8 };
   const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
   // Fix bug : 6 ellipses force une pause d'environ 1s entre chaque mot dans ElevenLabs
   // (les [PAUSE_0.5s] étaient supprimés par le parseur SPLIT_THRESHOLD=2.0)
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2);
-  // Fix bug "huit-e temps" : ellipse entre le nombre et "temps" pour casser la liaison TT
-  const inTemps = (n) => "en " + NUM_FR[n] + "... temps...";
+  // Fix bug "huit-e temps" : ellipse entre "huit" et "temps" UNIQUEMENT
+  // (le double T crée un schwa parasite. Pour les autres chiffres : aucune liaison, donc pas de pause).
+  const inTemps = (n) => (n === 8) ? "en huit... temps..." : "en " + NUM_FR[n] + " temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
@@ -1386,7 +1384,8 @@ function QuizVAKOG({ prenom, onComplete }) {
 function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
   const [relaxDir, setRelaxDir] = useState("");
   const [beliefSystem, setBeliefSystem] = useState("");
-  const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
+  // Aucune voix par défaut : oblige l'utilisateur à choisir consciemment
+  const [selectedVoice, setSelectedVoice] = useState("");
   const [musicChoice, setMusicChoice] = useState("");
   const [playingPreview, setPlayingPreview] = useState(null);
   const audioRef = useRef(null);
@@ -1585,7 +1584,15 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
       {/* Choix de la voix */}
       <div style={{ marginBottom:"2rem" }}>
         <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
-          fontWeight:"400", marginBottom:"1rem" }}>La voix de votre thérapeute</h3>
+          fontWeight:"400", marginBottom:"0.5rem" }}>La voix de votre thérapeute</h3>
+        {!selectedVoice && (
+          <p style={{ fontSize:"12px", color:C.gold, marginBottom:"0.75rem",
+            padding:"0.5rem 0.875rem", background:"rgba(184,149,90,.08)",
+            border:`1px solid ${C.gold}`, borderRadius:"8px",
+            fontFamily:"'Raleway',sans-serif" }}>
+            ← Cliquez sur une carte pour choisir votre voix (obligatoire)
+          </p>
+        )}
         <div style={{ display:"grid", gap:"0.6rem" }}>
           {VOICES.map(v => (
             <div key={v.id}
@@ -1937,14 +1944,19 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const sr = actx.sampleRate;
       const bufs = [];
       const sil = (s) => actx.createBuffer(1, Math.floor(sr * s), sr);
+      // Réglages voix : stabilité ÉLEVÉE (~0.80) pour rythme uniforme en sophro
+      // (évite les accélérations/ralentissements qui cassent l'état de relaxation).
+      // Style BAS (0.10-0.15) pour limiter les variations expressives parasites.
       const VOICE_SETTINGS_V2 = {
-        "4RZ84U1b4WCqpu57LvIq": { stability:0.65, similarity_boost:0.70, style:0.20, use_speaker_boost:false, speed:0.78 },
-        "YV28ox2c5Cuh5rim0LrW": { stability:0.80, similarity_boost:0.65, style:0.10, use_speaker_boost:false, speed:0.78 },
-        "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:0.90 },
-        "19cV422MaCP4oU6N8AFm": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
+        "4RZ84U1b4WCqpu57LvIq": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.85 }, // Bella
+        "YV28ox2c5Cuh5rim0LrW": { stability:0.82, similarity_boost:0.70, style:0.08, use_speaker_boost:false, speed:0.85 }, // Marcel
+        "cQVn2FWawJsxa2z9X3l1": { stability:0.85, similarity_boost:0.70, style:0.05, use_speaker_boost:false, speed:0.90 }, // Valentin
+        "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 }, // Mickaël v2
       };
+      // V3 : stabilité un peu plus basse pour exploiter l'expressivité v3,
+      // mais pas trop pour éviter les variations de tempo erratiques.
       const VOICE_SETTINGS_V3 = {
-        "19cV422MaCP4oU6N8AFm": { stability:0.50, similarity_boost:0.75, style:0.30, use_speaker_boost:true, speed:0.90 },
+        "19cV422MaCP4oU6N8AFm": { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true, speed:0.90 }, // Mickaël v3
       };
       const useV3 = voiceIsV3Capable && useV3Mode;
       const effectiveModelId = useV3 ? "eleven_v3" : "eleven_multilingual_v2";
@@ -2109,6 +2121,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   };
 
   // Sauvegarde la séance personnelle (audio + meta) dans IndexedDB
+  // CHAQUE NOUVELLE SÉANCE = reset du streak (le streak compte les écoutes consécutives
+  // de LA séance personnelle, pas le nombre de séances créées).
   const persistPersonalSession = async (audioBlob) => {
     try {
       const meta = {
@@ -2126,6 +2140,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       };
       await saveSession({ audioBlob, script, userData, ...meta });
       setSessionFlag(true, meta);
+      // Reset du streak — c'est une nouvelle séance, le compteur 21 jours redémarre à 0
+      resetStreak();
+      // Ré-arme l'incrément (la prochaine écoute > 30s va déclencher Jour 1)
+      streakCountedRef.current = false;
     } catch (e) {
       console.warn("Persist personal session failed:", e);
     }
@@ -2731,6 +2749,19 @@ function App() {
 
   const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Séance"];
   const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, seance:5 };
+
+  // Orphan cleanup au démarrage : si un streak existe en localStorage mais
+  // aucune séance en IndexedDB (cas d'utilisateurs venant de l'ancien code MBTI
+  // qui incrémentait le streak à la génération, ou de cache vidé), on reset.
+  // Le streak ne doit représenter QUE les écoutes consécutives d'une séance existante.
+  useEffect(() => {
+    const meta = getSessionFlag();
+    const streak = loadStreak();
+    if (!meta && streak.streak > 0) {
+      console.log("[EUREKA] Orphan streak détecté (pas de séance personnelle) → reset");
+      resetStreak();
+    }
+  }, []);
 
   const updateUser = (data) => setUserData(d => ({ ...d, ...data }));
 
