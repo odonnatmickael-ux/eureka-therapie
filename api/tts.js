@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { text, voiceId, previous_text, next_text } = req.body;
+  const { text, voiceId } = req.body;
 
   const SPEEDS = {
     "4RZ84U1b4WCqpu57LvIq": 0.78,  // Bella
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     "cQVn2FWawJsxa2z9X3l1": 0.90,  // Valentin
     "5l4ttmr4SKNgi0HnOelT": 0.78,  // Paul K
     "HeQxwrjIb6zvCa1bt1EE": 0.78,  // Ludovic
-    "D8YqJ6FEIaP09qWQcZuN": 0.90,  // Mickaël
+    "19cV422MaCP4oU6N8AFm": 0.90,  // Mickaël (nouvelle voix ElevenLabs)
   };
 
   const voice = voiceId || "4RZ84U1b4WCqpu57LvIq";
@@ -29,9 +29,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           text: text,
           model_id: "eleven_multilingual_v2",
-          voice_settings: { speed: speed },
-          ...(previous_text && { previous_text }),
-          ...(next_text && { next_text })
+          voice_settings: { speed: speed }
         })
       }
     );
