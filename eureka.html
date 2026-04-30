@@ -87,7 +87,7 @@ const VOICES = [
   { id:"4RZ84U1b4WCqpu57LvIq", name:"Bella",    desc:"Voix féminine, douce et enveloppante", gender:"F", preview:"" },
   { id:"YV28ox2c5Cuh5rim0LrW", name:"Marcel",   desc:"Voix masculine, chaleureuse et poétique", gender:"M", preview:"" },
   { id:"cQVn2FWawJsxa2z9X3l1", name:"Valentin", desc:"Voix masculine, chuchotée et apaisante", gender:"M", preview:"" },
-  { id:"D8YqJ6FEIaP09qWQcZuN", name:"Mickaël",  desc:"Voix masculine, personnelle et apaisante", gender:"M", preview:"" },
+  { id:"19cV422MaCP4oU6N8AFm", name:"Mickaël",  desc:"Voix masculine, personnelle et apaisante (nouvelle version)", gender:"M", preview:"" },
 ];
 </script>
 
@@ -1400,6 +1400,49 @@ function SeancePlayer({ userData, onRestart }) {
   const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
   const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
 
+  // ─── FEEDBACK (post-séance) ──────────────────────────────────────
+  const [fbFeel, setFbFeel] = useState(null);          // mieux | pareil | pire
+  const [fbPay, setFbPay] = useState(null);            // oui | peut-etre | non
+  const [fbComment, setFbComment] = useState("");
+  const [fbSent, setFbSent] = useState(false);
+  const [fbSending, setFbSending] = useState(false);
+  const [fbError, setFbError] = useState("");
+
+  const submitFeedback = async () => {
+    setFbError("");
+    if (!fbFeel && !fbPay && !fbComment.trim()) {
+      setFbError("Coche au moins une option ou laisse un mot.");
+      return;
+    }
+    setFbSending(true);
+    try {
+      if (window.emailjs) {
+        emailjs.init(CONFIG.EJS_PUBLIC_KEY);
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+          to_email: "odonnat.mickael@gmail.com",
+          to_name: "EUREKA Feedback",
+          mbti_type: mbti || "?",
+          mbti_profile: "[FEEDBACK] " + (MBTI_NAMES[mbti] || mbti || "?"),
+          vakog: VAKOG_NAMES[vakog] || vakog || "?",
+          problem: "Ressenti : " + (fbFeel || "(non précisé)"),
+          objectif: "Paierait : " + (fbPay || "(non précisé)"),
+          script: "FEEDBACK SÉANCE n°" + seanceNum + " — " + (prenom || "anonyme") +
+                  "\n\nRessenti : " + (fbFeel || "(non précisé)") +
+                  "\nPaierait : " + (fbPay || "(non précisé)") +
+                  "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)"),
+          date: new Date().toLocaleDateString("fr-FR"),
+          seance_num: seanceNum
+        });
+      }
+      setFbSent(true);
+    } catch (e) {
+      console.warn("Feedback EmailJS error:", e);
+      try { localStorage.setItem("eureka_last_feedback", JSON.stringify({ fbFeel, fbPay, fbComment, ts: Date.now() })); } catch {}
+      setFbSent(true);
+    }
+    setFbSending(false);
+  };
+
   useEffect(() => { generateSession(); }, []);
 
   const generateSession = async () => {
@@ -1521,7 +1564,7 @@ function SeancePlayer({ userData, onRestart }) {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
         "cQVn2FWawJsxa2z9X3l1": "marcel",
-        "D8YqJ6FEIaP09qWQcZuN": "marcel"
+        "19cV422MaCP4oU6N8AFm": "marcel"
       };
       const voiceName = VOICE_NAMES[selectedVoice] || "bella";
       const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3";
@@ -1577,7 +1620,7 @@ function SeancePlayer({ userData, onRestart }) {
         "4RZ84U1b4WCqpu57LvIq": { stability:0.65, similarity_boost:0.70, style:0.20, use_speaker_boost:false, speed:0.78 },
         "YV28ox2c5Cuh5rim0LrW": { stability:0.80, similarity_boost:0.65, style:0.10, use_speaker_boost:false, speed:0.78 },
         "cQVn2FWawJsxa2z9X3l1": { stability:0.82, similarity_boost:0.65, style:0.08, use_speaker_boost:false, speed:0.90 },
-        "D8YqJ6FEIaP09qWQcZuN": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
+        "19cV422MaCP4oU6N8AFm": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
       };
       const ttsClient = async (txt, prevText = "", nextText = "") => {
         if (!txt.trim()) return null;
@@ -2046,6 +2089,131 @@ function SeancePlayer({ userData, onRestart }) {
             <strong style={{ color:C.goldLight }}>Protocole EUREKA — 21 séances</strong><br/>
             Écoutez votre séance chaque jour pendant 21 jours consécutifs pour ancrer la transformation durablement dans votre cerveau.
           </p>
+        </div>
+
+        {/* ╔═══════════════════════════════════════════╗
+            ║  FEEDBACK — Retour anonyme post-séance    ║
+            ╚═══════════════════════════════════════════╝ */}
+        <div style={{ marginTop:"1.5rem", padding:"1.5rem", background:C.panel,
+          borderRadius:"16px", border:`1.5px solid ${C.gold}` }}>
+          {fbSent ? (
+            <div style={{ textAlign:"center", padding:"1rem 0" }}>
+              <div style={{ width:"56px", height:"56px", borderRadius:"50%",
+                background:"rgba(184,149,90,.18)", display:"flex", alignItems:"center",
+                justifyContent:"center", margin:"0 auto 1rem", fontSize:"28px", color:C.gold,
+                animation:"breathe 2.4s ease-in-out infinite" }}>✦</div>
+              <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
+                color:C.cream, fontWeight:"400", marginBottom:"0.5rem" }}>Merci.</h3>
+              <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7" }}>
+                Ton retour nous aide à affiner les séances suivantes.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
+                textTransform:"uppercase", marginBottom:"0.5rem", textAlign:"center" }}>
+                Anonyme · facultatif
+              </p>
+              <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
+                color:C.cream, fontWeight:"400", marginBottom:"0.5rem", textAlign:"center" }}>
+                Si tu veux partager…
+              </h3>
+              <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7",
+                marginBottom:"1.5rem", textAlign:"center", fontStyle:"italic",
+                fontFamily:"'Cormorant Garamond', serif" }}>
+                Réponds aux questions qui t'inspirent, ignore les autres.
+              </p>
+
+              {/* Question 1 — Ressenti */}
+              <div style={{ marginBottom:"1.25rem" }}>
+                <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
+                  fontWeight:"500" }}>Comment te sens-tu ?</p>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.5rem" }}>
+                  {[
+                    { v:"mieux",  emoji:"✦", label:"Mieux" },
+                    { v:"pareil", emoji:"◯", label:"Pareil" },
+                    { v:"pire",   emoji:"△", label:"Moins bien" },
+                  ].map(o => (
+                    <button key={o.v}
+                      onClick={() => setFbFeel(fbFeel === o.v ? null : o.v)}
+                      style={{
+                        padding:"0.875rem 0.5rem", borderRadius:"12px", cursor:"pointer",
+                        border:`2px solid ${fbFeel === o.v ? C.gold : C.border}`,
+                        background: fbFeel === o.v ? "rgba(184,149,90,.12)" : C.bg,
+                        color:C.cream, transition:"all .25s",
+                        fontFamily:"'Raleway',sans-serif"
+                      }}>
+                      <div style={{ fontSize:"20px", color:C.gold, marginBottom:"4px" }}>{o.emoji}</div>
+                      <div style={{ fontSize:"12px" }}>{o.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Question 2 — Tarification */}
+              <div style={{ marginBottom:"1.25rem" }}>
+                <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
+                  fontWeight:"500" }}>Tu paierais pour ce type de séance ?</p>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.5rem" }}>
+                  {[
+                    { v:"oui",       label:"Oui" },
+                    { v:"peut-etre", label:"Peut-être" },
+                    { v:"non",       label:"Non" },
+                  ].map(o => (
+                    <button key={o.v}
+                      onClick={() => setFbPay(fbPay === o.v ? null : o.v)}
+                      style={{
+                        padding:"0.75rem 0.5rem", borderRadius:"12px", cursor:"pointer",
+                        border:`2px solid ${fbPay === o.v ? C.gold : C.border}`,
+                        background: fbPay === o.v ? "rgba(184,149,90,.12)" : C.bg,
+                        color:C.cream, fontSize:"13px", transition:"all .25s",
+                        fontFamily:"'Raleway',sans-serif"
+                      }}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Question 3 — Commentaire libre */}
+              <div style={{ marginBottom:"1rem" }}>
+                <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
+                  fontWeight:"500" }}>Un mot ?</p>
+                <textarea
+                  value={fbComment}
+                  onChange={e => setFbComment(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Ce qui a marché, ce qui a manqué…"
+                  style={{ width:"100%", padding:"0.875rem 1rem", background:C.bg,
+                    border:`1.5px solid ${C.border}`, borderRadius:"12px",
+                    fontSize:"13px", fontFamily:"'Raleway',sans-serif", color:C.cream,
+                    outline:"none", resize:"vertical", lineHeight:"1.6" }} />
+                <p style={{ fontSize:"10px", color:C.hint, marginTop:"4px", textAlign:"right" }}>
+                  {fbComment.length}/500
+                </p>
+              </div>
+
+              {fbError && (
+                <div style={{ padding:"0.625rem 0.875rem", borderRadius:"10px",
+                  marginBottom:"0.75rem", fontSize:"12px",
+                  background:"rgba(192,57,43,.1)", border:`1px solid ${C.red}`,
+                  color:"#f87171" }}>
+                  ⚠ {fbError}
+                </div>
+              )}
+
+              <Btn onClick={submitFeedback}
+                disabled={fbSending}
+                variant="primary" style={{ marginTop:"0.5rem" }}>
+                {fbSending ? "Envoi…" : "Envoyer mon retour →"}
+              </Btn>
+              <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
+                marginTop:"0.75rem", textAlign:"center" }}>
+                100% anonyme · Aucune donnée personnelle collectée.
+              </p>
+            </>
+          )}
         </div>
 
         <Btn onClick={onRestart} variant="primary">🔄 Nouvelle séance</Btn>
