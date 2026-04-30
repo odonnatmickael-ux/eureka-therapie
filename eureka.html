@@ -1705,6 +1705,85 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const voiceIsV3Capable = isV3Voice(selectedVoice);
   const [useV3Mode, setUseV3Mode] = useState(voiceIsV3Capable);
 
+  // ─── RÉGLAGES VOIX AVANCÉS (panneau A/B test, comme dans anti-stress) ─
+  // Permet à l'utilisateur d'ajuster en temps réel les paramètres ElevenLabs
+  // sans toucher au code. Très utile pour trouver le sweet spot Mickaël v3.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advSpeed, setAdvSpeed] = useState(0.90);
+  const [advStability, setAdvStability] = useState(0.80);
+  const [advStyle, setAdvStyle] = useState(0.10);
+  const [advSimilarity, setAdvSimilarity] = useState(0.75);
+  const [advUseSpeakerBoost, setAdvUseSpeakerBoost] = useState(false);
+  const [snippetUrl, setSnippetUrl] = useState(null);
+  const [snippetLoading, setSnippetLoading] = useState(false);
+  const [snippetError, setSnippetError] = useState("");
+
+  // Modèle utilisé pour le DERNIER audio personnalisé généré (pour affichage post-gen)
+  const [lastModelUsed, setLastModelUsed] = useState(null);
+
+  // Initialise les sliders aux valeurs par défaut de la voix sélectionnée
+  // dès que la voix change.
+  useEffect(() => {
+    if (!selectedVoice) return;
+    const isV3 = voiceIsV3Capable && useV3Mode;
+    const defaults = isV3
+      ? { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true,  speed:0.90 }
+      : ({
+          "4RZ84U1b4WCqpu57LvIq": { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.85 },
+          "YV28ox2c5Cuh5rim0LrW": { stability:0.82, similarity_boost:0.70, style:0.08, use_speaker_boost:false, speed:0.85 },
+          "cQVn2FWawJsxa2z9X3l1": { stability:0.85, similarity_boost:0.70, style:0.05, use_speaker_boost:false, speed:0.90 },
+          "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 },
+        }[selectedVoice] || { stability:0.80, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.85 });
+    setAdvSpeed(defaults.speed);
+    setAdvStability(defaults.stability);
+    setAdvStyle(defaults.style);
+    setAdvSimilarity(defaults.similarity_boost);
+    setAdvUseSpeakerBoost(defaults.use_speaker_boost);
+  }, [selectedVoice, useV3Mode, voiceIsV3Capable]);
+
+  // Génère un snippet de test ~10 secondes avec les paramètres avancés actuels
+  // pour faire de l'A/B en direct sans regénérer toute la séance
+  const generateSnippet = async () => {
+    const key = elevenClientKey.trim();
+    if (!key) { setSnippetError("Colle d'abord ta clé ElevenLabs ci-dessus."); return; }
+    setSnippetError("");
+    setSnippetLoading(true);
+    setSnippetUrl(null);
+    try {
+      const isV3 = voiceIsV3Capable && useV3Mode;
+      const modelId = isV3 ? "eleven_v3" : "eleven_multilingual_v2";
+      const testText = "Bonjour " + (prenom || "ami") + "... installez-vous confortablement... laissez votre corps trouver sa position naturelle... vous êtes en sécurité ici... respirez doucement... et écoutez le son de cette voix.";
+      const r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "xi-api-key": key },
+        body: JSON.stringify({
+          text: testText,
+          model_id: modelId,
+          voice_settings: {
+            stability: advStability,
+            similarity_boost: advSimilarity,
+            style: advStyle,
+            use_speaker_boost: advUseSpeakerBoost,
+            speed: advSpeed
+          }
+        })
+      });
+      if (!r.ok) {
+        let detail = "";
+        try {
+          const errJson = JSON.parse(await r.text());
+          detail = errJson?.detail?.message || errJson?.detail || "Erreur API";
+        } catch { detail = "Erreur API"; }
+        throw new Error("ElevenLabs " + r.status + " — " + detail);
+      }
+      const blob = await r.blob();
+      setSnippetUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      setSnippetError(e.message);
+    }
+    setSnippetLoading(false);
+  };
+
   // ─── STREAK : incrémenter après 30s d'écoute de l'audio personnalisé ────
   const streakCountedRef = useRef(false);
   const handleAudioPlay = () => { setIsPlaying(true); };
@@ -1960,9 +2039,20 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       };
       const useV3 = voiceIsV3Capable && useV3Mode;
       const effectiveModelId = useV3 ? "eleven_v3" : "eleven_multilingual_v2";
-      const effectiveSettings = useV3
+      // Si l'utilisateur a ouvert le panneau avancé, on utilise SES paramètres ;
+      // sinon on prend les valeurs par défaut codées en dur.
+      const baseSettings = useV3
         ? (VOICE_SETTINGS_V3[selectedVoice] || VOICE_SETTINGS_V2[selectedVoice])
         : (VOICE_SETTINGS_V2[selectedVoice] || VOICE_SETTINGS_V2["4RZ84U1b4WCqpu57LvIq"]);
+      const effectiveSettings = showAdvanced ? {
+        stability: advStability,
+        similarity_boost: advSimilarity,
+        style: advStyle,
+        use_speaker_boost: advUseSpeakerBoost,
+        speed: advSpeed
+      } : baseSettings;
+      // Mémorise le modèle réellement utilisé pour l'affichage post-génération
+      setLastModelUsed(effectiveModelId);
       // Limite caractères par modèle : v3 = 3000 max → marge à 2800. v2 = 5000 max → marge à 4800.
       const MAX_TTS_CHARS = useV3 ? 2800 : 4800;
       const MAX_CTX_CHARS = useV3 ? 800 : 1000;
@@ -1976,8 +2066,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           model_id: effectiveModelId,
           voice_settings: effectiveSettings
         };
-        if (prevText) body.previous_text = cleanCtx(prevText);
-        if (nextText) body.next_text = cleanCtx(nextText);
+        // IMPORTANT : eleven_v3 (alpha) ne supporte PAS encore previous_text/next_text.
+        // Ces params améliorent la cohérence vocale entre segments mais ne sont dispo
+        // qu'en eleven_multilingual_v2. On les conditionne.
+        if (!useV3) {
+          if (prevText) body.previous_text = cleanCtx(prevText);
+          if (nextText) body.next_text = cleanCtx(nextText);
+        }
         let r;
         try {
           r = await fetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
@@ -2302,11 +2397,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           <div style={{ background:C.bg, borderRadius:"16px", padding:"1.5rem",
             border:`1.5px solid ${isPersonalized ? C.teal : C.border}`, marginBottom:"1.5rem", position:"relative" }}>
             <div style={{ position:"absolute", top:"12px", right:"12px",
-              padding:"3px 10px", borderRadius:"20px", fontSize:"9px", letterSpacing:"1.5px",
-              background: isPersonalized ? "rgba(42,138,143,.2)" : "rgba(184,149,90,.15)",
-              color: isPersonalized ? C.teal : C.gold,
-              border: `1px solid ${isPersonalized ? C.teal : C.gold}` }}>
-              {isPersonalized ? "✓ PERSONNALISÉ" : "ÉCHANTILLON"}
+              display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"4px" }}>
+              <div style={{ padding:"3px 10px", borderRadius:"20px", fontSize:"9px", letterSpacing:"1.5px",
+                background: isPersonalized ? "rgba(42,138,143,.2)" : "rgba(184,149,90,.15)",
+                color: isPersonalized ? C.teal : C.gold,
+                border: `1px solid ${isPersonalized ? C.teal : C.gold}` }}>
+                {isPersonalized ? "✓ PERSONNALISÉ" : "ÉCHANTILLON"}
+              </div>
+              {/* Indicateur du modèle ElevenLabs utilisé pour ce rendu */}
+              {isPersonalized && lastModelUsed && (
+                <div style={{ padding:"2px 8px", borderRadius:"20px", fontSize:"8px",
+                  letterSpacing:"1px", background:C.panel, color:C.muted,
+                  border:`1px solid ${C.border}`, fontFamily:"'Raleway',sans-serif" }}>
+                  🎙️ {lastModelUsed === "eleven_v3" ? "v3 alpha" : "multilingual v2"}
+                </div>
+              )}
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
               <div style={{ width:"48px", height:"48px", borderRadius:"50%",
@@ -2375,6 +2480,152 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               4. Le plan gratuit suffit pour la séance découverte (3 cycles)
             </p>
           </div>
+
+          {/* ╔═══════════════════════════════════════════════════════════╗
+              ║  PANNEAU RÉGLAGES VOIX AVANCÉS — A/B test (collapsible)   ║
+              ╚═══════════════════════════════════════════════════════════╝ */}
+          <div style={{ marginBottom:"0.75rem" }}>
+            <button onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{ width:"100%", padding:"0.625rem 0.875rem",
+                background:"transparent", border:`1px dashed ${C.border}`,
+                borderRadius:"10px", color:C.muted, fontSize:"11px",
+                fontFamily:"'Raleway',sans-serif", cursor:"pointer",
+                letterSpacing:"1px", textAlign:"left", display:"flex",
+                justifyContent:"space-between", alignItems:"center" }}>
+              <span>⚙️ Réglages voix avancés (A/B test)</span>
+              <span style={{ fontSize:"10px" }}>{showAdvanced ? "▲ Masquer" : "▼ Afficher"}</span>
+            </button>
+          </div>
+          {showAdvanced && (
+            <div style={{ background:C.bg, borderRadius:"12px", padding:"1.25rem",
+              border:`1px solid ${C.border}`, marginBottom:"0.75rem" }}>
+              <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"1.5px",
+                textTransform:"uppercase", marginBottom:"1rem", fontWeight:"600" }}>
+                Réglages ElevenLabs en temps réel
+              </p>
+
+              {/* Slider Vitesse */}
+              <div style={{ marginBottom:"1.25rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  marginBottom:"6px", fontSize:"12px" }}>
+                  <span style={{ color:C.cream }}>Vitesse <span style={{color:C.muted}}>(speed)</span></span>
+                  <span style={{ color:C.gold, fontWeight:"600" }}>{advSpeed.toFixed(2)}×</span>
+                </div>
+                <input type="range" min="0.60" max="1.10" step="0.01" value={advSpeed}
+                  onChange={e => setAdvSpeed(parseFloat(e.target.value))}
+                  style={{ width:"100%", accentColor:C.gold }} />
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  fontSize:"9px", color:C.hint, marginTop:"2px" }}>
+                  <span>0.60 (très lent)</span><span>0.85-0.90 (reco sophro)</span><span>1.10</span>
+                </div>
+              </div>
+
+              {/* Slider Stabilité */}
+              <div style={{ marginBottom:"1.25rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  marginBottom:"6px", fontSize:"12px" }}>
+                  <span style={{ color:C.cream }}>Stabilité <span style={{color:C.muted}}>(stability)</span></span>
+                  <span style={{ color:C.gold, fontWeight:"600" }}>{advStability.toFixed(2)}</span>
+                </div>
+                <input type="range" min="0" max="1" step="0.01" value={advStability}
+                  onChange={e => setAdvStability(parseFloat(e.target.value))}
+                  style={{ width:"100%", accentColor:C.gold }} />
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  fontSize:"9px", color:C.hint, marginTop:"2px" }}>
+                  <span>0 (variable)</span><span>0.75-0.85 (reco)</span><span>1 (monotone)</span>
+                </div>
+              </div>
+
+              {/* Slider Expressivité */}
+              <div style={{ marginBottom:"1.25rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  marginBottom:"6px", fontSize:"12px" }}>
+                  <span style={{ color:C.cream }}>Expressivité <span style={{color:C.muted}}>(style)</span></span>
+                  <span style={{ color:C.gold, fontWeight:"600" }}>{advStyle.toFixed(2)}</span>
+                </div>
+                <input type="range" min="0" max="1" step="0.01" value={advStyle}
+                  onChange={e => setAdvStyle(parseFloat(e.target.value))}
+                  style={{ width:"100%", accentColor:C.gold }} />
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  fontSize:"9px", color:C.hint, marginTop:"2px" }}>
+                  <span>0 (neutre)</span><span>0.10-0.25 (reco)</span><span>1 (théâtral)</span>
+                </div>
+              </div>
+
+              {/* Slider Fidélité */}
+              <div style={{ marginBottom:"1rem" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  marginBottom:"6px", fontSize:"12px" }}>
+                  <span style={{ color:C.cream }}>Fidélité <span style={{color:C.muted}}>(similarity_boost)</span></span>
+                  <span style={{ color:C.gold, fontWeight:"600" }}>{advSimilarity.toFixed(2)}</span>
+                </div>
+                <input type="range" min="0" max="1" step="0.01" value={advSimilarity}
+                  onChange={e => setAdvSimilarity(parseFloat(e.target.value))}
+                  style={{ width:"100%", accentColor:C.gold }} />
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  fontSize:"9px", color:C.hint, marginTop:"2px" }}>
+                  <span>0 (générique)</span><span>0.70-0.80 (reco)</span><span>1 (max, risque artefacts)</span>
+                </div>
+              </div>
+
+              {/* Speaker boost toggle */}
+              <label style={{ display:"flex", alignItems:"center", gap:"8px",
+                marginBottom:"1rem", cursor:"pointer", fontSize:"12px", color:C.cream }}>
+                <input type="checkbox" checked={advUseSpeakerBoost}
+                  onChange={e => setAdvUseSpeakerBoost(e.target.checked)}
+                  style={{ accentColor:C.gold }} />
+                Speaker boost <span style={{color:C.muted, fontSize:"11px"}}>
+                  (amplifie la voix — recommandé pour v3)
+                </span>
+              </label>
+
+              {/* Indicateur du modèle utilisé */}
+              <div style={{ background:C.panel, borderRadius:"8px",
+                padding:"0.5rem 0.75rem", marginBottom:"0.75rem",
+                fontSize:"11px", color:C.muted }}>
+                Modèle ElevenLabs actif :
+                <strong style={{ color: voiceIsV3Capable && useV3Mode ? C.gold : C.teal, marginLeft:"6px" }}>
+                  {voiceIsV3Capable && useV3Mode ? "eleven_v3" : "eleven_multilingual_v2"}
+                </strong>
+                {voiceIsV3Capable && (
+                  <span style={{ color:C.hint, marginLeft:"6px" }}>
+                    (modifiable via le toggle Mickaël v3/v2 ci-dessous)
+                  </span>
+                )}
+              </div>
+
+              {/* Bouton snippet test A/B */}
+              <Btn onClick={generateSnippet}
+                disabled={!elevenClientKey.trim() || snippetLoading || !selectedVoice}
+                variant="ghost" style={{ marginTop:0 }}>
+                {snippetLoading ? "Génération du snippet..." : "🎧 Tester ces réglages (snippet ~10s)"}
+              </Btn>
+              {snippetError && (
+                <p style={{ fontSize:"11px", color:"#f87171", marginTop:"0.5rem",
+                  background:"rgba(192,57,43,.1)", padding:"0.5rem 0.75rem",
+                  borderRadius:"8px", border:`1px solid ${C.red}` }}>
+                  ⚠ {snippetError}
+                </p>
+              )}
+              {snippetUrl && (
+                <div style={{ marginTop:"0.75rem", padding:"0.75rem",
+                  background:C.panel, borderRadius:"10px",
+                  border:`1px solid ${C.teal}` }}>
+                  <p style={{ fontSize:"11px", color:C.teal, marginBottom:"6px" }}>
+                    ✓ Snippet de test ({voiceIsV3Capable && useV3Mode ? "v3" : "v2"}) :
+                  </p>
+                  <audio src={snippetUrl} controls style={{ width:"100%", accentColor:C.gold }} />
+                </div>
+              )}
+
+              <p style={{ fontSize:"10px", color:C.hint, marginTop:"0.75rem",
+                lineHeight:"1.5", fontStyle:"italic" }}>
+                Pour A/B tester : ajuste les sliders → clique « Tester ces réglages » → écoute → ajuste à nouveau.
+                Quand tu es satisfait, clique « Générer la séance complète » ci-dessous.
+              </p>
+            </div>
+          )}
+
           {voiceIsV3Capable && (
             <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"12px",
               padding:"0.875rem 1rem", border:`1px solid ${C.gold}`, marginBottom:"0.75rem" }}>
