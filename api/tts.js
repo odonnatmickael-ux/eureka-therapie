@@ -1,6 +1,10 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { text, voiceId } = req.body;
+  // modelId et voiceSettings sont optionnels :
+  // - si non fournis → comportement historique (v2 + speed par défaut de la voix)
+  // - si fournis → on les utilise tels quels (utile pour faire matcher la démo Landing
+  //   avec les vrais réglages de la séance, ex: Mickaël en eleven_v3)
+  const { text, voiceId, modelId, voiceSettings } = req.body;
 
   const SPEEDS = {
     "4RZ84U1b4WCqpu57LvIq": 0.78,  // Bella
@@ -17,6 +21,11 @@ export default async function handler(req, res) {
   const voice = voiceId || "4RZ84U1b4WCqpu57LvIq";
   const speed = SPEEDS[voice] || 0.78;
 
+  // Modèle effectif : celui demandé par le client, sinon eleven_multilingual_v2 par défaut
+  const effectiveModel = modelId || "eleven_multilingual_v2";
+  // Réglages effectifs : ceux demandés par le client, sinon juste { speed } par défaut
+  const effectiveSettings = voiceSettings || { speed: speed };
+
   try {
     const r = await fetch(
       "https://api.elevenlabs.io/v1/text-to-speech/" + voice,
@@ -28,8 +37,8 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           text: text,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: { speed: speed }
+          model_id: effectiveModel,
+          voice_settings: effectiveSettings
         })
       }
     );
