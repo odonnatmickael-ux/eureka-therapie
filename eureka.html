@@ -1677,22 +1677,59 @@ function Anamnese({ onNext }) {
   const [crisisDetected, setCrisisDetected] = useState(false);  // vrai = écran de redirection affiché
   const [crisisOverride, setCrisisOverride] = useState(false);  // vrai = utilisateur confirme et continue malgré tout
 
+  // ─── Onboarding doux (option C) — 6 mini-écrans plutôt qu'un mur de formulaire
+  // Chaque écran présente UN champ unique, validation par étape, navigation Retour/Suivant.
+  // Détection de crise déclenchée dès la sortie des écrans 2 (problème) et 3 (objectif),
+  // pour ne pas faire perdre 3 écrans à un visiteur en détresse.
+  const TOTAL_SCREENS = 6;
+  const [screen, setScreen] = useState(0);
+
   const emailErr = emailTouched && !isValidEmail(email);
 
-  const canSubmit = prenom.trim() && isValidEmail(email) && problem.trim().length > 15 && objectif.trim().length > 10 && consentement && hasSupport !== null;
+  // Validation par écran : le bouton Suivant n'est actif que si le champ courant est valide.
+  const screenValid = [
+    prenom.trim().length > 0,        // 0 — prénom
+    isValidEmail(email),             // 1 — email
+    problem.trim().length > 15,      // 2 — problème
+    objectif.trim().length > 10,     // 3 — objectif
+    hasSupport !== null,             // 4 — suivi pro
+    consentement,                    // 5 — consentement RGPD
+  ];
 
-  const handleSubmit = () => {
-    // 1. Détection automatique sur les DEUX champs sensibles (problème ET objectif)
-    //    L'objectif peut aussi contenir « je veux en finir », « disparaître », etc.
+  const goBack = () => { if (screen > 0) setScreen(screen - 1); };
+
+  const goNext = () => {
+    // Détection de crise dès la sortie des écrans sensibles
+    if (screen === 2 && detectCrisis(problem) && !crisisOverride) {
+      track("crisis_detected", {
+        field: "problem",
+        has_support: hasSupport === true ? "yes" : (hasSupport === false ? "no" : "unknown")
+      });
+      setCrisisDetected(true);
+      return;
+    }
+    if (screen === 3 && detectCrisis(objectif) && !crisisOverride) {
+      track("crisis_detected", {
+        field: "objectif",
+        has_support: hasSupport === true ? "yes" : (hasSupport === false ? "no" : "unknown")
+      });
+      setCrisisDetected(true);
+      return;
+    }
+    // Avance d'un écran (sauf le dernier où on submit)
+    if (screen < TOTAL_SCREENS - 1) {
+      setScreen(screen + 1);
+      return;
+    }
+    // Submit final — defense in depth : re-check crisis au cas où
     if ((detectCrisis(problem) || detectCrisis(objectif)) && !crisisOverride) {
       track("crisis_detected", {
         field: detectCrisis(problem) ? "problem" : "objectif",
         has_support: hasSupport === true ? "yes" : "no"
       });
       setCrisisDetected(true);
-      return; // bloque l'avancement
+      return;
     }
-    // 2. Tout va bien (ou override) → on avance
     if (crisisOverride) track("crisis_overridden");
     onNext({ prenom, email, problem, objectif });
   };
@@ -1878,119 +1915,236 @@ function Anamnese({ onNext }) {
     );
   }
 
+  // Mini-progression (1/6 → 6/6)
+  const pct = ((screen + 1) / TOTAL_SCREENS) * 100;
+
   return (
     <Card>
       <Logo small />
       <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
-        <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
-          borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
-          textTransform:"uppercase", marginBottom:"1rem" }}>Étape 1 — Anamnèse</div>
-        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
-          fontWeight:"400", marginBottom:"0.5rem" }}>Parlez-moi de vous</h2>
-        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
-          Ces informations me permettent de créer une séance qui vous correspond vraiment.
-          Tout reste strictement confidentiel.
-        </p>
+        {/* En-tête : badge "Étape 1 — Présentation" + compteur n/6 + barre de progression */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+          marginBottom:"0.875rem", flexWrap:"wrap", gap:"0.5rem" }}>
+          <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
+            borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
+            textTransform:"uppercase" }}>Étape 1 — Présentation</div>
+          <span style={{ fontSize:"12px", color:C.muted }}>{screen + 1} / {TOTAL_SCREENS}</span>
+        </div>
+        <div style={{ height:"3px", background:C.border, borderRadius:"2px",
+          marginBottom:"1.75rem", overflow:"hidden" }}>
+          <div style={{ height:"100%", background:`linear-gradient(90deg,${C.teal},${C.gold})`,
+            width:`${pct}%`, transition:"width .4s ease", borderRadius:"2px" }} />
+        </div>
 
-        {[
-          { label:"Votre prénom", val:prenom, set:setPrenom, type:"text", ph:"Marie, Pierre…" },
-          { label:"Votre email", val:email, set:v => { setEmail(v); setET(true); }, type:"email", ph:"vous@exemple.com", err:emailErr },
-        ].map(({ label, val, set, type, ph, err }) => (
-          <div key={label} style={{ marginBottom:"1rem" }}>
-            <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
-              textTransform:"uppercase", marginBottom:"6px", fontFamily:"'Raleway', sans-serif" }}>{label}</label>
-            <input type={type} value={val} onChange={e => set(e.target.value)} placeholder={ph}
-              style={{ width:"100%", padding:"0.875rem 1rem", background:C.panel,
-                border:`1.5px solid ${err ? C.red : C.border}`, borderRadius:"10px",
-                fontSize:"14px", fontFamily:"'Raleway', sans-serif", color:C.text,
+        {/* ─── Écran 0 : Prénom ─── */}
+        {screen === 0 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>Comment vous appelez-vous ?</h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+              Pour personnaliser votre séance, j'ai besoin de votre prénom.
+            </p>
+            <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
+              placeholder="Marie, Pierre, Mickaël…"
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter' && screenValid[0]) goNext(); }}
+              style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
+                border:`1.5px solid ${C.border}`, borderRadius:"12px",
+                fontSize:"16px", fontFamily:"'Raleway', sans-serif", color:C.text,
                 outline:"none", transition:"border-color .2s" }}
               onFocus={e => e.target.style.borderColor=C.gold}
-              onBlur={e => e.target.style.borderColor=err?C.red:C.border} />
-            {err && <p style={{ fontSize:"12px", color:C.red, marginTop:"4px" }}>Email invalide</p>}
+              onBlur={e => e.target.style.borderColor=C.border} />
           </div>
-        ))}
+        )}
 
-        <div style={{ marginBottom:"1rem" }}>
-          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
-            textTransform:"uppercase", marginBottom:"6px" }}>Ce que vous traversez en ce moment</label>
-          <textarea value={problem} onChange={e => setProblem(e.target.value)}
-            placeholder="Décrivez ce qui vous préoccupe, ce qui vous pèse, ce que vous souhaitez transformer…"
-            rows={4} style={{ width:"100%", padding:"1rem", background:C.panel,
-              border:`1.5px solid ${C.border}`, borderRadius:"10px", fontSize:"14px",
-              fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
-              outline:"none", lineHeight:"1.7", transition:"border-color .2s" }}
-            onFocus={e => e.target.style.borderColor=C.gold}
-            onBlur={e => e.target.style.borderColor=C.border} />
-          <p style={{ fontSize:"11px", color:problem.length>15?C.teal:C.hint, textAlign:"right",
-            marginTop:"4px" }}>{problem.length} caractères {problem.length>15?"✓":""}</p>
-        </div>
-
-        <div style={{ marginBottom:"1.5rem" }}>
-          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
-            textTransform:"uppercase", marginBottom:"6px" }}>Ce que vous voulez atteindre</label>
-          <textarea value={objectif} onChange={e => setObjectif(e.target.value)}
-            placeholder="Votre objectif précis, ce que vous ressentiriez si ce problème était résolu…"
-            rows={3} style={{ width:"100%", padding:"1rem", background:C.panel,
-              border:`1.5px solid ${C.border}`, borderRadius:"10px", fontSize:"14px",
-              fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
-              outline:"none", lineHeight:"1.7" }}
-            onFocus={e => e.target.style.borderColor=C.gold}
-            onBlur={e => e.target.style.borderColor=C.border} />
-        </div>
-
-        {/* Question de détection — suivi professionnel en cours */}
-        <div style={{ marginBottom:"1.25rem" }}>
-          <label style={{ display:"block", fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
-            textTransform:"uppercase", marginBottom:"10px" }}>
-            Êtes-vous actuellement suivi(e) par un professionnel de santé pour un trouble psychologique sérieux ?
-          </label>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.625rem" }}>
-            <button type="button" onClick={() => setHasSupport(false)}
-              style={{ padding:"0.75rem", background: hasSupport === false ? `rgba(42,138,143,.20)` : C.panel,
-                border:`1.5px solid ${hasSupport === false ? C.teal : C.border}`,
-                borderRadius:"10px", fontSize:"13px", fontFamily:"'Raleway', sans-serif",
-                color: hasSupport === false ? C.cream : C.muted, cursor:"pointer",
-                transition:"all .2s" }}>Non</button>
-            <button type="button" onClick={() => setHasSupport(true)}
-              style={{ padding:"0.75rem", background: hasSupport === true ? `rgba(184,149,90,.15)` : C.panel,
-                border:`1.5px solid ${hasSupport === true ? C.gold : C.border}`,
-                borderRadius:"10px", fontSize:"13px", fontFamily:"'Raleway', sans-serif",
-                color: hasSupport === true ? C.cream : C.muted, cursor:"pointer",
-                transition:"all .2s" }}>Oui</button>
+        {/* ─── Écran 1 : Email ─── */}
+        {screen === 1 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              {prenom ? `À quelle adresse vous envoyer votre séance, ${prenom} ?` : "À quelle adresse vous envoyer votre séance ?"}
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+              Vous recevrez un récapitulatif de votre séance par email. Pas de spam — juste votre séance.
+            </p>
+            <input type="email" value={email}
+              onChange={e => { setEmail(e.target.value); setET(true); }}
+              placeholder="vous@exemple.com"
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter' && screenValid[1]) goNext(); }}
+              style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
+                border:`1.5px solid ${emailErr ? C.red : C.border}`, borderRadius:"12px",
+                fontSize:"16px", fontFamily:"'Raleway', sans-serif", color:C.text,
+                outline:"none", transition:"border-color .2s" }}
+              onFocus={e => e.target.style.borderColor=C.gold}
+              onBlur={e => e.target.style.borderColor=emailErr?C.red:C.border} />
+            {emailErr && <p style={{ fontSize:"12px", color:C.red, marginTop:"6px" }}>Email invalide</p>}
           </div>
-          {hasSupport === true && (
-            <div style={{ marginTop:"0.875rem", padding:"0.875rem 1rem",
-              background:"rgba(184,149,90,.08)", borderRadius:"10px",
-              border:`1px solid ${C.gold}` }}>
-              <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.7" }}>
-                💛 Ce service est conçu comme un complément de bien-être, pas comme un substitut à votre suivi professionnel. Nous vous encourageons à continuer votre suivi en cours. Vous pouvez utiliser ces séances en accord avec votre praticien, qui reste votre référent principal.
+        )}
+
+        {/* ─── Écran 2 : Problème ─── */}
+        {screen === 2 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              {prenom ? `Qu'est-ce qui vous pèse en ce moment, ${prenom} ?` : "Qu'est-ce qui vous pèse en ce moment ?"}
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+              Décrivez ce qui vous préoccupe, ce que vous traversez, ce que vous souhaitez transformer. Plus vous êtes précis, plus la séance vous correspondra.
+            </p>
+            <textarea value={problem} onChange={e => setProblem(e.target.value)}
+              placeholder="Stress au travail, anxiété nocturne, sentiment de blocage…"
+              rows={5} autoFocus
+              style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
+                border:`1.5px solid ${C.border}`, borderRadius:"12px", fontSize:"15px",
+                fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
+                outline:"none", lineHeight:"1.7", transition:"border-color .2s" }}
+              onFocus={e => e.target.style.borderColor=C.gold}
+              onBlur={e => e.target.style.borderColor=C.border} />
+            <p style={{ fontSize:"11px", color:problem.length>15?C.teal:C.hint, textAlign:"right",
+              marginTop:"6px" }}>
+              {problem.length} caractères {problem.length>15 ? "✓" : "(minimum 15)"}
+            </p>
+          </div>
+        )}
+
+        {/* ─── Écran 3 : Objectif ─── */}
+        {screen === 3 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>Et qu'aimeriez-vous atteindre ?</h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+              Imaginez que ce problème soit résolu. Que ressentiriez-vous ? Qu'est-ce qui aurait changé pour vous ?
+            </p>
+            <textarea value={objectif} onChange={e => setObjectif(e.target.value)}
+              placeholder="Retrouver le calme, dormir paisiblement, oser m'exprimer…"
+              rows={4} autoFocus
+              style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
+                border:`1.5px solid ${C.border}`, borderRadius:"12px", fontSize:"15px",
+                fontFamily:"'Cormorant Garamond', serif", color:C.text, resize:"vertical",
+                outline:"none", lineHeight:"1.7", transition:"border-color .2s" }}
+              onFocus={e => e.target.style.borderColor=C.gold}
+              onBlur={e => e.target.style.borderColor=C.border} />
+            <p style={{ fontSize:"11px", color:objectif.length>10?C.teal:C.hint, textAlign:"right",
+              marginTop:"6px" }}>
+              {objectif.length} caractères {objectif.length>10 ? "✓" : "(minimum 10)"}
+            </p>
+          </div>
+        )}
+
+        {/* ─── Écran 4 : Suivi pro ─── */}
+        {screen === 4 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>Êtes-vous suivi(e) par un professionnel de santé ?</h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
+              Pour un trouble psychologique sérieux (psychiatre, psychologue, psychothérapeute). Cette information nous aide à adapter notre accompagnement.
+            </p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
+              <button type="button" onClick={() => setHasSupport(false)}
+                style={{ padding:"1.25rem", background: hasSupport === false ? `rgba(42,138,143,.20)` : C.panel,
+                  border:`1.5px solid ${hasSupport === false ? C.teal : C.border}`,
+                  borderRadius:"12px", fontSize:"14px", fontFamily:"'Raleway', sans-serif",
+                  color: hasSupport === false ? C.cream : C.muted, cursor:"pointer",
+                  transition:"all .2s" }}>Non</button>
+              <button type="button" onClick={() => setHasSupport(true)}
+                style={{ padding:"1.25rem", background: hasSupport === true ? `rgba(184,149,90,.15)` : C.panel,
+                  border:`1.5px solid ${hasSupport === true ? C.gold : C.border}`,
+                  borderRadius:"12px", fontSize:"14px", fontFamily:"'Raleway', sans-serif",
+                  color: hasSupport === true ? C.cream : C.muted, cursor:"pointer",
+                  transition:"all .2s" }}>Oui</button>
+            </div>
+            {hasSupport === true && (
+              <div style={{ marginTop:"1rem", padding:"1rem 1.25rem",
+                background:"rgba(184,149,90,.08)", borderRadius:"12px",
+                border:`1px solid ${C.gold}` }}>
+                <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.7" }}>
+                  💛 EUREKA est un complément de bien-être, pas un substitut à votre suivi professionnel. Continuez votre suivi en cours et utilisez ces séances en accord avec votre praticien — il reste votre référent principal.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── Écran 5 : Récap + consentement RGPD ─── */}
+        {screen === 5 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              {prenom ? `Dernière étape, ${prenom}` : "Dernière étape"}
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem" }}>
+              Vérifiez votre profil et confirmez le traitement de vos données.
+            </p>
+
+            {/* Récap visuel */}
+            <div style={{ background:C.panel, borderRadius:"12px", padding:"1rem 1.25rem",
+              border:`1px solid ${C.border}`, marginBottom:"1.25rem" }}>
+              <div style={{ display:"grid", gap:"0.625rem", fontSize:"12px" }}>
+                <div><span style={{ color:C.muted }}>Prénom : </span><span style={{ color:C.cream }}>{prenom}</span></div>
+                <div><span style={{ color:C.muted }}>Email : </span><span style={{ color:C.cream }}>{email}</span></div>
+                <div style={{ paddingTop:"0.25rem" }}>
+                  <span style={{ color:C.muted, display:"block", marginBottom:"3px" }}>Ce que vous traversez :</span>
+                  <span style={{ color:C.cream, fontStyle:"italic", fontFamily:"'Cormorant Garamond',serif", fontSize:"13px" }}>
+                    « {problem.length > 140 ? problem.slice(0, 140) + "…" : problem} »
+                  </span>
+                </div>
+                <div style={{ paddingTop:"0.25rem" }}>
+                  <span style={{ color:C.muted, display:"block", marginBottom:"3px" }}>Ce que vous voulez atteindre :</span>
+                  <span style={{ color:C.cream, fontStyle:"italic", fontFamily:"'Cormorant Garamond',serif", fontSize:"13px" }}>
+                    « {objectif.length > 140 ? objectif.slice(0, 140) + "…" : objectif} »
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Consentement RGPD */}
+            <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer",
+              marginBottom:"1rem" }}>
+              <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
+                style={{ marginTop:"3px", accentColor:C.gold }} />
+              <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
+                Je consens explicitement au traitement de mes données — y compris des informations sur mon état émotionnel ou mon ressenti — pour la génération de ma séance personnalisée.
+                Ces données ne sont <strong style={{ color:C.cream }}>pas conservées sur nos serveurs</strong> et sont traitées uniquement en temps réel (RGPD article 9).
+              </span>
+            </label>
+
+            {/* Mention médicale */}
+            <div style={{ padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
+              borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)` }}>
+              <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+                ⚕️ Service de relaxation et sophrologie générée par IA — ne remplace pas un suivi médical, psychologique ou thérapeutique professionnel.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Navigation : ← Retour (sauf écran 0) + Suivant / Lancer mon profil */}
+        <div style={{ display:"flex", gap:"0.625rem", marginTop:"1.5rem" }}>
+          {screen > 0 && (
+            <button onClick={goBack}
+              style={{ flex:"0 0 auto", padding:"0.875rem 1.25rem", background:"transparent",
+                border:`1px solid ${C.border}`, borderRadius:"12px", color:C.muted,
+                fontSize:"12px", fontFamily:"'Raleway',sans-serif", fontWeight:"500",
+                letterSpacing:"1px", cursor:"pointer", transition:"all .2s" }}>
+              ← Retour
+            </button>
           )}
+          <button onClick={goNext} disabled={!screenValid[screen]}
+            style={{ flex:1, padding:"0.875rem 1.25rem",
+              background: screenValid[screen]
+                ? `linear-gradient(135deg, ${C.gold}, #9a7a40)`
+                : C.panel,
+              color: screenValid[screen] ? "#1a0e00" : C.hint,
+              border:"none", borderRadius:"12px", fontSize:"13px",
+              fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+              letterSpacing:"1.5px", textTransform:"uppercase",
+              cursor: screenValid[screen] ? "pointer" : "not-allowed",
+              transition:"all .25s",
+              opacity: screenValid[screen] ? 1 : 0.5 }}>
+            {screen < TOTAL_SCREENS - 1 ? "Suivant →" : "Lancer mon profil →"}
+          </button>
         </div>
-
-        <label style={{ display:"flex", gap:"10px", alignItems:"flex-start", cursor:"pointer",
-          marginBottom:"1rem" }}>
-          <input type="checkbox" checked={consentement} onChange={e => setConsentement(e.target.checked)}
-            style={{ marginTop:"3px", accentColor:C.gold }} />
-          <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
-            Je consens explicitement au traitement de mes données — y compris des informations sur mon état émotionnel ou mon ressenti — pour la génération de ma séance personnalisée.
-            Ces données ne sont <strong style={{ color:C.cream }}>pas conservées sur nos serveurs</strong> et sont traitées uniquement en temps réel (RGPD article 9).
-          </span>
-        </label>
-
-        {/* Mention médicale */}
-        <div style={{ padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
-          borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)`, marginBottom:"1.5rem" }}>
-          <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
-            ⚕️ Ce service propose des séances de relaxation et de sophrologie par IA.
-            Il ne remplace pas un suivi médical, psychologique ou thérapeutique professionnel.
-          </p>
-        </div>
-
-        <Btn onClick={handleSubmit} disabled={!canSubmit} variant="gold">
-          Continuer → Profil de personnalité
-        </Btn>
       </div>
     </Card>
   );
