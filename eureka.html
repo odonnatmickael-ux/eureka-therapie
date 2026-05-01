@@ -3881,13 +3881,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               </div>
             </div>
 
-            {/* Étapes numérotées avec petits cercles dorés */}
+            {/* Étapes numérotées avec petits cercles dorés — version raccourcie via deep links */}
             <div style={{ display:"grid", gap:"0.75rem", marginBottom:"1rem" }}>
               {[
-                { n:"1", t:<>Créez un compte gratuit sur <a href="https://elevenlabs.io/sign-up" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>elevenlabs.io</a></> },
-                { n:"2", t:<>Cliquez sur votre avatar (en haut à droite) → <strong style={{color:C.cream}}>API Keys</strong></> },
-                { n:"3", t:<>Cliquez « <strong style={{color:C.cream}}>Create API Key</strong> » → copiez la clé (<code style={{color:C.goldLight, fontFamily:"monospace", fontSize:"11px"}}>sk_...</code>)</> },
-                { n:"4", t:<>Collez-la dans le champ ci-dessous (elle sera sauvegardée localement, pas chez nous)</> },
+                { n:"1", t:<>Pas encore de compte ? <a href="https://elevenlabs.io/sign-up" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>Créer un compte gratuit</a> (sans carte bancaire)</> },
+                { n:"2", t:<>Une fois connecté, <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>cliquer ici pour accéder à vos clés API</a> → bouton <strong style={{color:C.cream}}>« Create API Key »</strong></> },
+                { n:"3", t:<>Copiez la clé (<code style={{color:C.goldLight, fontFamily:"monospace", fontSize:"11px"}}>sk_...</code>) et collez-la dans le champ ci-dessous (sauvegardée localement, pas chez nous)</> },
               ].map(({n, t}) => (
                 <div key={n} style={{ display:"flex", gap:"0.75rem", alignItems:"flex-start" }}>
                   <span style={{ width:"22px", height:"22px", borderRadius:"50%",
