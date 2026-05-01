@@ -11,6 +11,8 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- lamejs : encodage MP3 côté client (~30 Ko) — fichiers 10-15× plus légers que WAV -->
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; overflow-x: hidden; }
@@ -171,13 +173,13 @@ const BFI10 = [
   { dim: "E", reverse: true,  text: "Je me vois comme quelqu'un de réservé." },
   { dim: "A", reverse: false, text: "Je me vois comme quelqu'un de naturellement confiant envers les autres." },
   { dim: "C", reverse: true,  text: "Je me vois comme quelqu'un qui a tendance à être paresseux(se)." },
-  { dim: "N", reverse: true,  text: "Je me vois comme quelqu'un de détendu(e), qui gère bien le stress." },
-  { dim: "O", reverse: true,  text: "Je me vois comme quelqu'un qui s'intéresse peu à l'art ou aux expériences esthétiques." },
+  { dim: "N", reverse: true,  text: "Je me vois comme quelqu'un de globalement détendu(e) au quotidien." },
+  { dim: "O", reverse: true,  text: "Je me vois comme quelqu'un qui s'intéresse peu aux arts (musique, peinture, littérature, théâtre)." },
   { dim: "E", reverse: false, text: "Je me vois comme quelqu'un d'extraverti(e), de sociable." },
   { dim: "A", reverse: true,  text: "Je me vois comme quelqu'un qui critique facilement les autres." },
   { dim: "C", reverse: false, text: "Je me vois comme quelqu'un de consciencieux(se), qui fait son travail à fond." },
   { dim: "N", reverse: false, text: "Je me vois comme quelqu'un qui s'inquiète facilement, qui devient nerveux(se)." },
-  { dim: "O", reverse: false, text: "Je me vois comme quelqu'un d'imaginatif(ve), qui aime réfléchir." },
+  { dim: "O", reverse: false, text: "Je me vois comme quelqu'un d'imaginatif(ve), qui aime créer ou explorer de nouvelles idées." },
 ];
 const LIKERT_LABELS = [
   { v: 1, text: "Pas du tout d'accord" },
@@ -2385,19 +2387,24 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               finalCh[i] = voiceCh[i] + mixCh[i] * 0.20;
             }
             normalizeChannel(finalCh, 0.95); // Normalisation finale du mix
-            const finalWav = bufferToWav(finalBuf, sr);
-            setAudioUrl(URL.createObjectURL(finalWav));
-            await persistPersonalSession(finalWav);
+            // Encodage MP3 (10-15× plus léger que WAV) avec fallback WAV si lamejs absent
+            setFullGenMsg("Encodage MP3 du mix final...");
+            const finalMp3 = bufferToMp3(finalBuf, sr, 128);
+            setAudioUrl(URL.createObjectURL(finalMp3));
+            await persistPersonalSession(finalMp3);
           } catch(e) {
-            // Si la musique échoue, on livre l'audio voix seule (déjà normalisée)
-            const wav = bufferToWav(comb, sr);
-            setAudioUrl(URL.createObjectURL(wav));
-            await persistPersonalSession(wav);
+            // Si la musique échoue, on livre l'audio voix seule (déjà normalisée) en MP3
+            setFullGenMsg("Encodage MP3 (voix seule)...");
+            const mp3 = bufferToMp3(comb, sr, 128);
+            setAudioUrl(URL.createObjectURL(mp3));
+            await persistPersonalSession(mp3);
           }
         } else {
-          const wav = bufferToWav(comb, sr);
-          setAudioUrl(URL.createObjectURL(wav));
-          await persistPersonalSession(wav);
+          // Pas de musique de fond → voix seule en MP3
+          setFullGenMsg("Encodage MP3...");
+          const mp3 = bufferToMp3(comb, sr, 128);
+          setAudioUrl(URL.createObjectURL(mp3));
+          await persistPersonalSession(mp3);
         }
 
         setFullGenPhase("done");
@@ -3235,6 +3242,43 @@ function bufferToWav(buffer, sampleRate) {
   const d = buffer.getChannelData(0); let o = 44;
   for (let i=0;i<d.length;i++,o+=2) { const s=Math.max(-1,Math.min(1,d[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); }
   return new Blob([ab],{type:'audio/wav'});
+}
+
+// ─── Encodeur MP3 (lamejs) — fichiers 10-15× plus légers que WAV ──────
+// Utilisé pour la séance complète : ~5-10 Mo en MP3 vs 80-150 Mo en WAV.
+// Fallback automatique sur WAV si lamejs n'est pas chargé (résilience).
+function bufferToMp3(buffer, sampleRate, bitrate = 128) {
+  // Fallback de sécurité : si lamejs absent (CDN down), on retombe sur WAV
+  if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
+    console.warn("[EUREKA] lamejs non chargé → fallback WAV");
+    return bufferToWav(buffer, sampleRate);
+  }
+  try {
+    const samples = buffer.getChannelData(0);
+    const mp3Encoder = new lamejs.Mp3Encoder(1, sampleRate, bitrate); // mono, sampleRate Hz, bitrate kbps
+    const sampleBlockSize = 1152; // taille bloc standard MP3
+    const mp3Data = [];
+
+    // Convertir Float32 [-1, +1] en Int16 [-32768, +32767]
+    const int16Samples = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      int16Samples[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+
+    for (let i = 0; i < int16Samples.length; i += sampleBlockSize) {
+      const sampleChunk = int16Samples.subarray(i, i + sampleBlockSize);
+      const mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
+      if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    }
+    const finalChunk = mp3Encoder.flush();
+    if (finalChunk.length > 0) mp3Data.push(finalChunk);
+
+    return new Blob(mp3Data, { type: 'audio/mp3' });
+  } catch (e) {
+    console.warn("[EUREKA] Encodage MP3 échoué :", e, "→ fallback WAV");
+    return bufferToWav(buffer, sampleRate);
+  }
 }
 
 function App() {
