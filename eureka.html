@@ -1193,8 +1193,9 @@ function MentionsModal({ onClose }) {
 // ÉTAPES DU FUNNEL
 // ══════════════════════════════════════════════════════════════════
 
-// ─── Mini-démo audio 30s — un échantillon de la voix Mickaël jouable avant inscription
-// L'audio est généré à la demande via /api/tts puis caché en mémoire (sessionStorage URL).
+// ─── Mini-démo audio — un court échantillon vocal jouable avant inscription
+// L'audio est généré à la demande via /api/tts puis caché en mémoire (URL.createObjectURL).
+// Match strict des réglages séance (eleven_v3 + voice_settings) pour ne pas tromper l'utilisateur.
 // Conversion attendue : x2-3 d'engagement quand l'utilisateur entend la voix avant de cliquer "Commencer".
 function DemoAudio() {
   const [state, setState] = useState("idle");      // idle | loading | playing | paused | error
@@ -1203,9 +1204,9 @@ function DemoAudio() {
   const audioRef = useRef(null);
   const cachedUrlRef = useRef(null);
 
-  // Échantillon court (~7-8 secondes), phrase neutre, prosodie naturelle.
-  // Pas de fausses pauses : le client entend juste le timbre de la voix.
-  const DEMO_TEXT = "Bonjour, je suis Mickaël. Voici un court aperçu de ma voix.";
+  // Échantillon court (~10-12 secondes), phrase neutre, prosodie naturelle.
+  // Pas de fausses pauses, pas de prénom : le client entend juste le timbre de sa future voix de séance.
+  const DEMO_TEXT = "Bonjour. Voici un court aperçu de ma voix. Je vais vous accompagner tout au long de votre séance.";
 
   // Match strict des paramètres de la séance réelle (eureka_v25_bigfive_full.html ligne 3187)
   // pour que la démo restitue exactement le rendu que le client recevra.
@@ -1291,7 +1292,7 @@ function DemoAudio() {
       marginBottom:"1.5rem" }}>
       <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"2px", textTransform:"uppercase",
         fontWeight:"600", marginBottom:"0.5rem", textAlign:"center" }}>
-        🎧 La voix Mickaël
+        🎧 Aperçu de la voix
       </p>
       <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6", textAlign:"center",
         marginBottom:"1rem", fontStyle:"italic" }}>
@@ -1612,7 +1613,7 @@ function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
       <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>
         {savedMeta
           ? "Une nouvelle séance remplacera l'actuelle et remettra le compteur à zéro."
-          : "Durée : environ 8 minutes de personnalisation"}
+          : "Quelques questions pour personnaliser votre séance"}
       </p>
       <button onClick={() => onTutorial()} style={{ background:"transparent", border:"none",
         color:C.muted, fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
@@ -4408,15 +4409,4 @@ function App() {
               cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
               letterSpacing:"1px", padding:0 }}>
             Mentions légales
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-</script>
-</body>
-</html>
+          </b
