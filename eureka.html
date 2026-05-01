@@ -1665,13 +1665,23 @@ function detectCrisis(text) {
 }
 
 function Anamnese({ onNext }) {
-  const [email, setEmail] = useState("");
-  const [emailTouched, setET] = useState(false);
-  const [prenom, setPrenom] = useState("");
-  const [problem, setProblem] = useState("");
-  const [objectif, setObjectif] = useState("");
-  const [consentement, setConsentement] = useState(false);
-  const [hasSupport, setHasSupport] = useState(null); // null=non répondu, false=non, true=oui
+  // ─── Sauvegarde anti-frustration : on restaure depuis localStorage si présent
+  // Les textareas sont longues à remplir, perdre tout au refresh = abandon garanti.
+  const ANAMNESE_KEY = 'eureka_anamnese_state';
+  const loadSaved = () => {
+    try {
+      const raw = localStorage.getItem(ANAMNESE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const saved = loadSaved();
+  const [email, setEmail] = useState(saved?.email || "");
+  const [emailTouched, setET] = useState(saved?.emailTouched || false);
+  const [prenom, setPrenom] = useState(saved?.prenom || "");
+  const [problem, setProblem] = useState(saved?.problem || "");
+  const [objectif, setObjectif] = useState(saved?.objectif || "");
+  const [consentement, setConsentement] = useState(saved?.consentement || false);
+  const [hasSupport, setHasSupport] = useState(saved?.hasSupport ?? null); // null=non répondu, false=non, true=oui
 
   // ─── État détecteur de crise ───────────────────────────────────────
   const [crisisDetected, setCrisisDetected] = useState(false);  // vrai = écran de redirection affiché
@@ -1682,7 +1692,16 @@ function Anamnese({ onNext }) {
   // Détection de crise déclenchée dès la sortie des écrans 2 (problème) et 3 (objectif),
   // pour ne pas faire perdre 3 écrans à un visiteur en détresse.
   const TOTAL_SCREENS = 6;
-  const [screen, setScreen] = useState(0);
+  const [screen, setScreen] = useState(saved?.screen || 0);
+
+  // Persiste à chaque modification d'un champ (debounce naturel via React batching)
+  useEffect(() => {
+    try {
+      localStorage.setItem(ANAMNESE_KEY, JSON.stringify({
+        email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen
+      }));
+    } catch {}
+  }, [email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen]);
 
   const emailErr = emailTouched && !isValidEmail(email);
 
@@ -1731,6 +1750,8 @@ function Anamnese({ onNext }) {
       return;
     }
     if (crisisOverride) track("crisis_overridden");
+    // Nettoyage : l'anamnèse est validée, plus besoin de garder l'état brouillon
+    try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
     onNext({ prenom, email, problem, objectif });
   };
 
@@ -2510,11 +2531,28 @@ function QuizVAKOG({ prenom, onComplete }) {
 
 // ÉTAPE 4 : Résultats profil + choix techniques
 function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
-  const [relaxDir, setRelaxDir] = useState("");
-  const [beliefSystem, setBeliefSystem] = useState("");
+  // ─── Sauvegarde anti-frustration : on restaure les choix utilisateur si refresh
+  const PROFIL_KEY = 'eureka_profil_state';
+  const loadSaved = () => {
+    try {
+      const raw = localStorage.getItem(PROFIL_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const saved = loadSaved();
+  const [relaxDir, setRelaxDir] = useState(saved?.relaxDir || "");
+  const [beliefSystem, setBeliefSystem] = useState(saved?.beliefSystem || "");
   // Aucune voix par défaut : oblige l'utilisateur à choisir consciemment
-  const [selectedVoice, setSelectedVoice] = useState("");
-  const [musicChoice, setMusicChoice] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState(saved?.selectedVoice || "");
+  const [musicChoice, setMusicChoice] = useState(saved?.musicChoice || "");
+  // Persiste à chaque changement de choix
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROFIL_KEY, JSON.stringify({
+        relaxDir, beliefSystem, selectedVoice, musicChoice
+      }));
+    } catch {}
+  }, [relaxDir, beliefSystem, selectedVoice, musicChoice]);
   const [playingPreview, setPlayingPreview] = useState(null);
   const audioRef = useRef(null);
 
@@ -2627,22 +2665,25 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
             fontWeight:"600", marginBottom:"0.75rem" }}>
             Profil Big Five (BFI-10) · scientifiquement validé
           </p>
-          <div style={{ display:"grid", gap:"0.5rem" }}>
+          <div style={{ display:"grid", gap:"0.875rem" }}>
             {["O","C","E","A","N"].map(k => {
               const score = bigFiveScores[k] ?? 50;
               return (
-                <div key={k} style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
-                  <div style={{ flex:"0 0 110px", fontSize:"12px", color:C.cream }}>
-                    {BIG_FIVE_NAMES[k]}
+                <div key={k}>
+                  {/* Ligne 1 : nom à gauche, score+niveau à droite (layout responsive natif) */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+                    marginBottom:"5px", gap:"0.5rem" }}>
+                    <span style={{ fontSize:"12px", color:C.cream }}>{BIG_FIVE_NAMES[k]}</span>
+                    <span style={{ fontSize:"11px", color:C.muted, fontFamily:"'Raleway',sans-serif",
+                      whiteSpace:"nowrap" }}>
+                      {score}/100 · {bigFiveLevel(score)}
+                    </span>
                   </div>
-                  <div style={{ flex:1, height:"6px", background:C.bg, borderRadius:"3px", overflow:"hidden" }}>
+                  {/* Ligne 2 : barre pleine largeur — visible sur tous les écrans (mobile inclus) */}
+                  <div style={{ height:"6px", background:C.bg, borderRadius:"3px", overflow:"hidden" }}>
                     <div style={{ height:"100%", width:`${score}%`,
                       background:`linear-gradient(90deg,${C.teal},${C.gold})`,
                       transition:"width .6s ease" }} />
-                  </div>
-                  <div style={{ flex:"0 0 90px", textAlign:"right", fontSize:"11px",
-                    color:C.muted, fontFamily:"'Raleway',sans-serif" }}>
-                    {score}/100 · {bigFiveLevel(score)}
                   </div>
                 </div>
               );
@@ -2788,7 +2829,11 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
         )}
       </div>
 
-      <Btn onClick={() => onNext({ relaxDir, beliefSystem, selectedVoice, musicChoice })}
+      <Btn onClick={() => {
+          // Nettoyage : choix validés, on libère le brouillon localStorage
+          try { localStorage.removeItem(PROFIL_KEY); } catch {}
+          onNext({ relaxDir, beliefSystem, selectedVoice, musicChoice });
+        }}
         disabled={!canContinue} variant="gold">
         Générer ma séance personnalisée ✦
       </Btn>
@@ -3470,13 +3515,32 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               mixCh[i] = seamlessLoop[i % loopLen];
             }
 
-            // Mixer voix normalisée (100%) + musique (20%) puis normaliser le mix final
+            // ─── Volume musical ADAPTATIF selon canal VAKOG ───
+            // Auditif (A) → musique plus discrète pour ne pas saturer un canal déjà sensible aux sons
+            // Visuel (V), Kinesthésique (K) → volume standard pour soutenir l'imagerie/sensation
+            // Autres → entre les deux
+            const VAKOG_MUSIC_VOLUME = { V: 0.20, A: 0.15, K: 0.20, O: 0.18, G: 0.18, R: 0.18 };
+            const musicVolume = VAKOG_MUSIC_VOLUME[vakog] || 0.20;
+
+            // ─── Fade-in 3s au début + Fade-out 5s en fin de séance ───
+            // Évite l'attaque brutale de la musique et accompagne la sortie de l'état alpha en douceur
+            const FADE_IN_SAMPLES = Math.min(Math.floor(sr * 3.0), Math.floor(tot / 4));
+            const FADE_OUT_SAMPLES = Math.min(Math.floor(sr * 5.0), Math.floor(tot / 4));
+
+            // Mixer voix normalisée (100%) + musique (volume adaptatif + fades) puis normaliser le mix final
             setFullGenMsg("Mixage voix et musique...");
             const finalBuf = actx.createBuffer(1, tot, sr);
             const finalCh = finalBuf.getChannelData(0);
             const voiceCh = comb.getChannelData(0);
             for (let i = 0; i < tot; i++) {
-              finalCh[i] = voiceCh[i] + mixCh[i] * 0.20;
+              // Calcul du gain musical avec fade-in / fade-out
+              let musicGain = musicVolume;
+              if (i < FADE_IN_SAMPLES) {
+                musicGain *= i / FADE_IN_SAMPLES; // montée progressive
+              } else if (i > tot - FADE_OUT_SAMPLES) {
+                musicGain *= (tot - i) / FADE_OUT_SAMPLES; // descente progressive
+              }
+              finalCh[i] = voiceCh[i] + mixCh[i] * musicGain;
             }
             normalizeChannel(finalCh, 0.95); // Normalisation finale du mix
             // Encodage MP3 (10-15× plus léger que WAV) avec fallback WAV si lamejs absent
@@ -3796,15 +3860,69 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             fontFamily:"'Cormorant Garamond', serif", fontStyle:"italic" }}>
             Votre séance personnalisée inclut votre prénom, vos problèmes précis et des cycles de transformation profonde. Choisissez le format selon votre plan ElevenLabs.
           </p>
-          <div style={{ background:C.bg, borderRadius:"12px", padding:"1rem 1.25rem",
-            border:`1px solid ${C.border}`, marginBottom:"1rem" }}>
-            <p style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem" }}>Pour obtenir votre clé ElevenLabs gratuite :</p>
-            <p style={{ fontSize:"12px", color:C.muted, lineHeight:"2" }}>
-              1. Créez un compte gratuit sur <strong style={{color:C.cream}}>elevenlabs.io</strong><br/>
-              2. Allez dans "Profile" → "API Key"<br/>
-              3. Copiez votre clé et collez-la ci-dessous<br/>
-              4. Le plan gratuit suffit pour la séance découverte (3 cycles)
-            </p>
+          {/* ─── Bloc « Comment obtenir votre clé » — refondu pour réduire la friction BYOK ─── */}
+          <div style={{ background:C.bg, borderRadius:"14px", padding:"1.25rem 1.5rem",
+            border:`1.5px solid ${C.border}`, marginBottom:"1rem" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"0.75rem",
+              marginBottom:"1rem", flexWrap:"wrap" }}>
+              <span style={{ fontSize:"22px" }}>🔑</span>
+              <div style={{ flex:1, minWidth:"200px" }}>
+                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"600",
+                  fontFamily:"'Raleway',sans-serif" }}>
+                  Obtenir votre clé ElevenLabs en 30 secondes
+                </p>
+                <span style={{ display:"inline-block", marginTop:"4px",
+                  padding:"2px 8px", background:"rgba(74,222,128,.12)",
+                  border:`1px solid #4ade80`, borderRadius:"20px",
+                  fontSize:"10px", color:"#4ade80", fontWeight:"600",
+                  letterSpacing:"1px", textTransform:"uppercase" }}>
+                  100% gratuit · sans CB
+                </span>
+              </div>
+            </div>
+
+            {/* Étapes numérotées avec petits cercles dorés */}
+            <div style={{ display:"grid", gap:"0.75rem", marginBottom:"1rem" }}>
+              {[
+                { n:"1", t:<>Créez un compte gratuit sur <a href="https://elevenlabs.io/sign-up" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>elevenlabs.io</a></> },
+                { n:"2", t:<>Cliquez sur votre avatar (en haut à droite) → <strong style={{color:C.cream}}>API Keys</strong></> },
+                { n:"3", t:<>Cliquez « <strong style={{color:C.cream}}>Create API Key</strong> » → copiez la clé (<code style={{color:C.goldLight, fontFamily:"monospace", fontSize:"11px"}}>sk_...</code>)</> },
+                { n:"4", t:<>Collez-la dans le champ ci-dessous (elle sera sauvegardée localement, pas chez nous)</> },
+              ].map(({n, t}) => (
+                <div key={n} style={{ display:"flex", gap:"0.75rem", alignItems:"flex-start" }}>
+                  <span style={{ width:"22px", height:"22px", borderRadius:"50%",
+                    background:`linear-gradient(135deg, ${C.gold}, #9a7a40)`,
+                    color:"#1a0e00", display:"flex", alignItems:"center",
+                    justifyContent:"center", fontSize:"11px", fontWeight:"700",
+                    flexShrink:0, marginTop:"1px" }}>{n}</span>
+                  <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.65", flex:1 }}>{t}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Mini-FAQ rassurante repliable */}
+            <details style={{ borderTop:`1px solid ${C.border}`, paddingTop:"0.875rem" }}>
+              <summary style={{ cursor:"pointer", fontSize:"11px", color:C.muted,
+                listStyle:"none", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                <span style={{ color:C.gold }}>❓</span>
+                <span style={{ textDecoration:"underline", textDecorationStyle:"dotted" }}>
+                  Pourquoi cette clé et pas un paiement direct chez vous ?
+                </span>
+              </summary>
+              <div style={{ marginTop:"0.75rem", padding:"0.75rem 1rem",
+                background:"rgba(42,138,143,.06)", borderRadius:"10px",
+                border:`1px solid rgba(42,138,143,.25)` }}>
+                <p style={{ fontSize:"11.5px", color:C.muted, lineHeight:"1.7" }}>
+                  EUREKA est en <strong style={{color:C.cream}}>bêta privée gratuite</strong>.
+                  Le modèle BYOK (« apportez votre clé ») vous permet d'utiliser le service
+                  sans rien nous payer : vous ne réglez qu'ElevenLabs, à la consommation réelle.
+                  <br/><br/>
+                  <strong style={{color:C.goldLight}}>Côté sécurité :</strong> votre clé reste
+                  dans votre navigateur (localStorage), elle ne transite jamais par nos serveurs.
+                  Vous pouvez la supprimer à tout moment via le bouton « Effacer ma clé » ci-dessous.
+                </p>
+              </div>
+            </details>
           </div>
 
           {/* ╔═══════════════════════════════════════════════════════════╗
@@ -3998,14 +4116,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 {useV3Mode ? (
                   <>
                     <strong style={{color:C.goldLight}}>v3 actif</strong> — voix plus expressive (chuchotement, douceur, chaleur).
-                    Consomme <strong style={{color:C.cream}}>2× plus de crédits</strong> que v2 et est plus lent à générer (~5-8 min pour 30 000 caractères).<br/>
-                    <span style={{color:C.gold}}>Plan ElevenLabs Creator (22 €/mois, 100 000 crédits) recommandé pour la séance complète.</span>
+                    Consomme un peu plus de crédits que v2 (~15 %) et est plus lent à générer.<br/>
+                    <span style={{color:C.gold}}>Plan ElevenLabs Starter (5 €/mois, 30 000 crédits) suffit pour 1 séance complète/mois.</span>
                   </>
                 ) : (
                   <>
-                    <strong style={{color:C.cream}}>v2 actif (bêta test)</strong> — voix standard, économie de crédits.
-                    Le plan <strong style={{color:C.cream}}>Starter (5 €/mois, 30 000 crédits)</strong> suffit pour la séance complète.
-                    Bascule en v3 si tu veux essayer le rendu expressif.
+                    <strong style={{color:C.cream}}>v2 actif (bêta test)</strong> — voix standard, légère économie de crédits.
+                    Le plan <strong style={{color:C.cream}}>Starter (5 €/mois, 30 000 crédits)</strong> suffit aussi pour 1 séance complète.
+                    Bascule en v3 si tu veux le rendu expressif.
                   </>
                 )}
               </p>
@@ -4055,7 +4173,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 ✦ Séance EUREKA Complète — Protocole original 7 cycles
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
-                Plan Starter ElevenLabs recommandé (5€/mois — 30 000 caractères)
+                Plan Starter ElevenLabs recommandé (5 €/mois — 30 000 crédits ≈ 1-2 séances complètes/mois)
               </p>
               <Btn onClick={() => generateFullAudio("complete")}
                 disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
@@ -4069,7 +4187,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 ◈ Séance Découverte — Version bêta 3 cycles
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
-                Plan gratuit ElevenLabs suffit (10 000 caractères)
+                Plan gratuit ElevenLabs suffit (10 000 crédits/mois ≈ 1 découverte par mois)
               </p>
               <Btn onClick={() => generateFullAudio("beta")}
                 disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
