@@ -17,6 +17,9 @@
 <!-- Pour activer : Dashboard Vercel → projet eureka-therapie → onglet Analytics → bouton Enable. -->
 <!-- Une fois activé, le script ci-dessous (servi par Vercel) commence à envoyer les events. -->
 <script defer src="/_vercel/insights/script.js"></script>
+<!-- Cloudflare Turnstile : captcha invisible RGPD, gratuit, anti-bot pour les formulaires EmailJS -->
+<!-- Pour activer : crée un compte sur dash.cloudflare.com → Turnstile → ajoute eureka-therapie.vercel.app → copie la sitekey dans CONFIG.TURNSTILE_SITEKEY ci-dessous -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #08191a; font-family: 'Raleway', sans-serif; min-height: 100vh; overflow-x: hidden; }
@@ -55,10 +58,60 @@ const CONFIG = {
   EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
   EJS_SERVICE_ID:  "service_veoaw2j",
   EJS_TEMPLATE_ID: "template_pvpb8m6",
+
+  // ── Cloudflare Turnstile (anti-spam invisible) ───────────────────────────
+  // Pour activer : crée un compte sur dash.cloudflare.com → Turnstile → ajoute
+  // eureka-therapie.vercel.app → mode "Invisible" → copie ta sitekey ci-dessous.
+  // Tant que cette valeur est vide, le captcha est désactivé et les formulaires
+  // fonctionnent normalement (utile pour la bêta privée).
+  TURNSTILE_SITEKEY: "0x4AAAAAADGuxnZ9eEH8V_2Y",
 };
 
 // ── Version Premium ────────────────────────────────────────────────
 const isPremium = false; // TODO: intégrer paiement (Stripe)
+
+// ── Cloudflare Turnstile : captcha invisible anti-bot ──────────────
+// Si TURNSTILE_SITEKEY est vide → tout désactivé, getTurnstileToken() renvoie ""
+// Si configuré → on génère un token "invisible" qui valide que ce n'est pas un bot.
+// Le token est ensuite envoyé dans les payloads EmailJS (anamnèse, feedback, pricing).
+async function getTurnstileToken() {
+  const sitekey = (typeof CONFIG !== 'undefined' ? CONFIG.TURNSTILE_SITEKEY : "") || "";
+  if (!sitekey) return ""; // captcha désactivé tant que la sitekey n'est pas configurée
+  if (typeof window === 'undefined' || !window.turnstile) {
+    console.warn("[EUREKA] Turnstile script non chargé → token vide");
+    return "";
+  }
+  return new Promise((resolve) => {
+    try {
+      // Conteneur invisible pour le widget (mode "managed" → Cloudflare décide si défi visible)
+      let host = document.getElementById('eureka-turnstile-host');
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'eureka-turnstile-host';
+        host.style.position = 'fixed';
+        host.style.bottom = '10px';
+        host.style.right = '10px';
+        host.style.zIndex = '9999';
+        host.style.opacity = '0.01'; // invisible mais cliquable au cas où Turnstile le rend visible
+        host.style.pointerEvents = 'none';
+        document.body.appendChild(host);
+      }
+      host.innerHTML = '';
+      window.turnstile.render(host, {
+        sitekey,
+        size: 'invisible',
+        callback: (token) => resolve(token),
+        'error-callback': () => resolve(""),
+        'expired-callback': () => resolve(""),
+      });
+      // Sécurité : timeout de 8s pour ne JAMAIS bloquer un envoi en cas de bug Turnstile
+      setTimeout(() => resolve(""), 8000);
+    } catch (e) {
+      console.warn("Turnstile error:", e);
+      resolve("");
+    }
+  });
+}
 
 // ── safeFetch : fetch robuste avec timeout + retry exponentiel ────
 // Évite les "Failed to fetch" silencieux en cas de hang réseau ou de 503 transitoire.
@@ -210,6 +263,27 @@ async function deleteSession() {
 
 // Synchronisation flag dans localStorage : permet de détecter rapidement si une séance existe
 // sans avoir à ouvrir IndexedDB (utile pour la Landing).
+// ─── Compteur de séances générées (pour déclencher capture intention tarifaire) ──
+function getSessionCount() {
+  try {
+    const v = localStorage.getItem('eureka_session_count');
+    return v ? parseInt(v, 10) : 0;
+  } catch { return 0; }
+}
+function incrementSessionCount() {
+  try {
+    const newCount = getSessionCount() + 1;
+    localStorage.setItem('eureka_session_count', String(newCount));
+    return newCount;
+  } catch { return 0; }
+}
+function hasShownPricingIntent() {
+  try { return localStorage.getItem('eureka_pricing_shown') === '1'; } catch { return false; }
+}
+function markPricingIntentShown() {
+  try { localStorage.setItem('eureka_pricing_shown', '1'); } catch {}
+}
+
 function setSessionFlag(present, meta) {
   try {
     if (present) localStorage.setItem('eureka_session_meta', JSON.stringify(meta || {}));
@@ -1526,7 +1600,173 @@ function Anamnese({ onNext }) {
   );
 }
 
-// ÉTAPE 2 : Quiz MBTI
+// ─── ÉCRAN INTENTION TARIFAIRE (apparaît UNE FOIS à la 5e séance) ─────
+// Objectif : capter le signal tarifaire AVANT de coder un vrai paywall Stripe.
+// On ne demande PAS de paiement, juste l'opinion. Anonyme via EmailJS.
+function PricingIntent({ prenom, archetype, onContinue }) {
+  const [intent, setIntent] = useState(null);     // oui | peut-etre | non
+  const [formula, setFormula] = useState(null);   // monthly | pack | none
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const submit = async () => {
+    // Si rien rempli, on passe sans envoyer
+    if (!intent && !formula && !comment.trim()) {
+      track("pricing_skipped");
+      onContinue();
+      return;
+    }
+    setSending(true);
+    track("pricing_submitted", { intent: intent || "?", formula: formula || "?" });
+    try {
+      if (window.emailjs) {
+        // Captcha invisible : token vide si Turnstile pas configuré (pas bloquant)
+        const captchaToken = await getTurnstileToken();
+        emailjs.init(CONFIG.EJS_PUBLIC_KEY);
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+          to_email: "odonnat.mickael@gmail.com",
+          to_name: "EUREKA Pricing Intent",
+          mbti_type: "PRICING_INTENT",
+          mbti_profile: "[INTENT TARIFAIRE 5e séance] " + (archetype || "?"),
+          vakog: "?",
+          problem: "Paierait : " + (intent || "(non précisé)"),
+          objectif: "Formule : " + (formula || "(non précisé)"),
+          'g-recaptcha-response': captchaToken, // EmailJS reconnaît ce nom de champ pour Turnstile/reCAPTCHA
+          script: "INTENTION TARIFAIRE — " + (prenom || "anonyme") +
+                  "\n\nPaierait pour ce service : " + (intent || "(non précisé)") +
+                  "\nFormule préférée : " + (formula || "(non précisé)") +
+                  "\n\nCommentaire :\n" + (comment.trim() || "(aucun)"),
+          date: new Date().toLocaleDateString("fr-FR"),
+          seance_num: "5"
+        });
+      }
+      setSent(true);
+      setTimeout(onContinue, 1800);
+    } catch (e) {
+      console.warn("Pricing intent EmailJS error:", e);
+      try { localStorage.setItem("eureka_last_pricing", JSON.stringify({ intent, formula, comment, ts: Date.now() })); } catch {}
+      setSent(true);
+      setTimeout(onContinue, 1800);
+    }
+    setSending(false);
+  };
+
+  if (sent) {
+    return (
+      <Card>
+        <Logo small />
+        <div style={{ textAlign:"center", padding:"2rem 0" }}>
+          <div style={{ width:"56px", height:"56px", borderRadius:"50%",
+            background:"rgba(184,149,90,.18)", display:"flex", alignItems:"center",
+            justifyContent:"center", margin:"0 auto 1.25rem", fontSize:"28px", color:C.gold }}>✦</div>
+          <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px",
+            color:C.cream, fontWeight:"400", marginBottom:"0.5rem" }}>Merci.</h2>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.7" }}>
+            Ton retour nous aide à construire un service qui te correspond.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <Logo small />
+      <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+        <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
+          textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:"600", textAlign:"center" }}>
+          5ème séance · Anonyme · Facultatif
+        </p>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px",
+          color:C.cream, fontWeight:"400", marginBottom:"0.5rem", textAlign:"center" }}>
+          Merci de tester EUREKA, {prenom || ""}
+        </h2>
+        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem",
+          textAlign:"center", fontStyle:"italic", fontFamily:"'Cormorant Garamond', serif" }}>
+          Ton avis nous aide à savoir si on doit continuer ce projet — et sous quelle forme.
+          Tout est optionnel, anonyme, et tu peux passer.
+        </p>
+
+        <div style={{ marginBottom:"1.5rem" }}>
+          <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem", fontWeight:"500" }}>
+            Tu paierais pour ce type de séance ?
+          </p>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))", gap:"0.5rem" }}>
+            {[
+              { v:"oui",       label:"Oui" },
+              { v:"peut-etre", label:"Peut-être" },
+              { v:"non",       label:"Non" },
+            ].map(o => (
+              <button key={o.v} onClick={() => setIntent(intent === o.v ? null : o.v)}
+                style={{ padding:"0.875rem 0.5rem", borderRadius:"12px", cursor:"pointer",
+                  border:`2px solid ${intent === o.v ? C.gold : C.border}`,
+                  background: intent === o.v ? "rgba(184,149,90,.12)" : C.bg,
+                  color:C.cream, fontSize:"13px", transition:"all .25s",
+                  fontFamily:"'Raleway',sans-serif" }}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom:"1.5rem" }}>
+          <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem", fontWeight:"500" }}>
+            Quelle formule te conviendrait ?
+          </p>
+          <div style={{ display:"grid", gap:"0.5rem" }}>
+            {[
+              { v:"monthly", label:"Abonnement mensuel illimité",     desc:"~9-19 €/mois, séances à volonté" },
+              { v:"pack",    label:"Pack de 5 séances complètes",     desc:"~15-25 € le pack, sans engagement" },
+              { v:"single",  label:"Une séance à la carte",           desc:"~3-5 € par séance, paiement unique" },
+              { v:"none",    label:"Aucune — je préfère le BYOK actuel", desc:"Je colle ma propre clé ElevenLabs" },
+            ].map(o => (
+              <button key={o.v} onClick={() => setFormula(formula === o.v ? null : o.v)}
+                style={{ padding:"0.875rem 1rem", borderRadius:"12px", cursor:"pointer",
+                  border:`2px solid ${formula === o.v ? C.gold : C.border}`,
+                  background: formula === o.v ? "rgba(184,149,90,.12)" : C.bg,
+                  color:C.cream, fontSize:"13px", textAlign:"left",
+                  transition:"all .25s", fontFamily:"'Raleway',sans-serif" }}>
+                <div style={{ fontWeight:"500" }}>{o.label}</div>
+                <div style={{ fontSize:"11px", color:C.muted, marginTop:"3px" }}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom:"1.25rem" }}>
+          <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem", fontWeight:"500" }}>
+            Un mot ? <span style={{ color:C.muted, fontWeight:"400" }}>(facultatif)</span>
+          </p>
+          <textarea value={comment} onChange={e => setComment(e.target.value)}
+            rows={3} maxLength={400}
+            placeholder="Ce qui te convaincrait, ce qui te ferait hésiter, le prix juste selon toi…"
+            style={{ width:"100%", padding:"0.875rem 1rem", background:C.bg,
+              border:`1.5px solid ${C.border}`, borderRadius:"12px",
+              fontSize:"13px", fontFamily:"'Raleway',sans-serif", color:C.cream,
+              outline:"none", resize:"vertical", lineHeight:"1.6" }} />
+        </div>
+
+        <Btn onClick={submit} disabled={sending} variant="primary">
+          {sending ? "Envoi…" : "Envoyer mon avis →"}
+        </Btn>
+        <button onClick={() => { track("pricing_skipped"); onContinue(); }}
+          style={{ display:"block", width:"100%", padding:"0.625rem",
+            background:"transparent", border:"none", color:C.hint,
+            fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
+            fontFamily:"'Raleway',sans-serif", textDecoration:"underline" }}>
+          Passer sans répondre
+        </button>
+        <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
+          marginTop:"0.75rem", textAlign:"center" }}>
+          100% anonyme · Aucun paiement réclamé · Juste pour valider la suite du projet.
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+// ÉTAPE 2 : Quiz Big Five
 function QuizBigFive({ prenom, onComplete }) {
   const [current, setCurrent] = useState(() => {
     try {
@@ -2206,6 +2446,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     setFbSending(true);
     try {
       if (window.emailjs) {
+        // Captcha invisible : token vide si Turnstile pas configuré (pas bloquant)
+        const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
@@ -2215,6 +2457,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           vakog: VAKOG_NAMES[vakog] || vakog || "?",
           problem: "Ressenti : " + (fbFeel || "(non précisé)"),
           objectif: "Paierait : " + (fbPay || "(non précisé)"),
+          'g-recaptcha-response': captchaToken,
           script: "FEEDBACK SÉANCE n°" + seanceNum + " — " + (prenom || "anonyme") +
                   "\n\nRessenti : " + (fbFeel || "(non précisé)") +
                   "\nPaierait : " + (fbPay || "(non précisé)") +
@@ -2274,9 +2517,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         return d.text || "";
       };
 
-      // APPEL 1 : Accueil + Respirations + Relaxation physique + Pauses alpha + Relaxation mentale
-      setLoadMsg("Generation de la relaxation...");
-      const part1 = await gpt(sysPrompt,
+      // ─── 3 APPELS CLAUDE EN PARALLÈLE (Promise.all) ──────────────────
+      // Avant : appels séquentiels = 3-5 minutes d'attente
+      // Maintenant : appels parallèles = ~1-2 minutes (limité par le plus lent)
+      // Les 3 prompts sont indépendants, donc Promise.all est sûr.
+      // En cas d'échec d'UN appel, Promise.all rejette → erreur claire à l'utilisateur.
+      setLoadMsg("Generation parallèle : intro + scènes + clôture...");
+      const FIN_PHRASE = "À très bientôt " + prenom + ".";
+
+      const part1Promise = gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
         "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases)\n" +
         "2. 3 respirations exactes (texte exact REGLE 3)\n" +
@@ -2286,9 +2535,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
         "STOP ici - ne pas commencer les scenes.", 4096);
 
-      // APPEL 2 : Les 3 scenes UNE SEULE FOIS en detail
-      setLoadMsg("Generation des 3 scenes...");
-      const scenes = await gpt(sysPrompt,
+      const scenesPromise = gpt(sysPrompt,
         info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
         "VERBES CANAL - ne jamais repeter le meme verbe plus de 2 fois par scene:\n" +
         "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu percois, tu discernes, tu visualises\n" +
@@ -2300,6 +2547,25 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
         "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
 
+      // APPEL 3 : Cloture spirituelle + Desophronisation
+      // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
+      const part3Promise = gpt(sysPrompt,
+        info + "\n\nGenere UNIQUEMENT la fin de seance - ZERO TITRE - commencer DIRECTEMENT:\n" +
+        "1. Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
+        "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes)\n" +
+        "3. [PAUSE_15s]\n" +
+        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom + "\n" +
+        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de seance\n" +
+        "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'", 2500);
+
+      // Tracking : on mesure le gain de temps réel pour confirmer le bénéfice
+      const _t0 = Date.now();
+      const [part1, scenes, part3Raw] = await Promise.all([part1Promise, scenesPromise, part3Promise]);
+      const _elapsed = Math.round((Date.now() - _t0) / 1000);
+      console.log("[EUREKA] 3 appels Claude parallèles terminés en " + _elapsed + "s (avant : ~3× ce temps en séquentiel)");
+      track("script_generated_parallel", { duration_s: _elapsed });
+
+      // ─── Construction du texte final (séquentielle, après les 3 appels) ──
       // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
       const annonces7 = [
         "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
@@ -2320,21 +2586,6 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       for (let i = 0; i < 7; i++) {
         cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
       }
-
-      // APPEL 3 : Cloture spirituelle + Desophronisation
-      // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux INTJ/INTP/ENTJ
-      // dépassaient les 1500 tokens et la sortie était tronquée en plein milieu).
-      // Phrase de fin imposée pour garantir une fin propre même si Claude approche la limite.
-      setLoadMsg("Generation de la cloture...");
-      const FIN_PHRASE = "À très bientôt " + prenom + ".";
-      const part3Raw = await gpt(sysPrompt,
-        info + "\n\nGenere UNIQUEMENT la fin de seance - ZERO TITRE - commencer DIRECTEMENT:\n" +
-        "1. Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
-        "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes)\n" +
-        "3. [PAUSE_15s]\n" +
-        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom + "\n" +
-        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de seance\n" +
-        "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'", 2500);
 
       // Filet de sécurité : si Claude n'a pas inclus la phrase de fin (sortie tronquée
       // ou ignorée), on l'ajoute manuellement pour que la séance ne se termine pas en l'air.
@@ -2383,12 +2634,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // EMAIL
       setLoadMsg("Envoi email...");
       try {
+        // Captcha invisible : token vide si Turnstile pas configuré
+        const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
           to_email: email, to_name: prenom, mbti_type: archetypeKey,
           mbti_profile: archetype.name, vakog: VAKOG_NAMES[vakog],
           problem, objectif, script: clean.substring(0, 8000),
-          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum
+          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum,
+          'g-recaptcha-response': captchaToken
         });
         setEmailStatus("ok");
       } catch { setEmailStatus("fail"); }
@@ -2730,6 +2984,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       setSessionFlag(true, meta);
       resetStreak();
       streakCountedRef.current = false;
+      // Incrémente le compteur global de séances générées (pour déclencher
+      // la capture d'intention tarifaire à la 5e séance)
+      const newCount = incrementSessionCount();
+      console.log("[EUREKA] Séance n°" + newCount + " générée");
     } catch (e) {
       console.warn("Persist personal session failed:", e);
     }
@@ -3580,7 +3838,12 @@ function App() {
   const [resumeData, setResumeData] = useState(null); // { audioBlob, script, userData } chargé depuis IDB
 
   const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Séance"];
-  const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, seance:5 };
+  const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, seance:5, pricing:5 };
+
+  // ─── Capture intention tarifaire — apparaît UNE fois à la 5e séance ──
+  // On stocke le compteur de séances générées dans localStorage pour décider
+  // quand afficher l'écran. Une fois affiché, on marque "shown" pour ne pas
+  // le redéclencher à chaque future séance.
 
   const updateUser = (data) => setUserData(d => ({ ...d, ...data }));
 
@@ -3646,6 +3909,20 @@ function App() {
   };
 
   const handleRestart = () => {
+    // Capture d'intention tarifaire : si on a atteint la 5e séance et qu'on
+    // n'a pas encore montré l'écran, on l'affiche AVANT de retourner à la landing.
+    if (getSessionCount() >= 5 && !hasShownPricingIntent()) {
+      track("pricing_shown");
+      markPricingIntentShown();
+      setStep("pricing");
+      return; // on ne réinitialise PAS userData, on en a besoin pour le prénom/archétype
+    }
+    setStep("landing");
+    setUserData({});
+    setResumeData(null);
+  };
+
+  const handlePricingContinue = () => {
     setStep("landing");
     setUserData({});
     setResumeData(null);
@@ -3695,6 +3972,12 @@ function App() {
             userData={resumeData ? resumeData.userData : userData}
             resumeData={resumeData}
             onRestart={handleRestart} />
+        )}
+        {step === "pricing" && (
+          <PricingIntent
+            prenom={userData.prenom}
+            archetype={userData.bigFiveScores ? (ARCHETYPES[archetypeFromBigFive(userData.bigFiveScores)]?.name || "?") : "?"}
+            onContinue={handlePricingContinue} />
         )}
 
         <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
