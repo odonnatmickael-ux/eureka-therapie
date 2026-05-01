@@ -1215,10 +1215,15 @@ function Anamnese({ onNext }) {
     // 1. Détection automatique sur les DEUX champs sensibles (problème ET objectif)
     //    L'objectif peut aussi contenir « je veux en finir », « disparaître », etc.
     if ((detectCrisis(problem) || detectCrisis(objectif)) && !crisisOverride) {
+      track("crisis_detected", {
+        field: detectCrisis(problem) ? "problem" : "objectif",
+        has_support: hasSupport === true ? "yes" : "no"
+      });
       setCrisisDetected(true);
       return; // bloque l'avancement
     }
     // 2. Tout va bien (ou override) → on avance
+    if (crisisOverride) track("crisis_overridden");
     onNext({ prenom, email, problem, objectif });
   };
 
@@ -1299,18 +1304,19 @@ function Anamnese({ onNext }) {
                 letterSpacing:"1px" }}>
                 📞 Appeler
               </a>
-              <a href="https://3114.fr/discuter" target="_blank" rel="noopener noreferrer"
+              <a href="https://3114.fr" target="_blank" rel="noopener noreferrer"
                 style={{ flex:1, minWidth:"130px", padding:"0.75rem 0.5rem",
                 background:"transparent", border:`1.5px solid ${C.gold}`,
                 color:C.goldLight, borderRadius:"10px", textDecoration:"none",
                 textAlign:"center", fontFamily:"'Raleway',sans-serif", fontSize:"12px",
                 fontWeight:"600", letterSpacing:"1px" }}>
-                💬 Discuter par écrit
+                🌐 Aller sur 3114.fr
               </a>
             </div>
             <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", lineHeight:"1.5",
               fontStyle:"italic" }}>
-              Si parler vous semble trop difficile, le chat écrit anonyme du 3114 est une excellente alternative.
+              Le site 3114.fr propose aussi un <strong>chat anonyme par écrit</strong> (utile si parler est trop difficile),
+              et des ressources adaptées à votre situation.
             </p>
           </div>
 
@@ -1367,7 +1373,12 @@ function Anamnese({ onNext }) {
             </p>
           </div>
 
-          <Btn onClick={() => { setCrisisDetected(false); setProblem(""); setObjectif(""); }} variant="gold">
+          <Btn onClick={() => {
+            track("crisis_modified");
+            setCrisisDetected(false);
+            setProblem("");
+            setObjectif("");
+          }} variant="gold">
             J'ai compris, je modifie ma demande
           </Btn>
 
