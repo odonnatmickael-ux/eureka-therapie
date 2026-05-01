@@ -1189,94 +1189,6 @@ function MentionsModal({ onClose }) {
   );
 }
 
-// ─── Modal "Méthode scientifique" — accessible discrètement depuis le footer
-// Pour les curieux / spécialistes / journalistes qui veulent comprendre l'outil derrière la séance.
-// Pas mis sur la Landing : le client vient pour une séance, pas pour un cours de psychométrie.
-function MethodeModal({ onClose }) {
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
-      display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}
-      onClick={onClose}>
-      <div style={{ background:C.card, borderRadius:"20px", padding:"2rem",
-        border:`1px solid ${C.border}`, maxWidth:"600px", width:"100%",
-        maxHeight:"85vh", overflowY:"auto" }}
-        onClick={e => e.stopPropagation()}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"22px", color:C.cream, fontWeight:"400" }}>
-            La méthode derrière vos séances
-          </h2>
-          <button onClick={onClose}
-            style={{ background:"transparent", border:"none", color:C.muted, fontSize:"20px", cursor:"pointer" }}>✕</button>
-        </div>
-
-        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem", fontStyle:"italic" }}>
-          Le cœur d'EUREKA, c'est la séance de sophrologie elle-même : la voix, le rythme, les
-          inductions. Ce qui suit décrit l'<strong style={{color:C.cream, fontStyle:"normal"}}>outil
-          d'analyse</strong> qui nous permet d'adapter chaque séance à votre profil — pas la séance
-          elle-même.
-        </p>
-
-        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
-          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
-            fontFamily:"'Raleway',sans-serif" }}>🧬 Le Big Five (modèle OCEAN)</p>
-          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            Le Big Five est le modèle de personnalité le plus utilisé en recherche académique depuis
-            30 ans. Il décrit cinq dimensions continues : <strong style={{color:C.cream}}>Ouverture,
-            Conscienciosité, Extraversion, Agréabilité, Stabilité émotionnelle</strong>.
-            Chaque dimension est notée sur un score, pas dans une catégorie binaire.
-          </p>
-        </div>
-
-        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
-          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
-            fontFamily:"'Raleway',sans-serif" }}>📊 Le BFI-10 (10 questions)</p>
-          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            Pour ne pas vous imposer un long questionnaire, nous utilisons le BFI-10, version courte
-            validée par <strong style={{color:C.cream}}>Rammstedt &amp; John (2007)</strong> :
-            10 items à évaluer sur une échelle Likert. Fiabilité test-retest <strong>r ≈ 0,75</strong>,
-            validation interculturelle dans une cinquantaine de pays.
-          </p>
-          <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.6", marginTop:"0.75rem", fontStyle:"italic" }}>
-            Référence : Rammstedt, B., &amp; John, O. P. (2007). Measuring personality in one minute or
-            less: A 10-item short version of the Big Five Inventory. <em>Journal of Research in
-            Personality</em>, 41(1), 203–212.
-          </p>
-        </div>
-
-        <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
-          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
-            fontFamily:"'Raleway',sans-serif" }}>👁️ Le canal sensoriel (VAKOG)</p>
-          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            En complément, un court questionnaire VAKOG identifie votre canal sensoriel dominant
-            (Visuel, Auditif, Kinesthésique, Olfactif, Gustatif). Les inductions de la séance sont
-            alors formulées dans le registre qui vous parle le mieux — par exemple « voir » plutôt
-            que « ressentir » selon votre profil.
-          </p>
-        </div>
-
-        <div style={{ marginBottom:"1.25rem" }}>
-          <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
-            fontFamily:"'Raleway',sans-serif" }}>🌊 La séance de sophrologie</p>
-          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            Le profil sert d'entrée à la génération du script : descente alpha (relaxation
-            progressive), respiration 4-2-8, sophro-acceptation progressive (visualisation de
-            l'objectif déjà atteint), ancrage sensoriel sur le canal dominant, retour calme.
-            La voix Mickaël guide le tout sur fond de musique douce optionnelle.
-          </p>
-        </div>
-
-        <button onClick={onClose}
-          style={{ display:"block", width:"100%", padding:"0.875rem", marginTop:"1rem",
-            background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
-            border:"none", borderRadius:"10px", color:C.cream, fontSize:"13px",
-            cursor:"pointer", fontFamily:"'Raleway',sans-serif" }}>
-          Fermer
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ══════════════════════════════════════════════════════════════════
 // ÉTAPES DU FUNNEL
 // ══════════════════════════════════════════════════════════════════
@@ -1291,23 +1203,20 @@ function DemoAudio() {
   const audioRef = useRef(null);
   const cachedUrlRef = useRef(null);
 
-  // Texte court (~30s) — phrases courtes + ellipses multiples pour forcer de vraies pauses
-  // Technique : ElevenLabs interprète "......" (6 points) comme une pause d'environ 1 seconde,
-  // et un point seul comme une mini-pause naturelle. On alterne pour créer un rythme respiratoire.
-  const DEMO_TEXT = "Bonjour...... " +
-    "Je m'appelle Mickaël...... " +
-    "et je vais vous accompagner. " +
-    "...... " +
-    "Installez-vous confortablement. ...... " +
-    "Fermez les yeux. ...... " +
-    "...... " +
-    "Et laissez... votre respiration... ralentir... naturellement. " +
-    "...... ...... " +
-    "Inspirez profondément. ...... " +
-    "Retenez un instant. ...... " +
-    "Et expirez... doucement. " +
-    "...... " +
-    "Ce moment...... est pour vous.";
+  // Échantillon court (~7-8 secondes), phrase neutre, prosodie naturelle.
+  // Pas de fausses pauses : le client entend juste le timbre de la voix.
+  const DEMO_TEXT = "Bonjour, je suis Mickaël. Voici un court aperçu de ma voix.";
+
+  // Match strict des paramètres de la séance réelle (eureka_v25_bigfive_full.html ligne 3187)
+  // pour que la démo restitue exactement le rendu que le client recevra.
+  const DEMO_MODEL = "eleven_v3";
+  const DEMO_VOICE_SETTINGS = {
+    stability: 0.75,
+    similarity_boost: 0.80,
+    style: 0.20,
+    use_speaker_boost: true,
+    speed: 0.90
+  };
 
   const play = async () => {
     // Toggle pause/play si déjà chargé
@@ -1330,8 +1239,13 @@ function DemoAudio() {
       const r = await safeFetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: DEMO_TEXT, voiceId: "19cV422MaCP4oU6N8AFm" })
-      }, { timeoutMs: 30000, maxRetries: 1 });
+        body: JSON.stringify({
+          text: DEMO_TEXT,
+          voiceId: "19cV422MaCP4oU6N8AFm",
+          modelId: DEMO_MODEL,
+          voiceSettings: DEMO_VOICE_SETTINGS
+        })
+      }, { timeoutMs: 45000, maxRetries: 1 });
       if (!r.ok) throw new Error("HTTP " + r.status);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -1364,7 +1278,7 @@ function DemoAudio() {
   };
 
   const label = ({
-    idle: "▶  Écouter un extrait de 30 secondes",
+    idle: "▶  Écouter un aperçu de la voix",
     loading: "⏳  Génération en cours...",
     playing: "⏸  Pause",
     paused: "▶  Reprendre",
@@ -1377,11 +1291,11 @@ function DemoAudio() {
       marginBottom:"1.5rem" }}>
       <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"2px", textTransform:"uppercase",
         fontWeight:"600", marginBottom:"0.5rem", textAlign:"center" }}>
-        🎧 Aperçu de la voix Mickaël
+        🎧 La voix Mickaël
       </p>
       <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6", textAlign:"center",
         marginBottom:"1rem", fontStyle:"italic" }}>
-        Écoutez un court extrait avant de commencer — pour vous donner une idée du ton et de l'ambiance.
+        Un court échantillon pour entendre le timbre.
       </p>
       <audio ref={audioRef} onTimeUpdate={onTimeUpdate} onEnded={onEnded} style={{ display:"none" }} />
       <button onClick={play} disabled={state === "loading"}
@@ -4325,7 +4239,6 @@ function App() {
   const [userData, setUserData] = useState({});
   const [showMentions, setShowMentions] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showMethode, setShowMethode] = useState(false);
   const [resumeData, setResumeData] = useState(null); // { audioBlob, script, userData } chargé depuis IDB
 
   const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Séance"];
@@ -4438,7 +4351,6 @@ function App() {
 
       {showMentions && <MentionsModal onClose={() => setShowMentions(false)} />}
       {showTutorial && <TutorielModal onClose={() => setShowTutorial(false)} />}
-      {showMethode && <MethodeModal onClose={() => setShowMethode(false)} />}
 
       {/* Fond décoratif */}
       <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
@@ -4496,12 +4408,6 @@ function App() {
               cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
               letterSpacing:"1px", padding:0 }}>
             Mentions légales
-          </button>
-          <button onClick={() => { track("methode_view"); setShowMethode(true); }}
-            style={{ background:"transparent", border:"none", color:C.hint, fontSize:"10px",
-              cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
-              letterSpacing:"1px", padding:0 }}>
-            Méthode
           </button>
         </div>
       </div>
