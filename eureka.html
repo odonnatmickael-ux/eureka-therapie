@@ -261,6 +261,63 @@ async function deleteSession() {
   } catch { return false; }
 }
 
+// ─── Historique multi-séances ──
+// Métadonnées légères en localStorage (instant, pour la liste)
+// Audio Blob + script en IndexedDB sous une clé timestamp (lourd, lazy-load au clic)
+// Cap à 30 séances pour ne pas exploser le quota navigateur (~50 Mo/séance × 30 ≈ 1,5 Go max).
+function getHistory() {
+  try {
+    const raw = localStorage.getItem('eureka_history');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function setHistory(arr) {
+  try { localStorage.setItem('eureka_history', JSON.stringify(arr.slice(0, 30))); } catch {}
+}
+function addHistoryEntry(meta) {
+  // meta: { id, savedAt, prenom, archetypeName, voiceId, useV3Mode, problem, objectif, durationApprox }
+  const list = getHistory();
+  const filtered = list.filter(e => e.id !== meta.id);
+  filtered.unshift(meta);
+  setHistory(filtered);
+}
+function removeHistoryEntry(id) {
+  setHistory(getHistory().filter(e => e.id !== id));
+}
+async function saveSessionWithId(id, data) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(data, String(id));
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  } catch (e) { console.warn('IDB save by id failed:', e); return false; }
+}
+async function loadSessionById(id) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(String(id));
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); resolve(null); };
+    });
+  } catch { return null; }
+}
+async function deleteSessionById(id) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(String(id));
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); resolve(false); };
+    });
+  } catch { return false; }
+}
+
 // Synchronisation flag dans localStorage : permet de détecter rapidement si une séance existe
 // sans avoir à ouvrir IndexedDB (utile pour la Landing).
 // ─── Compteur de séances générées (pour déclencher capture intention tarifaire) ──
@@ -1136,11 +1193,324 @@ function MentionsModal({ onClose }) {
 // ÉTAPES DU FUNNEL
 // ══════════════════════════════════════════════════════════════════
 
+// ─── Mini-démo audio 30s — un échantillon de la voix Mickaël jouable avant inscription
+// L'audio est généré à la demande via /api/tts puis caché en mémoire (sessionStorage URL).
+// Conversion attendue : x2-3 d'engagement quand l'utilisateur entend la voix avant de cliquer "Commencer".
+function DemoAudio() {
+  const [state, setState] = useState("idle");      // idle | loading | playing | paused | error
+  const [progress, setProgress] = useState(0);     // 0-100
+  const [duration, setDuration] = useState(0);     // secondes
+  const audioRef = useRef(null);
+  const cachedUrlRef = useRef(null);
+
+  // Texte court (~30s à vitesse 0.90), construit pour mettre en valeur la voix calme et chaleureuse
+  const DEMO_TEXT = "Bonjour... je m'appelle Mickaël, et je vais vous accompagner dans votre séance personnelle. " +
+    "Installez-vous confortablement... fermez les yeux si vous le souhaitez... " +
+    "et laissez votre respiration ralentir naturellement. " +
+    "Inspirez profondément... retenez un instant... et expirez doucement, " +
+    "en relâchant tout ce qui peut être relâché. " +
+    "Ce moment est pour vous. Et il commence maintenant.";
+
+  const play = async () => {
+    // Toggle pause/play si déjà chargé
+    if (cachedUrlRef.current && audioRef.current) {
+      if (state === "playing") {
+        audioRef.current.pause();
+        setState("paused");
+        return;
+      }
+      if (state === "paused") {
+        audioRef.current.play();
+        setState("playing");
+        return;
+      }
+    }
+    // Première lecture : générer l'audio
+    setState("loading");
+    track("demo_audio_play");
+    try {
+      const r = await safeFetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: DEMO_TEXT, voiceId: "19cV422MaCP4oU6N8AFm" })
+      }, { timeoutMs: 30000, maxRetries: 1 });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      cachedUrlRef.current = url;
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        await audioRef.current.play();
+        setState("playing");
+        track("demo_audio_loaded");
+      }
+    } catch(e) {
+      console.error("[DEMO] Erreur génération audio:", e);
+      setState("error");
+      setTimeout(() => setState("idle"), 3000);
+    }
+  };
+
+  const onTimeUpdate = () => {
+    if (!audioRef.current) return;
+    const d = audioRef.current.duration || 0;
+    const t = audioRef.current.currentTime || 0;
+    if (d > 0) setProgress((t / d) * 100);
+    if (d && d !== duration) setDuration(d);
+  };
+
+  const onEnded = () => {
+    setState("idle");
+    setProgress(0);
+    track("demo_audio_completed");
+  };
+
+  const label = ({
+    idle: "▶  Écouter un extrait de 30 secondes",
+    loading: "⏳  Génération en cours...",
+    playing: "⏸  Pause",
+    paused: "▶  Reprendre",
+    error: "✕  Erreur — réessayez"
+  })[state];
+
+  return (
+    <div style={{ background:`linear-gradient(135deg, rgba(184,149,90,.10), rgba(42,138,143,.05))`,
+      borderRadius:"16px", padding:"1.25rem 1.25rem 1rem", border:`1.5px solid ${C.gold}`,
+      marginBottom:"1.5rem" }}>
+      <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"2px", textTransform:"uppercase",
+        fontWeight:"600", marginBottom:"0.5rem", textAlign:"center" }}>
+        🎧 Aperçu de la voix Mickaël
+      </p>
+      <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6", textAlign:"center",
+        marginBottom:"1rem", fontStyle:"italic" }}>
+        Écoutez un court extrait avant de commencer — pour vous donner une idée du ton et de l'ambiance.
+      </p>
+      <audio ref={audioRef} onTimeUpdate={onTimeUpdate} onEnded={onEnded} style={{ display:"none" }} />
+      <button onClick={play} disabled={state === "loading"}
+        style={{ display:"block", width:"100%", padding:"0.875rem",
+          background: state === "error" ? "rgba(192,57,43,.15)" :
+                      state === "playing" || state === "paused" ? `linear-gradient(135deg, ${C.teal}, ${C.tealDark})` :
+                      "transparent",
+          color: state === "error" ? "#f87171" : state === "playing" || state === "paused" ? C.cream : C.gold,
+          border: state === "playing" || state === "paused" ? "none" : `1.5px solid ${C.gold}`,
+          borderRadius:"10px", fontSize:"12px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+          letterSpacing:"2px", textTransform:"uppercase",
+          cursor: state === "loading" ? "wait" : "pointer",
+          opacity: state === "loading" ? 0.7 : 1,
+          transition:"all .2s" }}>
+        {label}
+      </button>
+      {(state === "playing" || state === "paused") && (
+        <div style={{ marginTop:"0.75rem", height:"4px", background:C.bg, borderRadius:"2px",
+          overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${progress}%`,
+            background:`linear-gradient(90deg, ${C.gold}, ${C.teal})`,
+            transition:"width .15s linear" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ÉCRAN HISTORIQUE — liste de toutes les séances passées avec lecture + téléchargement + suppression
+// Lecture : on charge le blob depuis IndexedDB à la demande (sinon trop lourd à monter en mémoire d'un coup).
+function MesSeances({ onBack, onResume }) {
+  const [history, setHistoryState] = useState(() => getHistory());
+  const [playingId, setPlayingId] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
+  const audioRef = useRef(null);
+
+  useEffect(() => { track("history_view", { count: history.length }); }, []);
+
+  const fmt = (iso) => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" }) +
+        " · " + d.toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+    } catch { return iso; }
+  };
+
+  const togglePlay = async (id) => {
+    if (playingId === id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+      return;
+    }
+    setLoadingId(id);
+    const data = await loadSessionById(id);
+    setLoadingId(null);
+    if (!data || !data.audioBlob) {
+      alert("Audio introuvable pour cette séance — il a peut-être été effacé par le navigateur.");
+      removeHistoryEntry(id);
+      setHistoryState(getHistory());
+      return;
+    }
+    const url = URL.createObjectURL(data.audioBlob);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = url;
+      audioRef.current.play();
+      setPlayingId(id);
+      track("history_play", { id: String(id) });
+    }
+  };
+
+  const downloadAudio = async (entry) => {
+    setLoadingId(entry.id);
+    const data = await loadSessionById(entry.id);
+    setLoadingId(null);
+    if (!data || !data.audioBlob) { alert("Audio introuvable."); return; }
+    const url = URL.createObjectURL(data.audioBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eureka_${entry.prenom || 'seance'}_${(entry.archetypeName || '').replace(/\s+/g, '_')}_${new Date(entry.savedAt).toISOString().slice(0,10)}.mp3`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    track("history_download", { id: String(entry.id) });
+  };
+
+  const reuse = async (entry) => {
+    setLoadingId(entry.id);
+    const data = await loadSessionById(entry.id);
+    setLoadingId(null);
+    if (!data) { alert("Séance introuvable."); return; }
+    track("history_resume", { id: String(entry.id) });
+    onResume(data);
+  };
+
+  const remove = (id) => {
+    if (!window.confirm("Supprimer définitivement cette séance ? L'audio et le script seront effacés.")) return;
+    removeHistoryEntry(id);
+    deleteSessionById(id);
+    setHistoryState(getHistory());
+    if (playingId === id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+    }
+    track("history_delete", { id: String(id) });
+  };
+
+  return (
+    <Card style={{ maxWidth:"680px" }}>
+      <Logo small />
+      <audio ref={audioRef} onEnded={() => setPlayingId(null)} style={{ display:"none" }} />
+
+      <div style={{ borderTop:`2px solid ${C.gold}`, paddingTop:"1.5rem" }}>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"28px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem", textAlign:"center" }}>
+          Mes séances
+        </h2>
+        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.7", textAlign:"center",
+          marginBottom:"1.5rem", fontStyle:"italic" }}>
+          {history.length === 0
+            ? "Vous n'avez pas encore de séance enregistrée."
+            : `${history.length} séance${history.length > 1 ? 's' : ''} enregistrée${history.length > 1 ? 's' : ''} · stockées localement sur votre appareil`}
+        </p>
+
+        {history.length === 0 && (
+          <div style={{ background:C.panel, borderRadius:"12px", padding:"2rem 1.5rem",
+            border:`1px solid ${C.border}`, textAlign:"center", marginBottom:"1.5rem" }}>
+            <div style={{ fontSize:"40px", marginBottom:"0.75rem", opacity:0.4 }}>📂</div>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.6" }}>
+              Vos séances générées apparaîtront ici. Vous pourrez les réécouter, les télécharger ou les supprimer à tout moment.
+            </p>
+          </div>
+        )}
+
+        {history.map((entry, idx) => {
+          const isPlaying = playingId === entry.id;
+          const isLoading = loadingId === entry.id;
+          return (
+            <div key={entry.id} style={{ background:isPlaying ? `linear-gradient(135deg, rgba(42,138,143,.15), rgba(184,149,90,.10))` : C.panel,
+              borderRadius:"14px", padding:"1.25rem", border:isPlaying ? `1.5px solid ${C.teal}` : `1px solid ${C.border}`,
+              marginBottom:"1rem", transition:"all .2s" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
+                gap:"1rem", marginBottom:"0.75rem", flexWrap:"wrap" }}>
+                <div style={{ flex:1, minWidth:"200px" }}>
+                  <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"1.5px",
+                    textTransform:"uppercase", fontWeight:"600", marginBottom:"0.25rem" }}>
+                    Séance n°{history.length - idx}
+                  </p>
+                  <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"20px", color:C.cream,
+                    lineHeight:"1.3", marginBottom:"0.25rem" }}>
+                    {entry.archetypeName || "Profil"}
+                  </p>
+                  <p style={{ fontSize:"11px", color:C.muted }}>
+                    {fmt(entry.savedAt)}
+                  </p>
+                  {entry.problem && (
+                    <p style={{ fontSize:"12px", color:C.muted, marginTop:"0.5rem", lineHeight:"1.5",
+                      fontStyle:"italic", maxHeight:"3rem", overflow:"hidden",
+                      display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>
+                      « {entry.problem.length > 90 ? entry.problem.slice(0, 90) + "…" : entry.problem} »
+                    </p>
+                  )}
+                </div>
+                {entry.useV3Mode && (
+                  <span style={{ fontSize:"10px", padding:"0.25rem 0.5rem", background:"rgba(42,138,143,.20)",
+                    border:`1px solid ${C.teal}`, borderRadius:"6px", color:C.teal,
+                    letterSpacing:"1px", fontWeight:"600", whiteSpace:"nowrap" }}>
+                    EXPRESSIF
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+                <button onClick={() => togglePlay(entry.id)} disabled={isLoading}
+                  style={{ flex:"1 1 110px", padding:"0.625rem",
+                    background: isPlaying ? `linear-gradient(135deg, ${C.teal}, ${C.tealDark})` : "transparent",
+                    color: isPlaying ? C.cream : C.gold,
+                    border: isPlaying ? "none" : `1.5px solid ${C.gold}`,
+                    borderRadius:"8px", fontSize:"11px", fontFamily:"'Raleway',sans-serif",
+                    fontWeight:"600", letterSpacing:"1.5px", textTransform:"uppercase",
+                    cursor: isLoading ? "wait" : "pointer", opacity: isLoading ? 0.6 : 1 }}>
+                  {isLoading ? "⏳" : isPlaying ? "⏸ Pause" : "▶ Écouter"}
+                </button>
+                <button onClick={() => downloadAudio(entry)} disabled={isLoading}
+                  style={{ flex:"1 1 110px", padding:"0.625rem", background:"transparent",
+                    color:C.muted, border:`1px solid ${C.border}`, borderRadius:"8px",
+                    fontSize:"11px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+                    letterSpacing:"1.5px", textTransform:"uppercase", cursor:"pointer" }}>
+                  ⬇ MP3
+                </button>
+                <button onClick={() => reuse(entry)} disabled={isLoading}
+                  style={{ flex:"1 1 110px", padding:"0.625rem", background:"transparent",
+                    color:C.muted, border:`1px solid ${C.border}`, borderRadius:"8px",
+                    fontSize:"11px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+                    letterSpacing:"1.5px", textTransform:"uppercase", cursor:"pointer" }}>
+                  ↻ Réutiliser
+                </button>
+                <button onClick={() => remove(entry.id)}
+                  style={{ flex:"0 0 auto", padding:"0.625rem 0.875rem", background:"transparent",
+                    color:"#a06868", border:`1px solid rgba(192,57,43,.3)`, borderRadius:"8px",
+                    fontSize:"11px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+                    cursor:"pointer" }}
+                  title="Supprimer définitivement cette séance">
+                  🗑
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        <button onClick={onBack}
+          style={{ display:"block", width:"100%", padding:"0.875rem", background:"transparent",
+            color:C.muted, border:`1px solid ${C.border}`, borderRadius:"10px",
+            fontSize:"12px", fontFamily:"'Raleway',sans-serif", fontWeight:"500",
+            letterSpacing:"2px", textTransform:"uppercase", cursor:"pointer", marginTop:"1rem" }}>
+          ← Retour à l'accueil
+        </button>
+      </div>
+    </Card>
+  );
+}
+
 // ÉTAPE 0 : Landing
-function Landing({ onStart, onResume, onMentions, onTutorial }) {
+function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
   // Détection d'une séance personnelle déjà sauvegardée (lue depuis IndexedDB via flag localStorage)
   const savedMeta = getSessionFlag();
   const streak = loadStreak();
+  const historyCount = getHistory().length;
 
   return (
     <div style={{ textAlign:"center", maxWidth:"600px", width:"100%", animation:"fadeUp .6s ease" }}>
@@ -1183,6 +1553,65 @@ function Landing({ onStart, onResume, onMentions, onTutorial }) {
           ))}
         </div>
       </div>
+
+      {/* ───────── Mini-démo audio — convertit 2-3× plus quand l'utilisateur entend la voix ───────── */}
+      {/* Affichée seulement si pas de séance déjà créée (sinon doublon avec le bouton "Reprendre") */}
+      {!savedMeta && <DemoAudio />}
+
+      {/* ───────── Encart "Pourquoi le Big Five" — crédibilité scientifique ───────── */}
+      {/* Bloc dépliant pour ne pas alourdir le scroll : fermé par défaut */}
+      <details style={{ background:`linear-gradient(135deg, rgba(42,138,143,.08), rgba(184,149,90,.05))`,
+        borderRadius:"16px", padding:"0", border:`1px solid ${C.border}`,
+        marginBottom:"1.5rem", textAlign:"left", overflow:"hidden" }}>
+        <summary style={{ padding:"1rem 1.25rem", cursor:"pointer", listStyle:"none",
+          display:"flex", justifyContent:"space-between", alignItems:"center", gap:"0.75rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem" }}>
+            <span style={{ fontSize:"20px" }}>🔬</span>
+            <div>
+              <p style={{ fontSize:"12px", color:C.teal, letterSpacing:"2px",
+                textTransform:"uppercase", fontWeight:"600", marginBottom:"2px" }}>
+                Méthode scientifique
+              </p>
+              <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500" }}>
+                Pourquoi le Big Five ?
+              </p>
+            </div>
+          </div>
+          <span style={{ fontSize:"18px", color:C.muted, transition:"transform .2s" }}>+</span>
+        </summary>
+        <div style={{ padding:"0 1.25rem 1.25rem", borderTop:`1px solid ${C.border}` }}>
+          <p style={{ fontSize:"12px", color:C.cream, lineHeight:"1.7", marginTop:"1rem" }}>
+            Le <strong style={{color:C.goldLight}}>Big Five</strong> (modèle OCEAN) est le standard
+            scientifique de la personnalité depuis 30 ans, validé par <strong>plus de 3 000 études
+            académiques</strong>. Il mesure 5 traits : Ouverture, Conscienciosité, Extraversion,
+            Agréabilité, Stabilité émotionnelle.
+          </p>
+          <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7", marginTop:"0.75rem" }}>
+            Nous utilisons le <strong style={{color:C.cream}}>BFI-10</strong>, version courte
+            validée par Rammstedt &amp; John (2007), qui mesure ces 5 dimensions en 10 questions
+            avec une fiabilité test-retest de <strong>r ≈ 0,75</strong>.
+          </p>
+          <div style={{ marginTop:"1rem", padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
+            borderRadius:"10px", border:`1px solid rgba(184,149,90,.15)` }}>
+            <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"1.5px",
+              textTransform:"uppercase", fontWeight:"600", marginBottom:"0.5rem" }}>
+              Pourquoi pas le MBTI ?
+            </p>
+            <p style={{ fontSize:"11.5px", color:C.muted, lineHeight:"1.65" }}>
+              Le MBTI (« 16 personalities ») n'est <strong>pas reconnu par la communauté
+              scientifique</strong> : fiabilité test-retest faible (~0,50), catégories binaires non
+              validées empiriquement. Le Big Five évite ces écueils en utilisant des dimensions
+              continues, mesurées et reproductibles.
+            </p>
+          </div>
+          <p style={{ fontSize:"10.5px", color:C.hint, lineHeight:"1.6", marginTop:"0.875rem",
+            fontStyle:"italic" }}>
+            Source : Rammstedt, B., &amp; John, O. P. (2007). Measuring personality in one minute or
+            less: A 10-item short version of the Big Five Inventory. <em>Journal of Research in
+            Personality</em>, 41(1), 203–212.
+          </p>
+        </div>
+      </details>
 
       {/* Bloc "Reprendre ma séance" — visible UNIQUEMENT si une séance personnelle existe en IndexedDB */}
       {savedMeta && (
@@ -1233,6 +1662,15 @@ function Landing({ onStart, onResume, onMentions, onTutorial }) {
         textDecoration:"underline", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
         ❓ Comment ça marche ?
       </button>
+
+      {/* Bouton vers l'historique multi-séances — visible UNIQUEMENT si au moins 1 séance enregistrée */}
+      {historyCount > 0 && (
+        <button onClick={() => onHistory()} style={{ background:"transparent", border:"none",
+          color:C.gold, fontSize:"11px", cursor:"pointer", marginTop:"0.5rem", marginLeft:"1rem",
+          textDecoration:"underline", fontFamily:"'Raleway',sans-serif", letterSpacing:"1px" }}>
+          📂 Mes séances ({historyCount})
+        </button>
+      )}
 
       {/* Avertissement médical */}
       <div style={{ marginTop:"1.5rem", padding:"0.875rem 1rem", background:"rgba(184,149,90,.06)",
@@ -2967,7 +3405,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // consécutives d'UNE séance personnelle, pas le nombre de séances créées).
   const persistPersonalSession = async (audioBlob) => {
     try {
+      const sessionId = Date.now(); // identifiant unique pour l'historique
       const meta = {
+        id: sessionId,
         savedAt: new Date().toISOString(),
         prenom,
         archetypeKey,
@@ -2978,16 +3418,23 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         vakog,
         voiceId: selectedVoice,
         useV3Mode,
+        problem: userData.problem || "",
+        objectif: userData.objectif || "",
         durationApprox: audioBlob.size / 22050 / 2 // estimation pour WAV 22050Hz mono 16-bit
       };
-      await saveSession({ audioBlob, script, userData, ...meta });
+      const fullData = { audioBlob, script, userData, ...meta };
+      // 1. Sauvegarde "current" (séance active, pour bouton "Reprendre")
+      await saveSession(fullData);
+      // 2. Sauvegarde dans l'historique sous l'id timestamp + entrée meta légère en localStorage
+      await saveSessionWithId(sessionId, fullData);
+      addHistoryEntry(meta);
       setSessionFlag(true, meta);
       resetStreak();
       streakCountedRef.current = false;
       // Incrémente le compteur global de séances générées (pour déclencher
       // la capture d'intention tarifaire à la 5e séance)
       const newCount = incrementSessionCount();
-      console.log("[EUREKA] Séance n°" + newCount + " générée");
+      console.log("[EUREKA] Séance n°" + newCount + " générée (id:" + sessionId + ")");
     } catch (e) {
       console.warn("Persist personal session failed:", e);
     }
@@ -3928,6 +4375,18 @@ function App() {
     setResumeData(null);
   };
 
+  // Ouverture de l'écran historique
+  const handleOpenHistory = () => {
+    track("history_opened");
+    setStep("history");
+  };
+
+  // Réutilisation d'une séance depuis l'historique : on injecte les données comme un "resume"
+  const handleHistoryResume = (data) => {
+    setResumeData(data);
+    setStep("seance");
+  };
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
@@ -3950,8 +4409,8 @@ function App() {
       <div style={{ position:"relative", zIndex:1, width:"100%",
         display:"flex", flexDirection:"column", alignItems:"center" }}>
 
-        {/* Indicateur d'étape (caché sur landing) */}
-        {step !== "landing" && (
+        {/* Indicateur d'étape (caché sur landing et écran historique) */}
+        {step !== "landing" && step !== "history" && (
           <StepIndicator
             current={STEP_INDEX[step] || 0}
             total={STEP_LABELS.length}
@@ -3959,7 +4418,8 @@ function App() {
           />
         )}
 
-        {step === "landing" && <Landing onStart={handleLandingNext} onResume={handleLandingResume} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} />}
+        {step === "landing" && <Landing onStart={handleLandingNext} onResume={handleLandingResume} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} onHistory={handleOpenHistory} />}
+        {step === "history" && <MesSeances onBack={() => setStep("landing")} onResume={handleHistoryResume} />}
         {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
         {step === "bigfive" && <QuizBigFive prenom={userData.prenom} onComplete={handleBigFiveNext} />}
         {step === "vakog" && <QuizVAKOG prenom={userData.prenom} onComplete={handleVAKOGNext} />}
