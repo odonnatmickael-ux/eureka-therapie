@@ -1945,7 +1945,7 @@ function Anamnese({ onNext }) {
               Pour personnaliser votre séance, j'ai besoin de votre prénom.
             </p>
             <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
-              placeholder="Marie, Pierre, Mickaël…"
+              placeholder="Marie, Pierre…"
               autoFocus
               onKeyDown={e => { if (e.key === 'Enter' && screenValid[0]) goNext(); }}
               style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
@@ -1986,14 +1986,12 @@ function Anamnese({ onNext }) {
         {screen === 2 && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
-              fontWeight:"400", marginBottom:"0.5rem" }}>
-              {prenom ? `Qu'est-ce qui vous pèse en ce moment, ${prenom} ?` : "Qu'est-ce qui vous pèse en ce moment ?"}
-            </h2>
+              fontWeight:"400", marginBottom:"0.5rem" }}>Ce que vous traversez en ce moment</h2>
             <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
-              Décrivez ce qui vous préoccupe, ce que vous traversez, ce que vous souhaitez transformer. Plus vous êtes précis, plus la séance vous correspondra.
+              Plus vous êtes précis, plus la séance vous correspondra.
             </p>
             <textarea value={problem} onChange={e => setProblem(e.target.value)}
-              placeholder="Stress au travail, anxiété nocturne, sentiment de blocage…"
+              placeholder="Décrivez ce qui vous préoccupe, ce qui vous pèse, ce que vous souhaitez transformer…"
               rows={5} autoFocus
               style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
                 border:`1.5px solid ${C.border}`, borderRadius:"12px", fontSize:"15px",
