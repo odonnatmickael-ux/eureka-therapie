@@ -2177,7 +2177,7 @@ function PricingIntent({ prenom, archetype, onContinue }) {
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         // ─── Template ADMIN (notifications) ─── arrive chez Mickaël en gmail
-        // Variables attendues par template_yk0vr69 : to_email, notification_type, date, script
+        // Variables attendues par template_nc5fh13 : to_email, notification_type, date, script
         // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
@@ -3023,7 +3023,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         // ─── Template ADMIN (notifications) ─── arrive chez Mickaël en gmail
-        // Variables attendues par template_yk0vr69 : to_email, notification_type, date, script
+        // Variables attendues par template_nc5fh13 : to_email, notification_type, date, script
         // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
@@ -3205,17 +3205,20 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3";
       setAudioUrl(blobUrl);
 
-      // EMAIL
+      // EMAIL — ANONYMISATION TOTALE (RGPD)
+      // On n'envoie AUCUNE donnée perso à EmailJS : pas de prénom, pas de problème,
+      // pas d'objectif, pas de script. Juste l'email destinataire et le numéro de
+      // séance. Comme EmailJS passe par notre Gmail, tout ce qu'on envoie reste tracé
+      // dans "Mails envoyés". Donc on ne fournit rien que le client n'accepterait pas
+      // de voir conservé indéfiniment. Le contenu personnalisé reste UNIQUEMENT dans
+      // le navigateur du client (localStorage + IndexedDB + bouton Télécharger).
       setLoadMsg("Envoi email...");
       try {
-        // Captcha invisible : token vide si Turnstile pas configuré
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
-          to_email: email, to_name: prenom, mbti_type: archetypeKey,
-          mbti_profile: archetype.name, vakog: VAKOG_NAMES[vakog],
-          problem, objectif, script: clean.substring(0, 8000),
-          date: new Date().toLocaleDateString("fr-FR"), seance_num: seanceNum,
+          to_email: email,
+          seance_num: seanceNum,
           'g-recaptcha-response': captchaToken
         });
         setEmailStatus("ok");
