@@ -110,6 +110,71 @@ input:focus { border-color: #b8955a; }
     <button class="btn btn-gold" id="genBtn" onclick="generer()" disabled>Générer cet audio →</button>
   </div>
 
+    <div class="card" style="border: 1px solid #1a4548;">
+    <h2>⚙️ Réglages voix avancés (sliders)</h2>
+    <p style="font-size:11px;color:#7a9ea0;margin-bottom:1rem;line-height:1.6">
+      Ces réglages s'appliquent à la fois en v2 ET en v3. Les valeurs par défaut sont celles validées pour BELLA.
+    </p>
+
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Vitesse (speed)</span>
+        <span id="advSpeedVal" style="color:#b8955a;font-weight:600">0.78×</span>
+      </div>
+      <input type="range" min="0.60" max="1.20" step="0.01" value="0.78" id="advSpeed"
+        oninput="document.getElementById('advSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
+        style="width:100%;accent-color:#b8955a" />
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
+        <span>0.60 (lent)</span><span>0.85-0.90 (reco sophro)</span><span>1.20</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Stabilité (stability)</span>
+        <span id="advStabilityVal" style="color:#b8955a;font-weight:600">0.55</span>
+      </div>
+      <input type="range" min="0" max="1" step="0.01" value="0.55" id="advStability"
+        oninput="document.getElementById('advStabilityVal').textContent = parseFloat(this.value).toFixed(2)"
+        style="width:100%;accent-color:#b8955a" />
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
+        <span>0 (variable)</span><span>0.55-0.85 (reco)</span><span>1 (monotone)</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Expressivité (style)</span>
+        <span id="advStyleVal" style="color:#b8955a;font-weight:600">0.35</span>
+      </div>
+      <input type="range" min="0" max="1" step="0.01" value="0.35" id="advStyle"
+        oninput="document.getElementById('advStyleVal').textContent = parseFloat(this.value).toFixed(2)"
+        style="width:100%;accent-color:#b8955a" />
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
+        <span>0 (neutre)</span><span>0.10-0.40 (reco)</span><span>1 (théâtral)</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Fidélité (similarity_boost)</span>
+        <span id="advSimilarityVal" style="color:#b8955a;font-weight:600">0.75</span>
+      </div>
+      <input type="range" min="0" max="1" step="0.01" value="0.75" id="advSimilarity"
+        oninput="document.getElementById('advSimilarityVal').textContent = parseFloat(this.value).toFixed(2)"
+        style="width:100%;accent-color:#b8955a" />
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#f0e8d8;margin-bottom:0.5rem">
+      <input type="checkbox" id="advBoost" checked style="accent-color:#b8955a" />
+      Speaker Boost (amplifie la personnalité de la voix)
+    </label>
+
+    <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">
+      Astuce : ces réglages sont utilisés à la fois par le bouton "Générer preview 10s" ci-dessus ET par le bouton "Générer cet audio" ci-dessous (les 16 échantillons).
+    </p>
+  </div>
+
   <div class="card" id="progressCard" style="display:none">
     <h2>⏳ Génération en cours…</h2>
     <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
@@ -223,9 +288,26 @@ async function callTTS(text, prevText = "", nextText = "") {
     text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, maxChars),
     voiceId: VOICE_ID
   };
+  // Lecture des sliders avancés (utilisés en v3 ET en v2 pour le speed)
+  const advSpeedB = parseFloat(document.getElementById('advSpeed').value);
   if (isV3) {
     body.modelId = "eleven_v3";
-    body.voiceSettings = { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true, speed:0.78 };
+    body.voiceSettings = {
+      stability: parseFloat(document.getElementById('advStability').value),
+      similarity_boost: parseFloat(document.getElementById('advSimilarity').value),
+      style: parseFloat(document.getElementById('advStyle').value),
+      use_speaker_boost: document.getElementById('advBoost').checked,
+      speed: advSpeedB
+    };
+  } else {
+    body.modelId = "eleven_multilingual_v2";
+    body.voiceSettings = {
+      stability: parseFloat(document.getElementById('advStability').value),
+      similarity_boost: parseFloat(document.getElementById('advSimilarity').value),
+      style: parseFloat(document.getElementById('advStyle').value),
+      use_speaker_boost: document.getElementById('advBoost').checked,
+      speed: advSpeedB
+    };
   }
   // v3 (alpha) ne supporte PAS encore previous_text/next_text — on les omet en v3
   if (!isV3 && prevText) body.previous_text = cleanCtx(prevText);
@@ -275,9 +357,31 @@ async function genererPreview() {
       text: previewText,
       voiceId: VOICE_ID
     };
+    // Lecture des sliders avancés (utilisés en v3 ET en v2 pour le speed)
+    const advSpeed = parseFloat(document.getElementById('advSpeed').value);
+    const advStability = parseFloat(document.getElementById('advStability').value);
+    const advStyle = parseFloat(document.getElementById('advStyle').value);
+    const advSimilarity = parseFloat(document.getElementById('advSimilarity').value);
+    const advBoost = document.getElementById('advBoost').checked;
     if (isV3) {
       body.modelId = "eleven_v3";
-      body.voiceSettings = { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true, speed:0.78 };
+      body.voiceSettings = {
+        stability: advStability,
+        similarity_boost: advSimilarity,
+        style: advStyle,
+        use_speaker_boost: advBoost,
+        speed: advSpeed
+      };
+    } else {
+      // En v2 multilingual : tous les sliders sont actifs (stability, similarity, style, boost, speed)
+      body.modelId = "eleven_multilingual_v2";
+      body.voiceSettings = {
+        stability: advStability,
+        similarity_boost: advSimilarity,
+        style: advStyle,
+        use_speaker_boost: advBoost,
+        speed: advSpeed
+      };
     }
     const r = await fetch("/api/tts", {
       method: "POST",
