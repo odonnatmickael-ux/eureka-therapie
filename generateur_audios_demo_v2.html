@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — MARCEL</title>
+<title>EUREKA — Générateur Audios DÉMO — BELLA</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <style>
@@ -55,12 +55,12 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · MARCEL · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · v2/v3 togglable · BELLA · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Marcel (YV28ox2c5Cuh5rim0LrW) · Chaleureux, poétique · Speed : 0.78</div>
+  <div class="voice-badge">🎙️ Voix : Bella (4RZ84U1b4WCqpu57LvIq) · Douce, enveloppante · Speed : 0.78</div>
 
   <div class="warning">
-    ⚠️ Cet outil génère les 16 fichiers MP3 de démonstration à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
+    ⚠️ Cet outil génère les 16 fichiers MP3 de démonstration (en v2 ou v3 selon le toggle ci-dessous) à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
   </div>
 
   <div class="card">
@@ -70,8 +70,24 @@ input:focus { border-color: #b8955a; }
     <input type="password" id="elevenKey" placeholder="sk_..." />
   </div>
 
+  <div class="card" style="border: 1px solid #b8955a;">
+    <h2>🎙️ Générer preview court (10 sec)</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
+      Génère UN seul MP3 court (~10 sec) à uploader sur Vercel Blob sous le nom
+      <code style="color:#d4b483">preview_bella.mp3</code>.
+      Sera utilisé pour la démo Landing ET le bouton "Écouter" sur l'écran Profil.
+      Utilise le modèle sélectionné dans la carte du dessous (v2 ou v3).
+    </p>
+    <button class="btn btn-gold" onclick="genererPreview()">🎙️ Générer preview 10s →</button>
+  </div>
+
+  <div class="card" id="previewResultCard" style="display:none">
+    <h2>✅ Preview générée</h2>
+    <div id="previewResult"></div>
+  </div>
+
   <div class="card">
-    <h2>🎯 Générer un audio</h2>
+    <h2>🎯 Générer un audio (16 échantillons par voix)</h2>
     <label>Canal VAKOG</label>
     <div class="grid" id="vagokGrid">
       <div class="opt" data-val="V" onclick="selectOpt('vakog',this)">👁️ Visuel</div>
@@ -85,6 +101,11 @@ input:focus { border-color: #b8955a; }
       <div class="opt" data-val="diplomates" onclick="selectOpt('dir',this)">💫 Diplomates (NF)</div>
       <div class="opt" data-val="sentinelles" onclick="selectOpt('dir',this)">🛡️ Sentinelles (SJ)</div>
       <div class="opt" data-val="explorateurs" onclick="selectOpt('dir',this)">⚡ Explorateurs (SP)</div>
+    </div>
+    <label>Modèle ElevenLabs</label>
+    <div class="grid" id="modelGrid">
+      <div class="opt selected" data-val="v2" onclick="selectOpt('model',this)">📻 v2 (multilingual — standard)</div>
+      <div class="opt" data-val="v3" onclick="selectOpt('model',this)">✨ v3 (alpha expressif)</div>
     </div>
     <button class="btn btn-gold" id="genBtn" onclick="generer()" disabled>Générer cet audio →</button>
   </div>
@@ -105,37 +126,38 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_marcel_analystes_visuel.mp3</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_marcel_analystes_auditif.mp3</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_marcel_analystes_kinesth.mp3</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_marcel_analystes_rationnel.mp3</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_marcel_diplomates_visuel.mp3</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_marcel_diplomates_auditif.mp3</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_marcel_diplomates_kinesth.mp3</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_marcel_diplomates_rationnel.mp3</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_marcel_sentinelles_visuel.mp3</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_marcel_sentinelles_auditif.mp3</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_marcel_sentinelles_kinesth.mp3</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_marcel_sentinelles_rationnel.mp3</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_marcel_explorateurs_visuel.mp3</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_marcel_explorateurs_auditif.mp3</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_marcel_explorateurs_kinesth.mp3</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_marcel_explorateurs_rationnel.mp3</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_bella_analystes_visuel.mp3</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_bella_analystes_auditif.mp3</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_bella_analystes_kinesth.mp3</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_bella_analystes_rationnel.mp3</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_bella_diplomates_visuel.mp3</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_bella_diplomates_auditif.mp3</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_bella_diplomates_kinesth.mp3</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_bella_diplomates_rationnel.mp3</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_bella_sentinelles_visuel.mp3</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_bella_sentinelles_auditif.mp3</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_bella_sentinelles_kinesth.mp3</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_bella_sentinelles_rationnel.mp3</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_bella_explorateurs_visuel.mp3</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_bella_explorateurs_auditif.mp3</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_bella_explorateurs_kinesth.mp3</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_bella_explorateurs_rationnel.mp3</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "YV28ox2c5Cuh5rim0LrW"; // Marcel
-let selVakog = null, selDir = null;
+const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
+let selVakog = null, selDir = null, selModel = "v2";
 
 function selectOpt(type, el) {
-  const grid = type === 'vakog' ? document.getElementById('vagokGrid') : document.getElementById('dirGrid');
+  const grid = type === 'vakog' ? document.getElementById('vagokGrid') : type === 'dir' ? document.getElementById('dirGrid') : document.getElementById('modelGrid');
   grid.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   if (type === 'vakog') selVakog = el.dataset.val;
-  else selDir = el.dataset.val;
-  document.getElementById('genBtn').disabled = !(selVakog && selDir);
+  else if (type === 'dir') selDir = el.dataset.val;
+  else if (type === 'model') selModel = el.dataset.val;
+  document.getElementById('genBtn').disabled = !(selVakog && selDir && selModel);
 }
 
 function log(msg, type='') {
@@ -175,7 +197,7 @@ function buildPromptSysteme(vakog, dir) {
     "VAKOG: " + vakog + " (" + vakogStyle + ")\n\n" +
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction.\n" +
-    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre temps... un... [PAUSE_0.5s] deux... [PAUSE_0.5s] trois... [PAUSE_0.5s] quatre... Bloquez doucement... un... [PAUSE_0.5s] deux... Et expirez... tout doucement... en huit temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "2. RESPIRATION EXACTE: Inspirez maintenant... lentement... en quatre... temps... un...... deux...... trois...... quatre...... Bloquez doucement... un...... deux...... Et expirez... tout doucement... en huit... temps... laissez partir toutes les tensions... [PAUSE_6s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
     "3. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "4. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "5. PAUSE ENTRE PHRASES: apres chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite a vous installer... [PAUSE_1s] Laissez votre corps s abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
@@ -194,13 +216,20 @@ async function callClaude(system, user, tokens) {
 }
 
 async function callTTS(text, prevText = "", nextText = "") {
-  const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 1000);
+  const isV3 = selModel === "v3";
+  const maxChars = isV3 ? 2800 : 4800;
+  const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, isV3 ? 600 : 1000);
   const body = {
-    text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
+    text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, maxChars),
     voiceId: VOICE_ID
   };
-  if (prevText) body.previous_text = cleanCtx(prevText);
-  if (nextText) body.next_text = cleanCtx(nextText);
+  if (isV3) {
+    body.modelId = "eleven_v3";
+    body.voiceSettings = { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true, speed:0.78 };
+  }
+  // v3 (alpha) ne supporte PAS encore previous_text/next_text — on les omet en v3
+  if (!isV3 && prevText) body.previous_text = cleanCtx(prevText);
+  if (!isV3 && nextText) body.next_text = cleanCtx(nextText);
   const r = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -231,6 +260,49 @@ function bufferToWav(buffer, sampleRate) {
 const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
 const DIR_NOMS = { analystes:'analystes', diplomates:'diplomates', sentinelles:'sentinelles', explorateurs:'explorateurs' };
 
+
+async function genererPreview() {
+  const elevenKey = document.getElementById('elevenKey').value.trim();
+  if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
+
+  const previewText = "Bonjour. Voici ma voix. Je peux vous accompagner pour votre séance.";
+  const fname = "preview_bella.mp3";
+
+  try {
+    // Appel TTS direct sans Claude (texte court, pas besoin de générer un script)
+    const isV3 = selModel === "v3";
+    const body = {
+      text: previewText,
+      voiceId: VOICE_ID
+    };
+    if (isV3) {
+      body.modelId = "eleven_v3";
+      body.voiceSettings = { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true, speed:0.78 };
+    }
+    const r = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error("ElevenLabs error: " + r.status);
+
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+
+    document.getElementById('previewResultCard').style.display = 'block';
+    document.getElementById('previewResult').innerHTML = `
+      <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.5rem">Modèle utilisé : <strong style="color:#d4b483">${isV3 ? "eleven_v3" : "eleven_multilingual_v2"}</strong></p>
+      <audio controls src="${url}" style="width:100%;margin-bottom:0.5rem"></audio>
+      <a class="dl-btn" href="${url}" download="${fname}">⬇ Télécharger ${fname}</a>
+      <p style="font-size:11px;color:#7a9ea0;margin-top:0.5rem;line-height:1.5">
+        ⚠ Uploadez sur Vercel Blob avec ce nom EXACT : <code style="color:#d4b483">${fname}</code>
+      </p>
+    `;
+  } catch(e) {
+    alert("Erreur : " + e.message);
+  }
+}
+
 async function generer() {
   const elevenKey = document.getElementById('elevenKey').value.trim();
   if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
@@ -239,7 +311,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_marcel_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
+  const fname = `demo_bella_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
@@ -320,10 +392,11 @@ async function generer() {
     for (const p of parts) {
       if (p.type === "s") { fp.push(p); continue; }
       let tx = p.c;
-      while (tx.length > 4800) {
-        let cut = tx.lastIndexOf("... ", 4800);
-        if (cut < 500) cut = tx.lastIndexOf(". ", 4800);
-        if (cut < 500) cut = 4800;
+      const chunkLimit = selModel === "v3" ? 2800 : 4800;
+      while (tx.length > chunkLimit) {
+        let cut = tx.lastIndexOf("... ", chunkLimit);
+        if (cut < 500) cut = tx.lastIndexOf(". ", chunkLimit);
+        if (cut < 500) cut = chunkLimit;
         fp.push({ type:"t", c:tx.substring(0, cut+3) });
         tx = tx.substring(cut+3).trim();
       }
