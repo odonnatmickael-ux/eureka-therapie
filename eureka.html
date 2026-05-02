@@ -57,7 +57,8 @@ const CONFIG = {
   // ── EmailJS ───────────────────────────────────────────────────────────────
   EJS_PUBLIC_KEY:  "Z-ubcOHqSYVnUjv2u",
   EJS_SERVICE_ID:  "service_veoaw2j",
-  EJS_TEMPLATE_ID: "template_pvpb8m6",
+  EJS_TEMPLATE_ID: "template_pvpb8m6",       // template séance client (récap + script)
+  EJS_ADMIN_TEMPLATE_ID: "template_yk0vr69", // template notifications admin (pricing intent + feedback) — variables : to_email, notification_type, date, script
 
   // ── Cloudflare Turnstile (anti-spam invisible) ───────────────────────────
   // Pour activer : crée un compte sur dash.cloudflare.com → Turnstile → ajoute
@@ -2175,25 +2176,18 @@ function PricingIntent({ prenom, archetype, onContinue }) {
         // Captcha invisible : token vide si Turnstile pas configuré (pas bloquant)
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
-        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+        // ─── Template ADMIN (notifications) ─── arrive chez Mickaël en gmail
+        // Variables attendues par template_yk0vr69 : to_email, notification_type, date, script
+        // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
-          to_name: "EUREKA Pricing Intent",
-          mbti_type: "PRICING_INTENT",
-          mbti_profile: "[INTENT TARIFAIRE 5e séance] " + (archetype || "?"),
-          vakog: "?",
-          problem: "Paierait : " + (intent || "(non précisé)"),
-          objectif: "Formule : " + (formula || "(non précisé)"),
-          'g-recaptcha-response': captchaToken, // EmailJS reconnaît ce nom de champ pour Turnstile/reCAPTCHA
-          // ─── ANONYMISATION STRICTE ───
-          // Le bandeau écran promet « 100 % anonyme ». On respecte la promesse :
-          // le prénom n'est PAS envoyé (même si renseigné à l'étape Anamnèse plus tôt).
-          // On ne garde que les champs analytiques utiles pour la décision pricing.
+          notification_type: "Intention tarifaire (5e séance)",
+          date: new Date().toLocaleDateString("fr-FR"),
+          'g-recaptcha-response': captchaToken,
           script: "INTENTION TARIFAIRE — visiteur anonyme" +
                   "\n\nPaierait pour ce service : " + (intent || "(non précisé)") +
                   "\nFormule préférée : " + (formula || "(non précisé)") +
-                  "\n\nCommentaire :\n" + (comment.trim() || "(aucun)"),
-          date: new Date().toLocaleDateString("fr-FR"),
-          seance_num: "5"
+                  "\n\nCommentaire :\n" + (comment.trim() || "(aucun)")
         });
       }
       setSent(true);
@@ -3028,26 +3022,18 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         // Captcha invisible : token vide si Turnstile pas configuré (pas bloquant)
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
-        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+        // ─── Template ADMIN (notifications) ─── arrive chez Mickaël en gmail
+        // Variables attendues par template_yk0vr69 : to_email, notification_type, date, script
+        // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
+        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
-          to_name: "EUREKA Feedback",
-          mbti_type: archetypeKey || "?",
-          mbti_profile: "[FEEDBACK] " + (archetype.name || "?"),
-          vakog: VAKOG_NAMES[vakog] || vakog || "?",
-          problem: "Ressenti : " + (fbFeel || "(non précisé)"),
-          objectif: "Paierait : " + (fbPay || "(non précisé)"),
+          notification_type: "Feedback séance n°" + seanceNum,
+          date: new Date().toLocaleDateString("fr-FR"),
           'g-recaptcha-response': captchaToken,
-          // ─── ANONYMISATION STRICTE ───
-          // Le bandeau écran promet « 100 % anonyme · Aucune donnée personnelle collectée. »
-          // On respecte la promesse : le prénom n'est PAS envoyé (même si renseigné à l'Anamnèse).
-          // Les futurs témoignages que tu sélectionnes manuellement seront accompagnés d'un
-          // prénom recueilli explicitement à part (pas via ce flux automatique).
           script: "FEEDBACK SÉANCE n°" + seanceNum + " — visiteur anonyme" +
                   "\n\nRessenti : " + (fbFeel || "(non précisé)") +
                   "\nPaierait : " + (fbPay || "(non précisé)") +
-                  "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)"),
-          date: new Date().toLocaleDateString("fr-FR"),
-          seance_num: seanceNum
+                  "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)")
         });
       }
       track("feedback_sent", { feel: fbFeel || "?", pay: fbPay || "?", has_comment: !!fbComment.trim() });
