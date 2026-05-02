@@ -464,52 +464,6 @@ const VOICES = [
 const { useState, useEffect, useRef, useCallback } = React;
 
 // ══════════════════════════════════════════════════════════════════
-// DONNÉES : Quiz MBTI 20 questions
-// ══════════════════════════════════════════════════════════════════
-const QUIZ_MBTI = [
-  { dim:"EI", q:"Après une journée intense, vous préférez…",
-    a:["Retrouver des amis pour vous revitaliser","Selon l'humeur du moment","Rester seul(e) pour recharger vos batteries"] },
-  { dim:"EI", q:"En groupe, vous avez tendance à…",
-    a:["Parler spontanément — vous pensez en parlant","Ça dépend vraiment du contexte","Écouter et réfléchir avant de prendre la parole"] },
-  { dim:"EI", q:"Votre cercle social idéal est…",
-    a:["Large — vous adorez rencontrer de nouvelles personnes","Variable selon les moments de vie","Intime — quelques amis précieux et choisis"] },
-  { dim:"SN", q:"Face à un défi, vous faites confiance à…",
-    a:["Votre expérience et aux faits concrets","Un mélange des deux","Votre intuition et aux possibilités invisibles"] },
-  { dim:"SN", q:"Vous êtes davantage attiré(e) par…",
-    a:["Les détails précis et les réalités tangibles","Les deux selon le contexte","Les grandes visions et les possibilités infinies"] },
-  { dim:"SN", q:"Vous apprenez le mieux en…",
-    a:["Pratiquant concrètement, étape par étape","Alternant théorie et pratique","Comprenant d'abord le sens profond des choses"] },
-  { dim:"SN", q:"Votre rapport au futur est…",
-    a:["Pragmatique — bien ancré dans le présent","Équilibré","Visionnaire — tourné vers les possibilités à venir"] },
-  { dim:"TF", q:"Pour décider, vous privilégiez…",
-    a:["L'analyse logique et objective","Logique ET ressenti conjointement","Les valeurs humaines et l'impact émotionnel"] },
-  { dim:"TF", q:"Face à un conflit, vous cherchez d'abord…",
-    a:["La solution la plus juste et rationnelle","Justice ET harmonie ensemble","L'harmonie et le bien-être de chacun"] },
-  { dim:"TF", q:"Vous êtes davantage touché(e) par…",
-    a:["La vérité, même difficile","La vérité dite avec bienveillance","La façon dont les choses sont ressenties"] },
-  { dim:"TF", q:"On vous reproche parfois d'être trop…",
-    a:["Froid(e) ou distant(e)","Ni l'un ni l'autre","Sensible ou influencé(e) par vos émotions"] },
-  { dim:"TF", q:"Vous valorisez davantage…",
-    a:["La compétence et l'efficacité","Les deux équitablement","L'empathie et la profondeur relationnelle"] },
-  { dim:"JP", q:"Votre espace de vie est…",
-    a:["Organisé — chaque chose a sa place","Organisé à ma façon","Vivant — je m'y retrouve à ma façon"] },
-  { dim:"JP", q:"Face à une échéance, vous…",
-    a:["Planifiez à l'avance, livrez tôt","Planifiez en gardant de la marge","Travaillez mieux sous pression"] },
-  { dim:"JP", q:"Vous préférez les projets…",
-    a:["Bien définis avec un plan clair","Structurés mais adaptables","Libres, qui évoluent au fil de l'eau"] },
-  { dim:"JP", q:"En voyage, vous…",
-    a:["Planifiez tout : hôtels, itinéraires","Planifiez les grandes lignes","Improvisez totalement — c'est là que ça commence"] },
-  { dim:"JP", q:"Vous vous sentez mieux quand…",
-    a:["Les décisions sont prises et le plan est clair","Il y a un cap, mais de la flexibilité","Les options restent ouvertes"] },
-  { dim:"JP", q:"Votre rapport aux règles est…",
-    a:["Les règles sont là pour être respectées","Je les respecte si elles font sens","Les règles freinent la créativité"] },
-  { dim:"EI", q:"Lors d'un week-end seul(e), vous vous sentez…",
-    a:["Ennuyé(e) — vous préférez être entouré(e)","Parfois bien, parfois seul(e)","Ressourcé(e) — c'est du luxe"] },
-  { dim:"SN", q:"Les rêves et leur interprétation vous…",
-    a:["Laissent de marbre — trop flou","Intéressent modérément","Fascinent profondément"] },
-];
-
-// ══════════════════════════════════════════════════════════════════
 // DONNÉES : Quiz VAKOG (6 modalités)
 // ══════════════════════════════════════════════════════════════════
 const QUIZ_VAKOG = [
@@ -574,13 +528,6 @@ const QUIZ_VAKOG = [
 // ══════════════════════════════════════════════════════════════════
 // UTILITAIRES
 // ══════════════════════════════════════════════════════════════════
-const MBTI_NAMES = {
-  INTJ:"L'Architecte", INTP:"Le Logicien", ENTJ:"Le Commandant", ENTP:"Le Débatteur",
-  INFJ:"L'Avocat", INFP:"Le Médiateur", ENFJ:"Le Protagoniste", ENFP:"Le Militant",
-  ISTJ:"Le Logisticien", ISFJ:"Le Défenseur", ESTJ:"Le Directeur", ESFJ:"Le Consul",
-  ISTP:"Le Virtuose", ISFP:"L'Aventurier", ESTP:"L'Entrepreneur", ESFP:"Le Performeur",
-};
-
 const VAKOG_NAMES = { V:"Visuel", A:"Auditif", K:"Kinesthésique", O:"Olfactif", G:"Gustatif", R:"Rationnel/Analytique" };
 const VAKOG_DESC = {
   V:"Vous pensez en images, visualisez facilement et êtes sensible aux couleurs et formes. Votre session utilisera des visualisations riches et détaillées.",
@@ -590,12 +537,6 @@ const VAKOG_DESC = {
   G:"Les saveurs résonnent en vous comme des souvenirs vivants. Votre session incorporera des métaphores gustatives.",
   R:"Vous comprenez et acceptez mieux ce qui a du sens logique. Votre session expliquera le pourquoi de chaque étape."
 };
-
-function scoreMBTI(answers) {
-  const d = { EI:0, SN:0, TF:0, JP:0 };
-  QUIZ_MBTI.forEach((q,i) => { const v=answers[i]; if(v===0) d[q.dim]+=1; else if(v===2) d[q.dim]-=1; });
-  return (d.EI>0?"E":"I")+(d.SN>0?"S":"N")+(d.TF>0?"T":"F")+(d.JP>0?"J":"P");
-}
 
 function scoreVAKOG(answers) {
   const counts = { V:0, A:0, K:0, O:0, G:0, R:0 };
@@ -1518,6 +1459,44 @@ function MesSeances({ onBack, onResume }) {
   );
 }
 
+// ─── COMPOSANT TÉMOIGNAGES — placeholder éditorial pour la Landing
+// Mickaël reçoit les commentaires de fin de séance par email (anonymisés).
+// Quand il identifie un commentaire positif et utilisable, il :
+//   1. Demande au client par email un OK explicite pour publier (avec prénom + initiale)
+//   2. Ajoute manuellement l'entrée dans le tableau TESTIMONIALS ci-dessous
+// Tant que TESTIMONIALS est vide, le composant ne rend rien (Landing inchangée).
+const TESTIMONIALS = [
+  // Exemple de format quand tu auras un retour validé :
+  // { name: "Marie B., 38 ans", text: "La voix m'a vraiment aidée à m'endormir le soir.", date: "2026-01" },
+];
+
+function Temoignages() {
+  if (!TESTIMONIALS || TESTIMONIALS.length === 0) return null;
+  return (
+    <div style={{ background:C.card, borderRadius:"20px", padding:"1.75rem 2rem",
+      border:`1px solid ${C.border}`, marginBottom:"2rem", textAlign:"left" }}>
+      <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"2px",
+        textTransform:"uppercase", fontWeight:"600", marginBottom:"1rem", textAlign:"center" }}>
+        Ils ont essayé EUREKA
+      </p>
+      <div style={{ display:"grid", gap:"1.25rem" }}>
+        {TESTIMONIALS.map((t, i) => (
+          <div key={i} style={{ borderLeft:`2px solid ${C.gold}`, paddingLeft:"1rem" }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"15px",
+              fontStyle:"italic", color:C.cream, lineHeight:"1.65", marginBottom:"0.5rem" }}>
+              « {t.text} »
+            </p>
+            <p style={{ fontSize:"11px", color:C.muted, fontFamily:"'Raleway',sans-serif",
+              letterSpacing:"1px" }}>
+              — {t.name}{t.date ? ` · ${t.date}` : ""}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ÉTAPE 0 : Landing
 function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
   // Détection d'une séance personnelle déjà sauvegardée (lue depuis IndexedDB via flag localStorage)
@@ -1570,6 +1549,9 @@ function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
       {/* ───────── Mini-démo audio — convertit 2-3× plus quand l'utilisateur entend la voix ───────── */}
       {/* Affichée seulement si pas de séance déjà créée (sinon doublon avec le bouton "Reprendre") */}
       {!savedMeta && <DemoAudio />}
+
+      {/* ───────── Témoignages — placeholder, n'affiche rien tant que TESTIMONIALS est vide ───────── */}
+      <Temoignages />
 
       {/* Bloc "Reprendre ma séance" — visible UNIQUEMENT si une séance personnelle existe en IndexedDB */}
       {savedMeta && (
@@ -2202,7 +2184,11 @@ function PricingIntent({ prenom, archetype, onContinue }) {
           problem: "Paierait : " + (intent || "(non précisé)"),
           objectif: "Formule : " + (formula || "(non précisé)"),
           'g-recaptcha-response': captchaToken, // EmailJS reconnaît ce nom de champ pour Turnstile/reCAPTCHA
-          script: "INTENTION TARIFAIRE — " + (prenom || "anonyme") +
+          // ─── ANONYMISATION STRICTE ───
+          // Le bandeau écran promet « 100 % anonyme ». On respecte la promesse :
+          // le prénom n'est PAS envoyé (même si renseigné à l'étape Anamnèse plus tôt).
+          // On ne garde que les champs analytiques utiles pour la décision pricing.
+          script: "INTENTION TARIFAIRE — visiteur anonyme" +
                   "\n\nPaierait pour ce service : " + (intent || "(non précisé)") +
                   "\nFormule préférée : " + (formula || "(non précisé)") +
                   "\n\nCommentaire :\n" + (comment.trim() || "(aucun)"),
@@ -3051,7 +3037,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           problem: "Ressenti : " + (fbFeel || "(non précisé)"),
           objectif: "Paierait : " + (fbPay || "(non précisé)"),
           'g-recaptcha-response': captchaToken,
-          script: "FEEDBACK SÉANCE n°" + seanceNum + " — " + (prenom || "anonyme") +
+          // ─── ANONYMISATION STRICTE ───
+          // Le bandeau écran promet « 100 % anonyme · Aucune donnée personnelle collectée. »
+          // On respecte la promesse : le prénom n'est PAS envoyé (même si renseigné à l'Anamnèse).
+          // Les futurs témoignages que tu sélectionnes manuellement seront accompagnés d'un
+          // prénom recueilli explicitement à part (pas via ce flux automatique).
+          script: "FEEDBACK SÉANCE n°" + seanceNum + " — visiteur anonyme" +
                   "\n\nRessenti : " + (fbFeel || "(non précisé)") +
                   "\nPaierait : " + (fbPay || "(non précisé)") +
                   "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)"),
@@ -4298,8 +4289,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         <div style={{ marginTop:"1rem", padding:"1rem", background:C.panel,
           borderRadius:"12px", border:`1px solid ${C.border}` }}>
           <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.7", textAlign:"center" }}>
-            <strong style={{ color:C.goldLight }}>Protocole EUREKA — 21 séances</strong><br/>
-            Écoutez votre séance chaque jour pendant 21 jours consécutifs pour ancrer la transformation durablement dans votre cerveau.
+            <strong style={{ color:C.goldLight }}>Protocole 21 jours</strong><br/>
+            Écoutez votre séance personnelle chaque jour pendant 21 jours pour ancrer la transformation durablement dans votre cerveau.
+          </p>
+          <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6", textAlign:"center",
+            marginTop:"0.625rem", fontStyle:"italic" }}>
+            Le bouton « 🔄 Nouvelle séance » plus bas crée un nouveau profil pour travailler sur un autre objectif (à utiliser après vos 21 jours).
           </p>
         </div>
 
