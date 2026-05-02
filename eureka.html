@@ -2288,7 +2288,7 @@ function PricingIntent({ prenom, archetype, onContinue }) {
               { v:"monthly", label:"Abonnement mensuel illimité",     desc:"~9-19 €/mois, séances à volonté" },
               { v:"pack",    label:"Pack de 5 séances complètes",     desc:"~15-25 € le pack, sans engagement" },
               { v:"single",  label:"Une séance à la carte",           desc:"~3-5 € par séance, paiement unique" },
-              { v:"none",    label:"Aucune — je préfère le BYOK actuel", desc:"Je colle ma propre clé ElevenLabs" },
+              { v:"none",    label:"Aucune — je préfère le système actuel", desc:"Je colle ma propre clé ElevenLabs" },
             ].map(o => (
               <button key={o.v} onClick={() => setFormula(formula === o.v ? null : o.v)}
                 style={{ padding:"0.875rem 1rem", borderRadius:"12px", cursor:"pointer",
@@ -3135,10 +3135,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "- Auditif: tu entends, tu percois, tu captes, tu ecoutes, tu ressens la resonance, tu distingues\n" +
         "- Kinesth.: tu ressens, tu eprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
         "- Rationnel: tu comprends, tu realises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
-        "Scene 1 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. [PAUSE_5s] entre moments cles.\n\n" +
-        "Scene 2 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. [PAUSE_5s] entre moments.\n\n" +
-        "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. [PAUSE_5s] entre moments.\n\n" +
-        "Terminer par: La transformation est REELLE... elle est PERMANENTE... elle est MAINTENANT... [PAUSE_5s]", 3000);
+        "REGLE PAUSES — IMPERATIF POUR L'AUDIO :\n" +
+        "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMES par le parseur audio, ils n'existeront pas a l'ecoute → enchainement trop rapide).\n" +
+        "- ENTRE CHAQUE PHRASE des scenes, utilise 6 ellipses '......' qui forcent une vraie pause prosodique d'environ 1 seconde dans la voix ElevenLabs. Exemple : 'Tu apercois une lumiere...... Elle grandit doucement...... Elle dissout la brume......'\n" +
+        "- ENTRE moments cles d'une scene (transitions importantes), utilise [PAUSE_3s] ou [PAUSE_5s] (vraies pauses audio).\n\n" +
+        "Scene 1 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
+        "Scene 2 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
+        "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
+        "Terminer par: La transformation est REELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
 
       // APPEL 3 : Cloture spirituelle + Desophronisation
       // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
@@ -3886,7 +3890,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               {[
                 { n:"1", t:<>Pas encore de compte ? <a href="https://elevenlabs.io/sign-up" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>Créer un compte gratuit</a> (sans carte bancaire)</> },
                 { n:"2", t:<>Une fois connecté, <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" style={{color:C.gold, textDecoration:"underline", fontWeight:"600"}}>cliquer ici pour accéder à vos clés API</a> → bouton <strong style={{color:C.cream}}>« Create API Key »</strong></> },
-                { n:"3", t:<>Copiez la clé (<code style={{color:C.goldLight, fontFamily:"monospace", fontSize:"11px"}}>sk_...</code>) et collez-la dans le champ ci-dessous (sauvegardée localement, pas chez nous)</> },
+                { n:"3", t:<>Copiez la clé (<code style={{color:C.goldLight, fontFamily:"monospace", fontSize:"11px"}}>sk_...</code>) et collez-la dans le champ ci-dessous (sauvegardée localement, pas chez nous).<br/><span style={{fontSize:"11px", color:C.hint, fontStyle:"italic"}}>💡 Astuce : conservez aussi cette clé dans un gestionnaire de mots de passe — ElevenLabs ne la réaffichera plus.</span></> },
               ].map(({n, t}) => (
                 <div key={n} style={{ display:"flex", gap:"0.75rem", alignItems:"flex-start" }}>
                   <span style={{ width:"22px", height:"22px", borderRadius:"50%",
@@ -3913,7 +3917,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 border:`1px solid rgba(42,138,143,.25)` }}>
                 <p style={{ fontSize:"11.5px", color:C.muted, lineHeight:"1.7" }}>
                   EUREKA est en <strong style={{color:C.cream}}>bêta privée gratuite</strong>.
-                  Le modèle BYOK (« apportez votre clé ») vous permet d'utiliser le service
+                  Ce système de clé personnelle vous permet d'utiliser le service
                   sans rien nous payer : vous ne réglez qu'ElevenLabs, à la consommation réelle.
                   <br/><br/>
                   <strong style={{color:C.goldLight}}>Côté sécurité :</strong> votre clé reste
