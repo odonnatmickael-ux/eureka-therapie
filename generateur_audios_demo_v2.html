@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — MARCEL</title>
+<title>EUREKA — Générateur Audios DÉMO — MICKAEL</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <style>
@@ -55,9 +55,9 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · v2/v3 togglable · MARCEL · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · v2/v3 togglable · MICKAEL · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Marcel (YV28ox2c5Cuh5rim0LrW) · Chaleureux, poétique · Speed : 0.78</div>
+  <div class="voice-badge">🎙️ Voix : Mickaël (19cV422MaCP4oU6N8AFm) · Personnelle, apaisante · Speed 0.90 · Stab 0.75 / Style 0.20 / Boost ON (v3 validés)</div>
 
   <div class="warning">
     ⚠️ Cet outil génère les 16 fichiers MP3 de démonstration (en v2 ou v3 selon le toggle ci-dessous) à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
@@ -74,7 +74,7 @@ input:focus { border-color: #b8955a; }
     <h2>🎙️ Générer preview court (10 sec)</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
       Génère UN seul MP3 court (~10 sec) à uploader sur Vercel Blob sous le nom
-      <code style="color:#d4b483">preview_marcel.mp3</code>.
+      <code style="color:#d4b483">preview_mickael.mp3</code>.
       Sera utilisé pour la démo Landing ET le bouton "Écouter" sur l'écran Profil.
       Utilise le modèle sélectionné dans la carte du dessous (v2 ou v3).
     </p>
@@ -113,15 +113,15 @@ input:focus { border-color: #b8955a; }
     <div class="card" style="border: 1px solid #1a4548;">
     <h2>⚙️ Réglages voix avancés (sliders)</h2>
     <p style="font-size:11px;color:#7a9ea0;margin-bottom:1rem;line-height:1.6">
-      Ces réglages s'appliquent à la fois en v2 ET en v3. Les valeurs par défaut sont celles validées pour MARCEL.
+      Ces réglages s'appliquent à la fois en v2 ET en v3. Les valeurs par défaut sont celles validées pour MICKAEL.
     </p>
 
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Vitesse (speed)</span>
-        <span id="advSpeedVal" style="color:#b8955a;font-weight:600">0.85×</span>
+        <span id="advSpeedVal" style="color:#b8955a;font-weight:600">0.9×</span>
       </div>
-      <input type="range" min="0.60" max="1.20" step="0.01" value="0.85" id="advSpeed"
+      <input type="range" min="0.60" max="1.20" step="0.01" value="0.9" id="advSpeed"
         oninput="document.getElementById('advSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -132,9 +132,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Stabilité (stability)</span>
-        <span id="advStabilityVal" style="color:#b8955a;font-weight:600">0.65</span>
+        <span id="advStabilityVal" style="color:#b8955a;font-weight:600">0.75</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.65" id="advStability"
+      <input type="range" min="0" max="1" step="0.01" value="0.75" id="advStability"
         oninput="document.getElementById('advStabilityVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -145,9 +145,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Expressivité (style)</span>
-        <span id="advStyleVal" style="color:#b8955a;font-weight:600">0.30</span>
+        <span id="advStyleVal" style="color:#b8955a;font-weight:600">0.2</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.30" id="advStyle"
+      <input type="range" min="0" max="1" step="0.01" value="0.2" id="advStyle"
         oninput="document.getElementById('advStyleVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -158,9 +158,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Fidélité (similarity_boost)</span>
-        <span id="advSimilarityVal" style="color:#b8955a;font-weight:600">0.7</span>
+        <span id="advSimilarityVal" style="color:#b8955a;font-weight:600">0.8</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.7" id="advSimilarity"
+      <input type="range" min="0" max="1" step="0.01" value="0.8" id="advSimilarity"
         oninput="document.getElementById('advSimilarityVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
     </div>
@@ -191,28 +191,28 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_marcel_analystes_visuel.mp3</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_marcel_analystes_auditif.mp3</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_marcel_analystes_kinesth.mp3</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_marcel_analystes_rationnel.mp3</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_marcel_diplomates_visuel.mp3</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_marcel_diplomates_auditif.mp3</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_marcel_diplomates_kinesth.mp3</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_marcel_diplomates_rationnel.mp3</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_marcel_sentinelles_visuel.mp3</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_marcel_sentinelles_auditif.mp3</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_marcel_sentinelles_kinesth.mp3</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_marcel_sentinelles_rationnel.mp3</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_marcel_explorateurs_visuel.mp3</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_marcel_explorateurs_auditif.mp3</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_marcel_explorateurs_kinesth.mp3</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_marcel_explorateurs_rationnel.mp3</div>
+      <div id="chk-ANA-VIS" class="badge">⬜ demo_mickael_analystes_visuel.mp3</div>
+      <div id="chk-ANA-AUD" class="badge">⬜ demo_mickael_analystes_auditif.mp3</div>
+      <div id="chk-ANA-KIN" class="badge">⬜ demo_mickael_analystes_kinesth.mp3</div>
+      <div id="chk-ANA-RAT" class="badge">⬜ demo_mickael_analystes_rationnel.mp3</div>
+      <div id="chk-DIP-VIS" class="badge">⬜ demo_mickael_diplomates_visuel.mp3</div>
+      <div id="chk-DIP-AUD" class="badge">⬜ demo_mickael_diplomates_auditif.mp3</div>
+      <div id="chk-DIP-KIN" class="badge">⬜ demo_mickael_diplomates_kinesth.mp3</div>
+      <div id="chk-DIP-RAT" class="badge">⬜ demo_mickael_diplomates_rationnel.mp3</div>
+      <div id="chk-SEN-VIS" class="badge">⬜ demo_mickael_sentinelles_visuel.mp3</div>
+      <div id="chk-SEN-AUD" class="badge">⬜ demo_mickael_sentinelles_auditif.mp3</div>
+      <div id="chk-SEN-KIN" class="badge">⬜ demo_mickael_sentinelles_kinesth.mp3</div>
+      <div id="chk-SEN-RAT" class="badge">⬜ demo_mickael_sentinelles_rationnel.mp3</div>
+      <div id="chk-EXP-VIS" class="badge">⬜ demo_mickael_explorateurs_visuel.mp3</div>
+      <div id="chk-EXP-AUD" class="badge">⬜ demo_mickael_explorateurs_auditif.mp3</div>
+      <div id="chk-EXP-KIN" class="badge">⬜ demo_mickael_explorateurs_kinesth.mp3</div>
+      <div id="chk-EXP-RAT" class="badge">⬜ demo_mickael_explorateurs_rationnel.mp3</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "YV28ox2c5Cuh5rim0LrW"; // Marcel
+const VOICE_ID = "19cV422MaCP4oU6N8AFm"; // Mickael (nouvelle voix ElevenLabs)
 let selVakog = null, selDir = null, selModel = "v2";
 
 function selectOpt(type, el) {
@@ -348,7 +348,7 @@ async function genererPreview() {
   if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
 
   const previewText = "Bonjour. Voici ma voix. Je peux vous accompagner pour votre séance.";
-  const fname = "preview_marcel.mp3";
+  const fname = "preview_mickael.mp3";
 
   try {
     // Appel TTS direct sans Claude (texte court, pas besoin de générer un script)
@@ -415,7 +415,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_marcel_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
+  const fname = `demo_mickael_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
