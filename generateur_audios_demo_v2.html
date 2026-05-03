@@ -95,12 +95,12 @@ input:focus { border-color: #b8955a; }
       <div class="opt" data-val="K" onclick="selectOpt('vakog',this)">🤲 Kinesthésique</div>
       <div class="opt" data-val="R" onclick="selectOpt('vakog',this)">🧠 Rationnel</div>
     </div>
-    <label>Bloc de personnalité MBTI</label>
+    <label>Archétype Big Five</label>
     <div class="grid" id="dirGrid">
-      <div class="opt" data-val="analystes" onclick="selectOpt('dir',this)">🧠 Analystes (NT)</div>
-      <div class="opt" data-val="diplomates" onclick="selectOpt('dir',this)">💫 Diplomates (NF)</div>
-      <div class="opt" data-val="sentinelles" onclick="selectOpt('dir',this)">🛡️ Sentinelles (SJ)</div>
-      <div class="opt" data-val="explorateurs" onclick="selectOpt('dir',this)">⚡ Explorateurs (SP)</div>
+      <div class="opt" data-val="batisseur" onclick="selectOpt('dir',this)">🏛️ Le Bâtisseur</div>
+      <div class="opt" data-val="pelerin" onclick="selectOpt('dir',this)">🌊 Le Pèlerin</div>
+      <div class="opt" data-val="compagnon" onclick="selectOpt('dir',this)">🤝 Le Compagnon</div>
+      <div class="opt" data-val="voyageur" onclick="selectOpt('dir',this)">🍃 Le Voyageur</div>
     </div>
     <label>Modèle ElevenLabs</label>
     <div class="grid" id="modelGrid">
@@ -191,22 +191,22 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-ANA-VIS" class="badge">⬜ demo_bella_analystes_visuel.mp3</div>
-      <div id="chk-ANA-AUD" class="badge">⬜ demo_bella_analystes_auditif.mp3</div>
-      <div id="chk-ANA-KIN" class="badge">⬜ demo_bella_analystes_kinesth.mp3</div>
-      <div id="chk-ANA-RAT" class="badge">⬜ demo_bella_analystes_rationnel.mp3</div>
-      <div id="chk-DIP-VIS" class="badge">⬜ demo_bella_diplomates_visuel.mp3</div>
-      <div id="chk-DIP-AUD" class="badge">⬜ demo_bella_diplomates_auditif.mp3</div>
-      <div id="chk-DIP-KIN" class="badge">⬜ demo_bella_diplomates_kinesth.mp3</div>
-      <div id="chk-DIP-RAT" class="badge">⬜ demo_bella_diplomates_rationnel.mp3</div>
-      <div id="chk-SEN-VIS" class="badge">⬜ demo_bella_sentinelles_visuel.mp3</div>
-      <div id="chk-SEN-AUD" class="badge">⬜ demo_bella_sentinelles_auditif.mp3</div>
-      <div id="chk-SEN-KIN" class="badge">⬜ demo_bella_sentinelles_kinesth.mp3</div>
-      <div id="chk-SEN-RAT" class="badge">⬜ demo_bella_sentinelles_rationnel.mp3</div>
-      <div id="chk-EXP-VIS" class="badge">⬜ demo_bella_explorateurs_visuel.mp3</div>
-      <div id="chk-EXP-AUD" class="badge">⬜ demo_bella_explorateurs_auditif.mp3</div>
-      <div id="chk-EXP-KIN" class="badge">⬜ demo_bella_explorateurs_kinesth.mp3</div>
-      <div id="chk-EXP-RAT" class="badge">⬜ demo_bella_explorateurs_rationnel.mp3</div>
+      <div id="chk-BAT-VIS" class="badge">⬜ demo_bella_batisseur_visuel.mp3</div>
+      <div id="chk-BAT-AUD" class="badge">⬜ demo_bella_batisseur_auditif.mp3</div>
+      <div id="chk-BAT-KIN" class="badge">⬜ demo_bella_batisseur_kinesth.mp3</div>
+      <div id="chk-BAT-RAT" class="badge">⬜ demo_bella_batisseur_rationnel.mp3</div>
+      <div id="chk-PEL-VIS" class="badge">⬜ demo_bella_pelerin_visuel.mp3</div>
+      <div id="chk-PEL-AUD" class="badge">⬜ demo_bella_pelerin_auditif.mp3</div>
+      <div id="chk-PEL-KIN" class="badge">⬜ demo_bella_pelerin_kinesth.mp3</div>
+      <div id="chk-PEL-RAT" class="badge">⬜ demo_bella_pelerin_rationnel.mp3</div>
+      <div id="chk-COM-VIS" class="badge">⬜ demo_bella_compagnon_visuel.mp3</div>
+      <div id="chk-COM-AUD" class="badge">⬜ demo_bella_compagnon_auditif.mp3</div>
+      <div id="chk-COM-KIN" class="badge">⬜ demo_bella_compagnon_kinesth.mp3</div>
+      <div id="chk-COM-RAT" class="badge">⬜ demo_bella_compagnon_rationnel.mp3</div>
+      <div id="chk-VOY-VIS" class="badge">⬜ demo_bella_voyageur_visuel.mp3</div>
+      <div id="chk-VOY-AUD" class="badge">⬜ demo_bella_voyageur_auditif.mp3</div>
+      <div id="chk-VOY-KIN" class="badge">⬜ demo_bella_voyageur_kinesth.mp3</div>
+      <div id="chk-VOY-RAT" class="badge">⬜ demo_bella_voyageur_rationnel.mp3</div>
     </div>
   </div>
 </div>
@@ -340,7 +340,7 @@ function bufferToWav(buffer, sampleRate) {
 }
 
 const VAKOG_NOMS = { V:'visuel', A:'auditif', K:'kinesth', R:'rationnel' };
-const DIR_NOMS = { analystes:'analystes', diplomates:'diplomates', sentinelles:'sentinelles', explorateurs:'explorateurs' };
+const DIR_NOMS = { batisseur:'batisseur', pelerin:'pelerin', compagnon:'compagnon', voyageur:'voyageur' };
 
 
 async function genererPreview() {
