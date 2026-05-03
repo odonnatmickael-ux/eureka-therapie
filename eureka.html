@@ -666,7 +666,7 @@ function buildSystemPrompt(data) {
     "REGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
     "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
-    "3. RESPIRATION EXACTE: Inspirez maintenant... lentement... " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " Bloquez doucement... " + buildCount(breath.hold) + " Et expirez... tout doucement... " + inTemps(breath.expire) + " laissez partir toutes les tensions... [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot. 3e respiration = [PAUSE_10s].\n" +
+    "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " " + buildCount(breath.expire) + " [PAUSE_2s] Laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot ni un marqueur PAUSE. 3e respiration = [PAUSE_10s].\n" +
     "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
