@@ -1221,7 +1221,7 @@ function DemoAudio() {
   };
 
   const label = ({
-    idle: "▶  Écouter un aperçu de la voix",
+    idle: "▶  Écouter un aperçu d'une des voix",
     loading: "⏳  Génération en cours...",
     playing: "⏸  Pause",
     paused: "▶  Reprendre",
@@ -1234,7 +1234,7 @@ function DemoAudio() {
       marginBottom:"1.5rem" }}>
       <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"2px", textTransform:"uppercase",
         fontWeight:"600", marginBottom:"0.5rem", textAlign:"center" }}>
-        🎧 Aperçu de la voix
+        🎧 Aperçu d'une des voix
       </p>
       <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6", textAlign:"center",
         marginBottom:"1rem", fontStyle:"italic" }}>
@@ -2884,10 +2884,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   };
 
   // ─── ELEVENLABS V3 (Mickaël uniquement) ─────────────────────────
-  // Par défaut : v3 activé si la voix sélectionnée est Mickaël v3
-  // L'utilisateur peut forcer le mode v2 (mode bêta test, économie crédits)
+  // Par défaut : MODE V2 pour TOUTES les voix (eleven_multilingual_v2).
+  // v2 respecte le param `speed` → rythme sophro garanti (~0.85×).
+  // v3 (alpha) est plus expressif mais ignore `speed` → trop rapide pour la sophro
+  // sauf pour Mickaël (réenregistrée au bon rythme) et Valentin (whisper natif lent).
+  // L'utilisateur peut activer v3 via le toggle s'il veut tester (note explicative à côté).
   const voiceIsV3Capable = isV3Voice(selectedVoice);
-  const [useV3Mode, setUseV3Mode] = useState(voiceIsV3Capable);
+  const [useV3Mode, setUseV3Mode] = useState(false);
 
   // ─── RÉGLAGES VOIX AVANCÉS (panneau A/B test) ─────────────────────
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -3297,6 +3300,18 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "4RZ84U1b4WCqpu57LvIq": { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true,  speed:0.78 }, // Bella v3    (validée)
         "cQVn2FWawJsxa2z9X3l1": { stability:0.88, similarity_boost:0.60, style:0.10, use_speaker_boost:false, speed:0.90 }, // Valentin v3 (validé) — whisper, similarity basse pour réduire sibilance
       };
+      // ─── Vitesse WSOLA appliquée APRÈS génération v3 (pitch préservé) ─────
+      // ⚠ WSOLA NEUTRALISÉ (toutes voix à 1.00) suite au bug "zzz" sur sessions longues.
+      // L'algo inline se verrouille en boucle sur certaines séquences répétitives
+      // (ex: "je vous" qui revient souvent en sophro). À réactiver quand on aura un
+      // vrai algo de time-stretch (SoundTouch / Rubber Band) ou un fix anti-verrouillage.
+      // 1.00 = aucun WSOLA (audio natif conservé tel quel).
+      const VOICE_WSOLA_SPEED = {
+        "4RZ84U1b4WCqpu57LvIq": 1.00, // Bella    — désactivé (bug WSOLA)
+        "YV28ox2c5Cuh5rim0LrW": 1.00, // Marcel   — désactivé (bug WSOLA)
+        "19cV422MaCP4oU6N8AFm": 1.00, // Mickaël  — désactivé (bug WSOLA)
+        "cQVn2FWawJsxa2z9X3l1": 1.00, // Valentin — désactivé (bug WSOLA)
+      };
 
       // Décide du modèle effectif :
       // - useV3Mode actif → eleven_v3 (toggle disponible pour TOUTES les voix
@@ -3457,11 +3472,24 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         }
       }
       if (bufs.length > 0) {
-        const tot = bufs.reduce((s, b) => s + b.length, 0);
-        const comb = actx.createBuffer(1, tot, sr);
+        let tot = bufs.reduce((s, b) => s + b.length, 0);
+        let comb = actx.createBuffer(1, tot, sr);
         const ch = comb.getChannelData(0);
         let off = 0;
         for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+
+        // ─── Ralentissement WSOLA en mode v3 (préserve le pitch) ─────
+        // v3 ignore le paramètre `speed` côté ElevenLabs → on ralentit ici.
+        // La musique de fond se cale ensuite sur la nouvelle longueur (tot mis à jour).
+        // Mickaël (réenregistré) et Valentin (whisper) sont à 1.00 → aucun traitement.
+        if (useV3) {
+          const wsolaSpeed = VOICE_WSOLA_SPEED[selectedVoice] || 1.00;
+          if (wsolaSpeed < 0.99) {
+            setFullGenMsg("Ajustement du tempo (préservation du pitch)...");
+            comb = wsolaStretch(comb, wsolaSpeed, sr);
+            tot = comb.length;
+          }
+        }
 
         // ─── NORMALISATION AUDIO réelle (scan peak + scaling) ─────
         const normalizeChannel = (channel, target = 0.95) => {
@@ -4123,16 +4151,17 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 {useV3Mode ? (
                   <>
                     <strong style={{color:C.goldLight}}>v3 actif</strong> — voix plus expressive (chuchotement, douceur, chaleur).
-                    Consomme ~15 % de crédits en plus que v2 et est plus lent à générer.
-                    {!voiceIsV3Capable && <> <span style={{color:C.gold}}>⚠ Cette voix n'est pas officiellement validée en v3 — utilisez ce mode pour tester si le rendu vous convient.</span></>}
+                    <span style={{color:C.gold}}> ⚠ Le rythme peut sonner plus rapide qu'en v2 (v3 ne respecte pas le réglage de vitesse).</span>
+                    {' '}Recommandé surtout pour <strong style={{color:C.cream}}>Mickaël</strong> et <strong style={{color:C.cream}}>Valentin</strong>.
+                    Consomme ~15 % de crédits en plus que v2.
                     <br/>
                     <span style={{color:C.gold}}>Plan ElevenLabs Starter (5 €/mois, 30 000 crédits) suffit pour 1 séance complète/mois.</span>
                   </>
                 ) : (
                   <>
-                    <strong style={{color:C.cream}}>v2 actif</strong> — voix standard, légère économie de crédits.
-                    Le plan <strong style={{color:C.cream}}>Starter (5 €/mois, 30 000 crédits)</strong> suffit aussi pour 1 séance complète.
-                    Bascule en v3 si tu veux tester le rendu expressif sur cette voix.
+                    <strong style={{color:C.cream}}>v2 actif</strong> — voix standard recommandée pour la sophrologie : rythme calme garanti, légère économie de crédits.
+                    Le plan <strong style={{color:C.cream}}>Starter (5 €/mois, 30 000 crédits)</strong> suffit pour 1 séance complète.
+                    Bascule en v3 si tu veux un rendu plus expressif (recommandé pour Mickaël et Valentin).
                   </>
                 )}
               </p>
@@ -4478,6 +4507,76 @@ function bufferToWav(buffer, sampleRate) {
   const d = buffer.getChannelData(0); let o = 44;
   for (let i=0;i<d.length;i++,o+=2) { const s=Math.max(-1,Math.min(1,d[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); }
   return new Blob([ab],{type:'audio/wav'});
+}
+
+// ─── WSOLA (Waveform Similarity Overlap-Add) — préserve le pitch ─────
+// Algorithme inline équivalent qualité Audacity "Change Tempo + Haute qualité".
+// Aucune dépendance externe, validé sur les générateurs PREVIEW Bella/Marcel.
+// tempo < 1.0 = ralentissement ; 1.0 = aucun traitement (passe-droit).
+function wsolaStretch(audioBuffer, tempo, sampleRate) {
+  if (Math.abs(tempo - 1.0) < 0.005) return audioBuffer;
+
+  const input = audioBuffer.getChannelData(0);
+  const inputLen = input.length;
+
+  // Paramètres adaptés à la voix sophro (taille fenêtre, sauts)
+  const N = 2048;
+  const Ha = Math.floor(N / 4);
+  const Hs = Math.floor(Ha / tempo);
+  const TolMax = 1024;
+
+  const outputLen = Math.floor(inputLen / tempo);
+  const output = new Float32Array(outputLen);
+
+  // Fenêtre Hann (préservée par OLA avec Hs)
+  const hann = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    hann[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N - 1)));
+  }
+
+  // Premier frame : pas de recherche
+  for (let i = 0; i < N && i < outputLen; i++) {
+    output[i] += input[i] * hann[i];
+  }
+
+  let xPos = Ha;
+  let yPos = Hs;
+
+  while (xPos + N + TolMax < inputLen && yPos + N < outputLen) {
+    const target = output.subarray(yPos - Ha, yPos);
+
+    let bestOffset = 0;
+    let bestCorr = -Infinity;
+    const maxOff = Math.min(TolMax, inputLen - xPos - N);
+    const minOff = Math.max(-TolMax, -xPos);
+
+    // Step 16 pour accélérer la recherche (~16x plus rapide, qualité quasi-identique)
+    for (let off = minOff; off <= maxOff; off += 16) {
+      let corr = 0;
+      for (let i = 0; i < Ha; i++) {
+        corr += input[xPos + off + i] * target[i];
+      }
+      if (corr > bestCorr) {
+        bestCorr = corr;
+        bestOffset = off;
+      }
+    }
+
+    xPos += bestOffset;
+
+    for (let i = 0; i < N && yPos + i < outputLen; i++) {
+      output[yPos + i] += input[xPos + i] * hann[i];
+    }
+
+    yPos += Hs;
+    xPos += Ha;
+  }
+
+  // Construire AudioBuffer de sortie
+  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const outBuf = tempCtx.createBuffer(1, outputLen, sampleRate);
+  outBuf.getChannelData(0).set(output);
+  return outBuf;
 }
 
 // ─── Encodeur MP3 (lamejs) — fichiers 10-15× plus légers que WAV ──────
