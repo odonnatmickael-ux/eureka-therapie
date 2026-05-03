@@ -416,29 +416,32 @@ function bigFiveLevel(score) {
   return "Bas";
 }
 
-// 4 ARCHÉTYPES MÉMORABLES dérivés des scores Big Five
-// Chaque archétype mappe vers un des 4 audio blocs existants pour réutiliser
-// les MP3 démo de Vercel Blob (analystes/diplomates/sentinelles/explorateurs).
+// 4 ARCHÉTYPES MÉMORABLES dérivés des scores Big Five (BFI-10)
+// Chaque archétype a son MP3 démo dédié sur Vercel Blob, nommé par l'archétype lui-même.
+// Format des fichiers : demo_<voix>_<archetype>_<canal_vakog>.mp3
+//   - voix : bella, marcel, valentin, mickael
+//   - archetype : pelerin, batisseur, compagnon, voyageur (correspondance Big Five)
+//   - canal : visuel, auditif, kinesth, rationnel (canal VAKOG dominant)
 const ARCHETYPES = {
   pelerin: {
     name: "Le Pèlerin", icon: "🌊",
     desc: "Quête de sens, ouverture aux métaphores, voyage intérieur",
-    bloc: "diplomates"
+    bloc: "pelerin"
   },
   batisseur: {
     name: "Le Bâtisseur", icon: "🏛️",
     desc: "Structure, discipline, protocole précis, résultats mesurables",
-    bloc: "analystes"
+    bloc: "batisseur"
   },
   compagnon: {
     name: "Le Compagnon", icon: "🤝",
     desc: "Lien, chaleur, sécurité affective, harmonie",
-    bloc: "sentinelles"
+    bloc: "compagnon"
   },
   voyageur: {
     name: "Le Voyageur", icon: "🍃",
     desc: "Énergie présente, sensoriel, action, spontanéité",
-    bloc: "explorateurs"
+    bloc: "voyageur"
   }
 };
 function archetypeFromBigFive(s) {
@@ -2832,7 +2835,7 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
 function SeancePlayer({ userData, resumeData, onRestart }) {
   const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
   const vakog = vakogResult.dominant;
-  // Archétype Big Five — remplace MBTI dans la version FULL
+  // Archétype Big Five (Pèlerin / Bâtisseur / Compagnon / Voyageur)
   const archetypeKey = archetypeFromBigFive(bigFiveScores);
   const archetype = ARCHETYPES[archetypeKey];
   const isResume = !!(resumeData && resumeData.audioBlob);
@@ -3197,11 +3200,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       // AUDIO — chargement depuis Vercel Blob selon archétype Big Five
       // Les 4 archétypes Big Five mappent sur les 4 blocs audio existants
-      // (Pèlerin→diplomates, Bâtisseur→analystes, Compagnon→sentinelles, Voyageur→explorateurs)
+      // Format URL Blob : demo_<voix>_<archetype>_<canal>.mp3
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
-      const bloc = archetype.bloc || "diplomates";
+      const bloc = archetype.bloc || "pelerin";
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
