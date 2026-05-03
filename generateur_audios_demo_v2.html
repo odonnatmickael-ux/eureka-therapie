@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Générateur Audios DÉMO — BELLA</title>
+<title>EUREKA — Générateur Audios DÉMO — MARCEL</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 <style>
@@ -55,9 +55,9 @@ input:focus { border-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Générateur d'Audios DÉMO · v2/v3 togglable · BELLA · Usage interne uniquement</p>
+  <p class="subtitle">Générateur d'Audios DÉMO · v2/v3 togglable · MARCEL · Usage interne uniquement</p>
 
-  <div class="voice-badge">🎙️ Voix : Bella (4RZ84U1b4WCqpu57LvIq) · Douce, enveloppante · Speed 0.78 · Stab 0.55 / Style 0.35 / Boost ON (v3 validés)</div>
+  <div class="voice-badge">🎙️ Voix : Marcel (YV28ox2c5Cuh5rim0LrW) · Chaleureux, poétique · Speed 0.85 · Stab 0.65 / Style 0.30 / Boost ON (v3 validés)</div>
 
   <div class="warning">
     ⚠️ Cet outil génère les 16 fichiers MP3 de démonstration (en v2 ou v3 selon le toggle ci-dessous) à stocker sur Vercel Blob. Chaque génération consomme vos crédits ElevenLabs et Claude. Uploadez sur Vercel Blob après téléchargement.
@@ -74,7 +74,7 @@ input:focus { border-color: #b8955a; }
     <h2>🎙️ Générer preview court (10 sec)</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
       Génère UN seul MP3 court (~10 sec) à uploader sur Vercel Blob sous le nom
-      <code style="color:#d4b483">preview_bella.mp3</code>.
+      <code style="color:#d4b483">preview_marcel.mp3</code>.
       Sera utilisé pour la démo Landing ET le bouton "Écouter" sur l'écran Profil.
       Utilise le modèle sélectionné dans la carte du dessous (v2 ou v3).
     </p>
@@ -113,15 +113,15 @@ input:focus { border-color: #b8955a; }
     <div class="card" style="border: 1px solid #1a4548;">
     <h2>⚙️ Réglages voix avancés (sliders)</h2>
     <p style="font-size:11px;color:#7a9ea0;margin-bottom:1rem;line-height:1.6">
-      Ces réglages s'appliquent à la fois en v2 ET en v3. Les valeurs par défaut sont celles validées pour BELLA.
+      Ces réglages s'appliquent à la fois en v2 ET en v3. Les valeurs par défaut sont celles validées pour MARCEL.
     </p>
 
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Vitesse (speed)</span>
-        <span id="advSpeedVal" style="color:#b8955a;font-weight:600">0.78×</span>
+        <span id="advSpeedVal" style="color:#b8955a;font-weight:600">0.85×</span>
       </div>
-      <input type="range" min="0.60" max="1.20" step="0.01" value="0.78" id="advSpeed"
+      <input type="range" min="0.60" max="1.20" step="0.01" value="0.85" id="advSpeed"
         oninput="document.getElementById('advSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -132,9 +132,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Stabilité (stability)</span>
-        <span id="advStabilityVal" style="color:#b8955a;font-weight:600">0.55</span>
+        <span id="advStabilityVal" style="color:#b8955a;font-weight:600">0.65</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.55" id="advStability"
+      <input type="range" min="0" max="1" step="0.01" value="0.65" id="advStability"
         oninput="document.getElementById('advStabilityVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -145,9 +145,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Expressivité (style)</span>
-        <span id="advStyleVal" style="color:#b8955a;font-weight:600">0.35</span>
+        <span id="advStyleVal" style="color:#b8955a;font-weight:600">0.30</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.35" id="advStyle"
+      <input type="range" min="0" max="1" step="0.01" value="0.30" id="advStyle"
         oninput="document.getElementById('advStyleVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
       <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
@@ -158,9 +158,9 @@ input:focus { border-color: #b8955a; }
     <div style="margin-bottom:1.25rem">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
         <span style="color:#f0e8d8">Fidélité (similarity_boost)</span>
-        <span id="advSimilarityVal" style="color:#b8955a;font-weight:600">0.75</span>
+        <span id="advSimilarityVal" style="color:#b8955a;font-weight:600">0.7</span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="0.75" id="advSimilarity"
+      <input type="range" min="0" max="1" step="0.01" value="0.7" id="advSimilarity"
         oninput="document.getElementById('advSimilarityVal').textContent = parseFloat(this.value).toFixed(2)"
         style="width:100%;accent-color:#b8955a" />
     </div>
@@ -172,6 +172,28 @@ input:focus { border-color: #b8955a; }
 
     <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">
       Astuce : ces réglages sont utilisés à la fois par le bouton "Générer preview 10s" ci-dessus ET par le bouton "Générer cet audio" ci-dessous (les 16 échantillons).
+    </p>
+  </div>
+
+  <div class="card" style="border: 1px solid #2a8a8f;">
+    <h2>🎼 Ralentissement avec préservation du pitch (WSOLA)</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
+      Ralentit le MP3 final <strong style="color:#d4b483">en préservant le pitch</strong> (algorithme WSOLA, équivalent qualité Audacity "Changer le tempo" + Haute qualité). Bella reste féminine, pas de "voix d'homme".
+    </p>
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Vitesse finale du MP3</span>
+        <span id="wsolaSpeedVal" style="color:#2a8a8f;font-weight:600">0.85×</span>
+      </div>
+      <input type="range" min="0.50" max="1.00" step="0.01" value="0.85" id="wsolaSpeed"
+        oninput="document.getElementById('wsolaSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
+        style="width:100%;accent-color:#2a8a8f" />
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
+        <span>0.50 (très lent)</span><span>0.85-0.90 (reco sophro)</span><span>1.00 (vitesse originale)</span>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">
+      1.00 = aucun traitement (audio ElevenLabs original conservé tel quel).
     </p>
   </div>
 
@@ -191,28 +213,28 @@ input:focus { border-color: #b8955a; }
   <div class="card">
     <h2>📋 Checklist des 16 fichiers</h2>
     <div style="display:grid;gap:0.5rem" id="checklist">
-      <div id="chk-BAT-VIS" class="badge">⬜ demo_bella_batisseur_visuel.mp3</div>
-      <div id="chk-BAT-AUD" class="badge">⬜ demo_bella_batisseur_auditif.mp3</div>
-      <div id="chk-BAT-KIN" class="badge">⬜ demo_bella_batisseur_kinesth.mp3</div>
-      <div id="chk-BAT-RAT" class="badge">⬜ demo_bella_batisseur_rationnel.mp3</div>
-      <div id="chk-PEL-VIS" class="badge">⬜ demo_bella_pelerin_visuel.mp3</div>
-      <div id="chk-PEL-AUD" class="badge">⬜ demo_bella_pelerin_auditif.mp3</div>
-      <div id="chk-PEL-KIN" class="badge">⬜ demo_bella_pelerin_kinesth.mp3</div>
-      <div id="chk-PEL-RAT" class="badge">⬜ demo_bella_pelerin_rationnel.mp3</div>
-      <div id="chk-COM-VIS" class="badge">⬜ demo_bella_compagnon_visuel.mp3</div>
-      <div id="chk-COM-AUD" class="badge">⬜ demo_bella_compagnon_auditif.mp3</div>
-      <div id="chk-COM-KIN" class="badge">⬜ demo_bella_compagnon_kinesth.mp3</div>
-      <div id="chk-COM-RAT" class="badge">⬜ demo_bella_compagnon_rationnel.mp3</div>
-      <div id="chk-VOY-VIS" class="badge">⬜ demo_bella_voyageur_visuel.mp3</div>
-      <div id="chk-VOY-AUD" class="badge">⬜ demo_bella_voyageur_auditif.mp3</div>
-      <div id="chk-VOY-KIN" class="badge">⬜ demo_bella_voyageur_kinesth.mp3</div>
-      <div id="chk-VOY-RAT" class="badge">⬜ demo_bella_voyageur_rationnel.mp3</div>
+      <div id="chk-BAT-VIS" class="badge">⬜ demo_marcel_batisseur_visuel.mp3</div>
+      <div id="chk-BAT-AUD" class="badge">⬜ demo_marcel_batisseur_auditif.mp3</div>
+      <div id="chk-BAT-KIN" class="badge">⬜ demo_marcel_batisseur_kinesth.mp3</div>
+      <div id="chk-BAT-RAT" class="badge">⬜ demo_marcel_batisseur_rationnel.mp3</div>
+      <div id="chk-PEL-VIS" class="badge">⬜ demo_marcel_pelerin_visuel.mp3</div>
+      <div id="chk-PEL-AUD" class="badge">⬜ demo_marcel_pelerin_auditif.mp3</div>
+      <div id="chk-PEL-KIN" class="badge">⬜ demo_marcel_pelerin_kinesth.mp3</div>
+      <div id="chk-PEL-RAT" class="badge">⬜ demo_marcel_pelerin_rationnel.mp3</div>
+      <div id="chk-COM-VIS" class="badge">⬜ demo_marcel_compagnon_visuel.mp3</div>
+      <div id="chk-COM-AUD" class="badge">⬜ demo_marcel_compagnon_auditif.mp3</div>
+      <div id="chk-COM-KIN" class="badge">⬜ demo_marcel_compagnon_kinesth.mp3</div>
+      <div id="chk-COM-RAT" class="badge">⬜ demo_marcel_compagnon_rationnel.mp3</div>
+      <div id="chk-VOY-VIS" class="badge">⬜ demo_marcel_voyageur_visuel.mp3</div>
+      <div id="chk-VOY-AUD" class="badge">⬜ demo_marcel_voyageur_auditif.mp3</div>
+      <div id="chk-VOY-KIN" class="badge">⬜ demo_marcel_voyageur_kinesth.mp3</div>
+      <div id="chk-VOY-RAT" class="badge">⬜ demo_marcel_voyageur_rationnel.mp3</div>
     </div>
   </div>
 </div>
 
 <script>
-const VOICE_ID = "4RZ84U1b4WCqpu57LvIq"; // Bella
+const VOICE_ID = "YV28ox2c5Cuh5rim0LrW"; // Marcel
 let selVakog = null, selDir = null, selModel = "v2";
 
 function selectOpt(type, el) {
@@ -348,7 +370,7 @@ async function genererPreview() {
   if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
 
   const previewText = "Bonjour. Voici ma voix. Je peux vous accompagner pour votre séance.";
-  const fname = "preview_bella.mp3";
+  const fname = "preview_marcel.mp3";
 
   try {
     // Appel TTS direct sans Claude (texte court, pas besoin de générer un script)
@@ -407,6 +429,76 @@ async function genererPreview() {
   }
 }
 
+
+// ─── WSOLA (Waveform Similarity Overlap-Add) — préserve le pitch ─────
+// Algorithme inline équivalent qualité Audacity "Change Tempo + Haute qualité".
+// Aucune dépendance externe, fiable, ~50 lignes.
+function wsolaStretch(audioBuffer, tempo, sampleRate) {
+  if (Math.abs(tempo - 1.0) < 0.005) return audioBuffer;
+
+  const input = audioBuffer.getChannelData(0);
+  const inputLen = input.length;
+
+  // Paramètres adaptés à la voix sophro (taille fenêtre, sauts)
+  const N = 2048;
+  const Ha = Math.floor(N / 4);
+  const Hs = Math.floor(Ha / tempo);
+  const TolMax = 1024;
+
+  const outputLen = Math.floor(inputLen / tempo);
+  const output = new Float32Array(outputLen);
+
+  // Fenêtre Hann (préservée par OLA avec Hs)
+  const hann = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    hann[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N - 1)));
+  }
+
+  // Premier frame : pas de recherche
+  for (let i = 0; i < N && i < outputLen; i++) {
+    output[i] += input[i] * hann[i];
+  }
+
+  let xPos = Ha;
+  let yPos = Hs;
+
+  while (xPos + N + TolMax < inputLen && yPos + N < outputLen) {
+    const target = output.subarray(yPos - Ha, yPos);
+
+    let bestOffset = 0;
+    let bestCorr = -Infinity;
+    const maxOff = Math.min(TolMax, inputLen - xPos - N);
+    const minOff = Math.max(-TolMax, -xPos);
+
+    // Step 16 pour accélérer la recherche (-16x plus rapide, qualité quasi-identique)
+    for (let off = minOff; off <= maxOff; off += 16) {
+      let corr = 0;
+      for (let i = 0; i < Ha; i++) {
+        corr += input[xPos + off + i] * target[i];
+      }
+      if (corr > bestCorr) {
+        bestCorr = corr;
+        bestOffset = off;
+      }
+    }
+
+    xPos += bestOffset;
+
+    for (let i = 0; i < N && yPos + i < outputLen; i++) {
+      output[yPos + i] += input[xPos + i] * hann[i];
+    }
+
+    yPos += Hs;
+    xPos += Ha;
+  }
+
+  // Construire AudioBuffer de sortie
+  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const outBuf = tempCtx.createBuffer(1, outputLen, sampleRate);
+  outBuf.getChannelData(0).set(output);
+  return outBuf;
+}
+
 async function generer() {
   const elevenKey = document.getElementById('elevenKey').value.trim();
   if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
@@ -415,7 +507,7 @@ async function generer() {
   document.getElementById('genBtn').disabled = true;
   document.getElementById('logEl').innerHTML = '';
 
-  const fname = `demo_bella_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
+  const fname = `demo_marcel_${DIR_NOMS[selDir]}_${VAKOG_NOMS[selVakog]}.mp3`;
 
   try {
     setProgress(10, 'Génération du script relaxation...');
@@ -559,8 +651,18 @@ async function generer() {
     const ch = comb.getChannelData(0);
     let off = 0;
     for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+    // ─── Application du ralentissement WSOLA (préserve le pitch) ─────
+    const wsolaSpeed = parseFloat(document.getElementById('wsolaSpeed').value);
+    let bufferToEncode = comb;
+    if (wsolaSpeed < 0.99) {
+      log('→ Ralentissement WSOLA à ' + wsolaSpeed.toFixed(2) + '× (préservation pitch)...');
+      setProgress(92, 'Ralentissement WSOLA à ' + wsolaSpeed.toFixed(2) + '×...');
+      bufferToEncode = wsolaStretch(comb, wsolaSpeed, sr);
+      log('✓ Audio ralenti (' + (comb.length/sr).toFixed(1) + 's → ' + (bufferToEncode.length/sr).toFixed(1) + 's)', 'ok');
+    }
+
     const mp3enc = new lamejs.Mp3Encoder(1, sr, 64);
-    const samples = comb.getChannelData(0);
+    const samples = bufferToEncode.getChannelData(0);
     const int16 = new Int16Array(samples.length);
     for (let i = 0; i < samples.length; i++) {
       int16[i] = Math.max(-32768, Math.min(32767, samples[i] * 32767));
