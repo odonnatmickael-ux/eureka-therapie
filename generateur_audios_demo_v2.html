@@ -175,6 +175,31 @@ input:focus { border-color: #b8955a; }
     </p>
   </div>
 
+  
+  <div class="card" style="border: 1px solid #2a8a8f;">
+    <h2>🐢 Ralentissement post-traitement</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
+      ElevenLabs v3 ignore le slider speed. Cette case ralentit le MP3 <strong style="color:#d4b483">après</strong> la génération
+      via Web Audio API (compatible avec tous les navigateurs).<br>
+      ⚠ Léger effet sur le pitch (la voix devient un peu plus grave) — normalement OK pour la sophro qui demande de la profondeur.
+    </p>
+    <div style="margin-bottom:0.5rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
+        <span style="color:#f0e8d8">Vitesse finale du MP3</span>
+        <span id="finalSpeedVal" style="color:#2a8a8f;font-weight:600">0.85×</span>
+      </div>
+      <input type="range" min="0.50" max="1.00" step="0.01" value="0.85" id="finalSpeed"
+        oninput="document.getElementById('finalSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
+        style="width:100%;accent-color:#2a8a8f" />
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
+        <span>0.50 (très lent)</span><span>0.80-0.90 (reco sophro)</span><span>1.00 (vitesse originale)</span>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">
+      Astuce : 1.00 = aucun ralentissement (l'audio original ElevenLabs est conservé tel quel).
+    </p>
+  </div>
+
   <div class="card" id="progressCard" style="display:none">
     <h2>⏳ Génération en cours…</h2>
     <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
@@ -559,8 +584,28 @@ async function generer() {
     const ch = comb.getChannelData(0);
     let off = 0;
     for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
+    // ─── RALENTISSEMENT POST-TRAITEMENT (Web Audio API) ─────────────
+    // ElevenLabs v3 ignore le slider speed → on ralentit ici, après la génération.
+    // OfflineAudioContext re-rend le buffer à un sample rate effectif différent.
+    // Effet secondaire : léger changement de pitch (voix légèrement plus grave si < 1.0).
+    const finalSpeed = parseFloat(document.getElementById('finalSpeed').value);
+    let bufferToEncode = comb;
+    if (finalSpeed < 0.99) {
+      log('→ Ralentissement post-traitement à ' + finalSpeed.toFixed(2) + '×...');
+      setProgress(92, 'Ralentissement audio à ' + finalSpeed.toFixed(2) + '×...');
+      const slowedLen = Math.floor(comb.length / finalSpeed);
+      const offlineCtx = new OfflineAudioContext(1, slowedLen, sr);
+      const source = offlineCtx.createBufferSource();
+      source.buffer = comb;
+      source.playbackRate.value = finalSpeed;
+      source.connect(offlineCtx.destination);
+      source.start(0);
+      bufferToEncode = await offlineCtx.startRendering();
+      log('✓ Audio ralenti (durée originale ' + (comb.length/sr).toFixed(1) + 's → ' + (bufferToEncode.length/sr).toFixed(1) + 's)', 'ok');
+    }
+
     const mp3enc = new lamejs.Mp3Encoder(1, sr, 64);
-    const samples = comb.getChannelData(0);
+    const samples = bufferToEncode.getChannelData(0);
     const int16 = new Int16Array(samples.length);
     for (let i = 0; i < samples.length; i++) {
       int16[i] = Math.max(-32768, Math.min(32767, samples[i] * 32767));
