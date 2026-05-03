@@ -581,34 +581,34 @@ function buildSystemPrompt(data) {
   const expirePauseSec = Math.max(6, breath.expire - 2); // proportionnel à la durée d'expiration
   // Fix bug "huit-e temps" : ellipse entre "huit" et "temps" UNIQUEMENT
   // (le double T crée un schwa parasite. Pour les autres chiffres : aucune liaison, donc pas de pause).
-  const inTemps = (n) => (n === 8) ? "en huit... temps..." : "en " + NUM_FR[n] + " temps...";
+  const inTemps = (n) => (n === 8) ? "en huit, temps..." : "en " + NUM_FR[n] + " temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
     vakog === 'K' ? "Metaphores KINESTH.: sensations, chaleur, poids, fluidite" :
     "Langage logique et clair";
 
-  const groupesTF = "GROUPES TETE vers PIEDS:\n" +
-    "Groupe TETE: cuir chevelu, oreilles, front, sourcils, paupieres, yeux, nez, joues, bouche, levres, interieur bouche, langue, machoire, menton - chacun: phrase invitation detente + [PAUSE_3s] - puis annoncer toute la tete detendue [PAUSE_5s]\n" +
-    "Groupe COU: cou, nuque, vertebres cervicales - chacun [PAUSE_3s] - puis annoncer cou detendu [PAUSE_5s]\n" +
-    "Groupe MEMBRES SUP: epaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup detendus [PAUSE_5s]\n" +
-    "Groupe TRONC: vertebres dorsales, lombaires, cage thoracique, poitrine, ventre, abdominaux, coeur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
-    "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, deuxièmes, troisièmes, quatrièmes, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps detendu [PAUSE_5s]";
+  const groupesTF = "GROUPES TÊTE vers PIEDS:\n" +
+    "Groupe TÊTE: cuir chevelu, oreilles, front, sourcils, paupières, yeux, nez, joues, bouche, lèvres, intérieur bouche, langue, mâchoire, menton - chacun: phrase invitation détente + [PAUSE_3s] - puis annoncer toute la tête détendue [PAUSE_5s]\n" +
+    "Groupe COU: cou, nuque, vertèbres cervicales - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: épaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
+    "Groupe TRONC: vertèbres dorsales, lombaires, cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, deuxièmes, troisièmes, quatrièmes, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps détendu [PAUSE_5s]";
 
-  const groupesFT = "GROUPES PIEDS vers TETE:\n" +
-    "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf detendus [PAUSE_5s]\n" +
-    "Groupe TRONC: intestins, reins, foie, estomac, poumons, coeur, abdominaux, ventre, poitrine, cage thoracique, vertebres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
-    "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, epaules - chacun [PAUSE_3s] - puis annoncer membres sup detendus [PAUSE_5s]\n" +
-    "Groupe COU: vertebres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou detendu [PAUSE_5s]\n" +
-    "Groupe TETE: menton, machoire, langue, interieur bouche, levres, bouche, joues, nez, yeux, paupieres, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tete detendue [PAUSE_5s]";
+  const groupesFT = "GROUPES PIEDS vers TÊTE:\n" +
+    "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf détendus [PAUSE_5s]\n" +
+    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, épaules - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
+    "Groupe COU: vertèbres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
+    "Groupe TÊTE: menton, mâchoire, langue, intérieur bouche, lèvres, bouche, joues, nez, yeux, paupières, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tête détendue [PAUSE_5s]";
 
   const groupes = relaxDir === 'TF' ? groupesTF : groupesFT;
 
   const spirituel = beliefSystem === 'croyant' ?
-    "Puis affirmations connexion divine, lumiere, victoire acquise, Namaste." :
+    "Puis affirmations connexion divine, lumière, victoire acquise, Namaste." :
     beliefSystem === 'spirituel' ?
     "Puis affirmations amour, paix, transformation, gratitude." :
-    "Puis affirmations ressources interieures, courage, progression.";
+    "Puis affirmations ressources intérieures, courage, progression.";
 
   // ─── PERSONNALISATION BIG FIVE — 5 leviers thérapeutiques indépendants ─
   const bigFiveDirectives = [];
@@ -653,31 +653,31 @@ function buildSystemPrompt(data) {
     "Place la balise EN DÉBUT de phrase, suivie d'un espace.\n\n"
   ) : "";
 
-  return "Tu es un sophrologue expert. Tu generes un script audio de seance.\n" +
+  return "Tu es un sophrologue expert. Tu génères un script audio de séance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
     "CLIENT: " + prenom + " | ARCHÉTYPE: " + archetype.name + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
-    "PROBLEMES: " + problem + "\n" +
+    "PROBLÈMES: " + problem + "\n" +
     "OBJECTIFS: " + objectif + "\n" +
-    "SPIRITUALITE: " + beliefSystem + "\n\n" +
+    "SPIRITUALITÉ: " + beliefSystem + "\n\n" +
     "PROFIL BIG FIVE (BFI-10, validé scientifiquement) — ADAPTE TOUT LE SCRIPT EN FONCTION DE CHAQUE DIMENSION:\n" +
     bigFiveDirectives.map(d => "- " + d).join("\n") + "\n\n" +
     "ARCHÉTYPE DOMINANT: " + archetype.name + " (" + archetype.desc + ")\n" +
     "Ton général de la séance: " + archetypeTon + "\n\n" +
-    "REGLES ABSOLUES:\n" +
-    "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scene, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases therapeutiques.\n" +
-    "2. JAMAIS resumer - tout ecrire integralement. Interdit: voir cycle 1, idem, meme texte.\n" +
+    "RÈGLES ABSOLUES:\n" +
+    "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scène, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases thérapeutiques.\n" +
+    "2. JAMAIS résumer - tout écrire intégralement. Interdit: voir cycle 1, idem, même texte.\n" +
     "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " " + buildCount(breath.expire) + " [PAUSE_2s] Laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot ni un marqueur PAUSE. 3e respiration = [PAUSE_10s].\n" +
-    "4. DETENDRE pas enumerer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
-    "5. PAS DE NEGATION - son emprise s est evaporee - pas n a plus de pouvoir.\n" +
-    "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] derniere resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
-    "7. PAUSE ENTRE PHRASES: apres chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite a vous installer... [PAUSE_1s] Laissez votre corps s abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
+    "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
+    "5. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
+    "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] dernière resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
+    "7. PAUSE ENTRE PHRASES: après chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite à vous installer... [PAUSE_1s] Laissez votre corps s'abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
     "8. PHRASES COURTES - maximum 10 mots par phrase. Jamais de longue phrase explicative.\n" +
-    "9. RYTHME BRISE - une idee par ligne. Espace entre chaque pensee. Laisser le silence travailler.\n" +
-    "10. LANGAGE SENSORIEL - utiliser le canal " + vakog + " a chaque etape. Faire RESSENTIR, pas expliquer.\n" +
-    "11. REPETITION HYPNOTIQUE - les mots cles reviennent... encore... et encore... comme une vague.\n" +
-    "12. PRESENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous etes'.\n" +
-    "13. VERBES D ACTION LENTS - fondre, glisser, lacher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
+    "9. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
+    "10. LANGAGE SENSORIEL - utiliser le canal " + vakog + " à chaque étape. Faire RESSENTIR, pas expliquer.\n" +
+    "11. RÉPÉTITION HYPNOTIQUE - les mots clés reviennent... encore... et encore... comme une vague.\n" +
+    "12. PRÉSENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous êtes'.\n" +
+    "13. VERBES D'ACTION LENTS - fondre, glisser, lâcher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
     "VIGILANCE ORTHOGRAPHIQUE FRANÇAISE — IMPÉRATIF:\n" +
     "14. Avant d'écrire CHAQUE verbe à l'impératif, vérifie son orthographe française complète.\n" +
     "    Erreurs courantes à NE JAMAIS commettre :\n" +
@@ -693,8 +693,8 @@ function buildSystemPrompt(data) {
     "    Audio = chaque mot SERA prononcé. Une faute = une voix qui dit n'importe quoi.\n\n" +
     "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
     v3TagsInstructions +
-    "SPIRITUALITE:\n" +
-    "Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
+    "SPIRITUALITÉ:\n" +
+    "Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
     spirituel;
 }
 // ══════════════════════════════════════════════════════════════════
@@ -3105,44 +3105,44 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Maintenant : appels parallèles = ~1-2 minutes (limité par le plus lent)
       // Les 3 prompts sont indépendants, donc Promise.all est sûr.
       // En cas d'échec d'UN appel, Promise.all rejette → erreur claire à l'utilisateur.
-      setLoadMsg("Generation parallèle : intro + scènes + clôture...");
+      setLoadMsg("Génération parallèle : intro + scènes + clôture...");
       const FIN_PHRASE = "À très bientôt " + prenom + ".";
 
       const part1Promise = gpt(sysPrompt,
-        info + "\n\nGenere UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
+        info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
         "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases)\n" +
-        "2. 3 respirations exactes (texte exact REGLE 3)\n" +
-        "3. Relaxation physique complete (une partie a la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
-        "4. Je vais me taire... [PAUSE_15s] corps s enfonce... [PAUSE_15s] s approfondir... [PAUSE_15s]\n" +
-        "5. Relaxation mentale canal " + vakog + " : lieu interieur, descente dans l espace...\n" +
-        "6. Etre simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
-        "STOP ici - ne pas commencer les scenes.", 4096);
+        "2. 3 respirations exactes (texte exact RÈGLE 3)\n" +
+        "3. Relaxation physique complète (une partie à la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
+        "4. Je vais me taire... [PAUSE_15s] corps s'enfonce... [PAUSE_15s] s'approfondir... [PAUSE_15s]\n" +
+        "5. Relaxation mentale canal " + vakog + " : lieu intérieur, descente dans l'espace...\n" +
+        "6. Être simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
+        "STOP ici - ne pas commencer les scènes.", 4096);
 
       const scenesPromise = gpt(sysPrompt,
-        info + "\n\nGenere UNIQUEMENT les 3 scenes therapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "VERBES CANAL - ne jamais repeter le meme verbe plus de 2 fois par scene:\n" +
-        "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu percois, tu discernes, tu visualises\n" +
-        "- Auditif: tu entends, tu percois, tu captes, tu ecoutes, tu ressens la resonance, tu distingues\n" +
-        "- Kinesth.: tu ressens, tu eprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
-        "- Rationnel: tu comprends, tu realises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
-        "REGLE PAUSES — IMPERATIF POUR L'AUDIO :\n" +
-        "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMES par le parseur audio, ils n'existeront pas a l'ecoute → enchainement trop rapide).\n" +
-        "- ENTRE CHAQUE PHRASE des scenes, utilise 6 ellipses '......' qui forcent une vraie pause prosodique d'environ 1 seconde dans la voix ElevenLabs. Exemple : 'Tu apercois une lumiere...... Elle grandit doucement...... Elle dissout la brume......'\n" +
-        "- ENTRE moments cles d'une scene (transitions importantes), utilise [PAUSE_3s] ou [PAUSE_5s] (vraies pauses audio).\n\n" +
-        "Scene 1 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Faire voir/ressentir le probleme '" + problem + "' exagere selon canal " + vakog + ". Puis effacement complet. Son emprise s est evaporee. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
-        "Scene 2 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concretes. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
-        "Scene 3 (MAXIMUM 220 mots au total - compter chaque mot - s arreter strictement a 220 mots): " + prenom + " EST DEJA la nouvelle personne. Vie transformee en detail. Entre phrases : '......' Entre moments cles : [PAUSE_5s].\n\n" +
-        "Terminer par: La transformation est REELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
+        info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
+        "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
+        "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu perçois, tu discernes, tu visualises\n" +
+        "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
+        "- Kinesth.: tu ressens, tu éprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
+        "- Rationnel: tu comprends, tu réalises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
+        "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO :\n" +
+        "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio, ils n'existeront pas à l'écoute → enchaînement trop rapide).\n" +
+        "- ENTRE CHAQUE PHRASE des scènes, utilise 6 ellipses '......' qui forcent une vraie pause prosodique d'environ 1 seconde dans la voix ElevenLabs. Exemple : 'Tu aperçois une lumière...... Elle grandit doucement...... Elle dissout la brume......'\n" +
+        "- ENTRE moments clés d'une scène (transitions importantes), utilise [PAUSE_3s] ou [PAUSE_5s] (vraies pauses audio).\n\n" +
+        "Scène 1 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Entre phrases : '......' Entre moments clés : [PAUSE_5s].\n\n" +
+        "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Entre phrases : '......' Entre moments clés : [PAUSE_5s].\n\n" +
+        "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Entre phrases : '......' Entre moments clés : [PAUSE_5s].\n\n" +
+        "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
 
-      // APPEL 3 : Cloture spirituelle + Desophronisation
+      // APPEL 3 : Clôture spirituelle + Désophronisation
       // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
       const part3Promise = gpt(sysPrompt,
-        info + "\n\nGenere UNIQUEMENT la fin de seance - ZERO TITRE - commencer DIRECTEMENT:\n" +
-        "1. Je cultive l amour... je cultive la verite... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
+        info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT:\n" +
+        "1. Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
         "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes)\n" +
         "3. [PAUSE_15s]\n" +
-        "4. Desophronisation douce: revenir... membres bougent... etirement... yeux s ouvrent... cloture chaleureuse avec " + prenom + "\n" +
-        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de seance\n" +
+        "4. Désophronisation douce: revenir... membres bougent... étirement... yeux s'ouvrent... clôture chaleureuse avec " + prenom + "\n" +
+        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de séance\n" +
         "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'", 2500);
 
       // Tracking : on mesure le gain de temps réel pour confirmer le bénéfice
@@ -3153,9 +3153,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       track("script_generated_parallel", { duration_s: _elapsed });
 
       // ─── Construction du texte final (séquentielle, après les 3 appels) ──
-      // JAVASCRIPT : Repeter les 3 scenes 7 fois exactement
+      // JAVASCRIPT : Répéter les 3 scènes 7 fois exactement
       const annonces7 = [
-        "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
+        "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondément...",
         "Nous recommençons une deuxième fois...",
         "Une troisième fois...",
         "Une quatrième fois...",
@@ -3164,7 +3164,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Une dernière fois... pour sceller cette transformation dans les profondeurs de votre être..."
       ];
       const annonces3 = [
-        "Je vous invite maintenant a commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondement...",
+        "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondément...",
         "Nous recommençons une deuxième fois...",
         "Une dernière fois... pour ancrer cette transformation..."
       ];
@@ -3289,7 +3289,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // style et speaker_boost plus présents pour exploiter les balises [whispers]/[soft]/etc.
       // Réglages voix : stabilité ÉLEVÉE (~0.80) pour rythme uniforme en sophro
       const VOICE_SETTINGS_V2 = {
-        "4RZ84U1b4WCqpu57LvIq": { stability:0.80, similarity_boost:0.75, style:0,    use_speaker_boost:false, speed:0.85 }, // Bella — style:0 pour éliminer les inspirations parasites entre chunks courts
+        "4RZ84U1b4WCqpu57LvIq": { stability:0.90, similarity_boost:0.75, style:0,    use_speaker_boost:false, speed:0.85 }, // Bella — style:0 + stability:0.90 pour éliminer inspirations parasites entre chunks courts
         "YV28ox2c5Cuh5rim0LrW": { stability:0.82, similarity_boost:0.70, style:0.08, use_speaker_boost:false, speed:0.85 }, // Marcel
         "cQVn2FWawJsxa2z9X3l1": { stability:0.85, similarity_boost:0.70, style:0.05, use_speaker_boost:false, speed:0.90 }, // Valentin
         "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 }, // Mickaël v2
@@ -3340,9 +3340,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         if (!txt.trim()) return null;
         // Strip pauses systématiquement, et balises v3 si on n'est pas en v3 (sinon elles seraient lues littéralement)
         const stripV3 = (t) => useV3 ? t : t.replace(V3_TAG_REGEX, "");
-        const cleanCtx = (t) => stripV3(t.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, MAX_CTX_CHARS);
+        // ─── Workaround phonétique : ElevenLabs v2 a un bug de rendu sur certaines cédilles
+        // (lit "perçois" comme "perkoi" au lieu de "persoi"). On remplace ç → s avant envoi.
+        // Le script reste lisible en français propre côté affichage utilisateur.
+        // Phonétiquement équivalent : "ç" et "s" produisent tous deux le son /s/.
+        const fixCedille = (t) => t.replace(/ç/g, 's').replace(/Ç/g, 'S');
+        const cleanCtx = (t) => fixCedille(stripV3(t.replace(/\[PAUSE_[\d.]+s\]/gi, ""))).trim().substring(0, MAX_CTX_CHARS);
         const body = {
-          text: stripV3(txt.replace(/\[PAUSE_[\d.]+s\]/gi, "")).trim().substring(0, MAX_TTS_CHARS),
+          text: fixCedille(stripV3(txt.replace(/\[PAUSE_[\d.]+s\]/gi, ""))).trim().substring(0, MAX_TTS_CHARS),
           model_id: effectiveModelId,
           voice_settings: effectiveSettings
         };
