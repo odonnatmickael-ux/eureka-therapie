@@ -552,7 +552,12 @@ const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 // GÉNÉRATION DU PROMPT SYSTÈME (expertise sophro-hypnose)
 // ══════════════════════════════════════════════════════════════════
 // ─── Voix ElevenLabs v3 (alpha) — supporte les balises expressives inline ───
-const V3_VOICES = ["19cV422MaCP4oU6N8AFm"]; // Mickaël uniquement
+const V3_VOICES = [
+  "19cV422MaCP4oU6N8AFm", // Mickaël (validé v3)
+  "YV28ox2c5Cuh5rim0LrW", // Marcel   (validé v3 — Stab 0.65 / Style 0.30 / Sim 0.70 / Boost ON)
+  "4RZ84U1b4WCqpu57LvIq", // Bella    (validé v3 — Stab 0.55 / Style 0.35 / Sim 0.75 / Boost ON)
+  "cQVn2FWawJsxa2z9X3l1", // Valentin (validé v3 — Stab 0.88 / Style 0.10 / Sim 0.60 / Boost OFF) — whisper voice
+];
 const isV3Voice = (voiceId) => V3_VOICES.includes(voiceId);
 // Tags v3 supportés inline dans le texte
 const V3_TAG_REGEX = /\[(whispers?|soft|calm|warm|breathing|slow|gentle)\]/gi;
@@ -1146,20 +1151,12 @@ function DemoAudio() {
   const audioRef = useRef(null);
   const cachedUrlRef = useRef(null);
 
-  // Échantillon court (~10-12 secondes), phrase neutre, prosodie naturelle.
-  // Pas de fausses pauses, pas de prénom : le client entend juste le timbre de sa future voix de séance.
-  const DEMO_TEXT = "Bonjour. Voici un court aperçu de ma voix. Je vais vous accompagner tout au long de votre séance.";
-
-  // Match strict des paramètres de la séance réelle (eureka_v25_bigfive_full.html ligne 3187)
-  // pour que la démo restitue exactement le rendu que le client recevra.
-  const DEMO_MODEL = "eleven_v3";
-  const DEMO_VOICE_SETTINGS = {
-    stability: 0.75,
-    similarity_boost: 0.80,
-    style: 0.20,
-    use_speaker_boost: true,
-    speed: 0.90
-  };
+  // ─── PLUS DE GÉNÉRATION DYNAMIQUE — on charge un MP3 statique depuis Vercel Blob ───
+  // La phrase enregistrée dans preview_mickael.mp3 est :
+  //   "Bonjour. Voici ma voix. Je peux vous accompagner pour votre séance."
+  // (générée via generateur_demo_mickael_mbti_v3_PREVIEW.html en mode v3 avec les
+  //  réglages validés Mickaël : Stab 0.75 / Style 0.20 / Boost ON / Speed 0.90)
+  // Si tu changes la phrase, regénère le MP3 et uploade-le sur Blob avec le même nom.
 
   const play = async () => {
     // Toggle pause/play si déjà chargé
@@ -1175,20 +1172,17 @@ function DemoAudio() {
         return;
       }
     }
-    // Première lecture : générer l'audio
+    // Première lecture : on charge un MP3 STATIQUE pré-généré sur Vercel Blob
+    // (au lieu de générer dynamiquement à chaque visiteur — coût zéro côté serveur,
+    // qualité identique, instantané). Le fichier preview_mickael.mp3 doit être
+    // uploadé sur Blob via le générateur preview (cf. generateurs_demo/*_v3_PREVIEW.html).
     setState("loading");
     track("demo_audio_play");
     try {
-      const r = await safeFetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: DEMO_TEXT,
-          voiceId: "19cV422MaCP4oU6N8AFm",
-          modelId: DEMO_MODEL,
-          voiceSettings: DEMO_VOICE_SETTINGS
-        })
-      }, { timeoutMs: 45000, maxRetries: 1 });
+      // ?v=N à incrémenter quand on remplace le MP3 sur Blob → force le navigateur
+      // à re-télécharger au lieu de servir une copie cachée de la version précédente.
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_mickael.mp3?v=2";
+      const r = await safeFetch(blobUrl, {}, { timeoutMs: 15000, maxRetries: 1 });
       if (!r.ok) throw new Error("HTTP " + r.status);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -2569,6 +2563,16 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
 
   const canContinue = relaxDir && beliefSystem && selectedVoice && musicChoice;
 
+  // Mapping voiceId → nom court pour les MP3 statiques sur Blob (preview_<nom>.mp3)
+  // Ces fichiers sont pré-générés une seule fois via generateurs_demo/*_v3_PREVIEW.html
+  // → coût zéro à chaque clic utilisateur, qualité identique (v3 si voix validée v3).
+  const VOICE_PREVIEW_NAMES = {
+    "4RZ84U1b4WCqpu57LvIq": "bella",
+    "YV28ox2c5Cuh5rim0LrW": "marcel",
+    "cQVn2FWawJsxa2z9X3l1": "valentin",
+    "19cV422MaCP4oU6N8AFm": "mickael"
+  };
+
   const playPreview = async (voice) => {
     // Stop si déjà en lecture
     if (playingPreview === voice.id) {
@@ -2578,13 +2582,12 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
     }
     setPlayingPreview(voice.id + "_loading");
     try {
-      // Générer un court extrait à la demande via ElevenLabs
-      const previewText = "Bonjour... installez-vous confortablement... respirez doucement... et laissez la détente s'installer naturellement en vous...";
-      const r = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: previewText, voiceId: voice.id })
-      });
+      // Charger un MP3 STATIQUE pré-généré sur Vercel Blob.
+      // Plus de génération dynamique = plus de coût ElevenLabs à chaque clic.
+      // ?v=N à incrémenter quand on remplace les MP3 sur Blob → bust cache navigateur.
+      const voiceName = VOICE_PREVIEW_NAMES[voice.id] || "bella";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3?v=2";
+      const r = await fetch(blobUrl);
       if (r.ok) {
         const blob = await r.blob();
         const url = URL.createObjectURL(blob);
@@ -2900,7 +2903,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // Initialise les sliders aux valeurs par défaut de la voix sélectionnée
   useEffect(() => {
     if (!selectedVoice) return;
-    const isV3 = voiceIsV3Capable && useV3Mode;
+    const isV3 = useV3Mode;
     const defaults = isV3
       ? { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true,  speed:0.90 }
       : ({
@@ -2923,7 +2926,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     setSnippetLoading(true);
     setSnippetUrl(null);
     try {
-      const isV3 = voiceIsV3Capable && useV3Mode;
+      const isV3 = useV3Mode;
       const modelId = isV3 ? "eleven_v3" : "eleven_multilingual_v2";
       const testText = "Bonjour " + (prenom || "ami") + "... installez-vous confortablement... laissez votre corps trouver sa position naturelle... vous êtes en sécurité ici... respirez doucement... et écoutez le son de cette voix.";
       const r = await safeFetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
@@ -3066,7 +3069,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const sysPrompt = buildSystemPrompt({
         vakog, vagokDesc: VAKOG_DESC[vakog],
         relaxDir, beliefSystem, problem, objectif, prenom,
-        useV3Tags: voiceIsV3Capable,
+        useV3Tags: useV3Mode,
         bigFiveScores, archetypeKey
       });
 
@@ -3280,13 +3283,17 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 }, // Mickaël v2
       };
       const VOICE_SETTINGS_V3 = {
-        "19cV422MaCP4oU6N8AFm": { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true, speed:0.90 }, // Mickaël v3
+        "19cV422MaCP4oU6N8AFm": { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true,  speed:0.90 }, // Mickaël v3
+        "YV28ox2c5Cuh5rim0LrW": { stability:0.65, similarity_boost:0.70, style:0.30, use_speaker_boost:true,  speed:0.85 }, // Marcel v3   (validé)
+        "4RZ84U1b4WCqpu57LvIq": { stability:0.55, similarity_boost:0.75, style:0.35, use_speaker_boost:true,  speed:0.78 }, // Bella v3    (validée)
+        "cQVn2FWawJsxa2z9X3l1": { stability:0.88, similarity_boost:0.60, style:0.10, use_speaker_boost:false, speed:0.90 }, // Valentin v3 (validé) — whisper, similarity basse pour réduire sibilance
       };
 
       // Décide du modèle effectif :
-      // - voix v3-capable + useV3Mode actif → eleven_v3
+      // - useV3Mode actif → eleven_v3 (toggle disponible pour TOUTES les voix
+      //   maintenant — l'admin/utilisateur peut tester n'importe quelle voix en v3)
       // - sinon → eleven_multilingual_v2 (et on supprime les balises v3 du texte sinon elles seraient lues)
-      const useV3 = voiceIsV3Capable && useV3Mode;
+      const useV3 = useV3Mode;
       const effectiveModelId = useV3 ? "eleven_v3" : "eleven_multilingual_v2";
       const baseSettings = useV3
         ? (VOICE_SETTINGS_V3[selectedVoice] || VOICE_SETTINGS_V2[selectedVoice])
@@ -3459,7 +3466,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             for (let i = 0; i < channel.length; i++) channel[i] *= gain;
           }
         };
-        normalizeChannel(comb.getChannelData(0), 0.92); // Voix normalisée à -0.7 dBFS
+        // Normalisation voix : -0.7 dBFS standard (0.92), MAIS plus bas pour
+        // Valentin (whisper) → réduit les pics sibilants des "s" qui sinon
+        // sont amplifiés par la normalisation et deviennent piquants au casque.
+        const VALENTIN_ID = "cQVn2FWawJsxa2z9X3l1";
+        const normTarget = (selectedVoice === VALENTIN_ID) ? 0.78 : 0.92;
+        normalizeChannel(comb.getChannelData(0), normTarget);
 
         // Mixage musique de fond
         const MUSIC_URLS = {
@@ -4041,8 +4053,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 padding:"0.5rem 0.75rem", marginBottom:"0.75rem",
                 fontSize:"11px", color:C.muted }}>
                 Modèle ElevenLabs actif :
-                <strong style={{ color: voiceIsV3Capable && useV3Mode ? C.gold : C.teal, marginLeft:"6px" }}>
-                  {voiceIsV3Capable && useV3Mode ? "eleven_v3" : "eleven_multilingual_v2"}
+                <strong style={{ color: useV3Mode ? C.gold : C.teal, marginLeft:"6px" }}>
+                  {useV3Mode ? "eleven_v3" : "eleven_multilingual_v2"}
                 </strong>
               </div>
 
@@ -4063,7 +4075,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                   background:C.panel, borderRadius:"10px",
                   border:`1px solid ${C.teal}` }}>
                   <p style={{ fontSize:"11px", color:C.teal, marginBottom:"6px" }}>
-                    ✓ Snippet de test ({voiceIsV3Capable && useV3Mode ? "v3" : "v2"}) :
+                    ✓ Snippet de test ({useV3Mode ? "v3" : "v2"}) :
                   </p>
                   <audio src={snippetUrl} controls style={{ width:"100%", accentColor:C.gold }} />
                 </div>
@@ -4077,14 +4089,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             </div>
           )}
 
-          {/* ─── Bloc moteur vocal v3 / v2 (visible si voix Mickaël v3 sélectionnée) ─── */}
-          {voiceIsV3Capable && (
-            <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"12px",
+          {/* ─── Bloc moteur vocal v3 / v2 (visible pour TOUTES les voix —
+                permet de tester n'importe quelle voix sur eleven_v3 alpha,
+                utile pour valider quelles voix gagnent à passer en v3) ─── */}
+          <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"12px",
               padding:"0.875rem 1rem", border:`1px solid ${C.gold}`, marginBottom:"0.75rem" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
                 marginBottom:"0.5rem", flexWrap:"wrap", gap:"0.5rem" }}>
                 <span style={{ fontSize:"12px", color:C.goldLight, fontWeight:"500" }}>
-                  ✨ Moteur vocal pour Mickaël
+                  ✨ Moteur vocal {voiceIsV3Capable ? "(validé v3)" : "(test v3)"}
                 </span>
                 <button onClick={() => setUseV3Mode(!useV3Mode)}
                   style={{ padding:"4px 10px", background: useV3Mode ? C.gold : "transparent",
@@ -4092,26 +4105,27 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                     fontSize:"10px", color: useV3Mode ? "#1a0e00" : C.goldLight,
                     cursor:"pointer", fontFamily:"'Raleway',sans-serif",
                     letterSpacing:"1px", textTransform:"uppercase" }}>
-                  {useV3Mode ? "v3 (expressif)" : "v2 (bêta test)"}
+                  {useV3Mode ? "v3 (expressif)" : "v2 (standard)"}
                 </button>
               </div>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.65" }}>
                 {useV3Mode ? (
                   <>
                     <strong style={{color:C.goldLight}}>v3 actif</strong> — voix plus expressive (chuchotement, douceur, chaleur).
-                    Consomme un peu plus de crédits que v2 (~15 %) et est plus lent à générer.<br/>
+                    Consomme ~15 % de crédits en plus que v2 et est plus lent à générer.
+                    {!voiceIsV3Capable && <> <span style={{color:C.gold}}>⚠ Cette voix n'est pas officiellement validée en v3 — utilisez ce mode pour tester si le rendu vous convient.</span></>}
+                    <br/>
                     <span style={{color:C.gold}}>Plan ElevenLabs Starter (5 €/mois, 30 000 crédits) suffit pour 1 séance complète/mois.</span>
                   </>
                 ) : (
                   <>
-                    <strong style={{color:C.cream}}>v2 actif (bêta test)</strong> — voix standard, légère économie de crédits.
+                    <strong style={{color:C.cream}}>v2 actif</strong> — voix standard, légère économie de crédits.
                     Le plan <strong style={{color:C.cream}}>Starter (5 €/mois, 30 000 crédits)</strong> suffit aussi pour 1 séance complète.
-                    Bascule en v3 si tu veux le rendu expressif.
+                    Bascule en v3 si tu veux tester le rendu expressif sur cette voix.
                   </>
                 )}
               </p>
             </div>
-          )}
           <input type="password" value={elevenClientKey}
             onChange={e => setElevenClientKey(e.target.value)}
             placeholder="Votre clé ElevenLabs (sk_...)"
