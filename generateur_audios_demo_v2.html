@@ -1151,20 +1151,12 @@ function DemoAudio() {
   const audioRef = useRef(null);
   const cachedUrlRef = useRef(null);
 
-  // Échantillon court (~10-12 secondes), phrase neutre, prosodie naturelle.
-  // Pas de fausses pauses, pas de prénom : le client entend juste le timbre de sa future voix de séance.
-  const DEMO_TEXT = "Bonjour. Voici un court aperçu de ma voix. Je vais vous accompagner tout au long de votre séance.";
-
-  // Match strict des paramètres de la séance réelle (eureka_v25_bigfive_full.html ligne 3187)
-  // pour que la démo restitue exactement le rendu que le client recevra.
-  const DEMO_MODEL = "eleven_v3";
-  const DEMO_VOICE_SETTINGS = {
-    stability: 0.75,
-    similarity_boost: 0.80,
-    style: 0.20,
-    use_speaker_boost: true,
-    speed: 0.90
-  };
+  // ─── PLUS DE GÉNÉRATION DYNAMIQUE — on charge un MP3 statique depuis Vercel Blob ───
+  // La phrase enregistrée dans preview_mickael.mp3 est :
+  //   "Bonjour. Voici ma voix. Je peux vous accompagner pour votre séance."
+  // (générée via generateur_demo_mickael_mbti_v3_PREVIEW.html en mode v3 avec les
+  //  réglages validés Mickaël : Stab 0.75 / Style 0.20 / Boost ON / Speed 0.90)
+  // Si tu changes la phrase, regénère le MP3 et uploade-le sur Blob avec le même nom.
 
   const play = async () => {
     // Toggle pause/play si déjà chargé
