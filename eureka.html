@@ -1179,10 +1179,13 @@ function DemoAudio() {
     setState("loading");
     track("demo_audio_play");
     try {
-      // ?v=N à incrémenter quand on remplace le MP3 sur Blob → force le navigateur
-      // à re-télécharger au lieu de servir une copie cachée de la version précédente.
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_mickael.mp3?v=2";
-      const r = await safeFetch(blobUrl, {}, { timeoutMs: 15000, maxRetries: 1 });
+      // BÊTA : on désactive le cache navigateur pour TOUJOURS récupérer la dernière
+      // version du MP3 sur Blob (au cas où on le remplace pendant le développement).
+      // Coût : ~80 Ko re-téléchargés à chaque visite — négligeable. Quand le site
+      // sera stable, on pourra retirer { cache: 'no-store' } pour réactiver le cache
+      // et économiser la bande passante.
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_mickael.mp3";
+      const r = await safeFetch(blobUrl, { cache: 'no-store' }, { timeoutMs: 15000, maxRetries: 1 });
       if (!r.ok) throw new Error("HTTP " + r.status);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
@@ -2584,10 +2587,11 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
     try {
       // Charger un MP3 STATIQUE pré-généré sur Vercel Blob.
       // Plus de génération dynamique = plus de coût ElevenLabs à chaque clic.
-      // ?v=N à incrémenter quand on remplace les MP3 sur Blob → bust cache navigateur.
+      // BÊTA : { cache: 'no-store' } pour TOUJOURS récupérer la dernière version
+      // (au cas où on remplace le MP3 pendant le développement).
       const voiceName = VOICE_PREVIEW_NAMES[voice.id] || "bella";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3?v=2";
-      const r = await fetch(blobUrl);
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3";
+      const r = await fetch(blobUrl, { cache: 'no-store' });
       if (r.ok) {
         const blob = await r.blob();
         const url = URL.createObjectURL(blob);
@@ -3205,7 +3209,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "19cV422MaCP4oU6N8AFm": "marcel"
       };
       const voiceName = VOICE_NAMES[selectedVoice] || "bella";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3";
+      // BÊTA : ?t=timestamp force le navigateur à re-télécharger l'échantillon Blob
+      // (au cas où on remplace le MP3 pendant le développement). À retirer quand stable.
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3?t=" + Date.now();
       setAudioUrl(blobUrl);
 
       // EMAIL — ANONYMISATION TOTALE (RGPD)
@@ -3485,7 +3491,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         if (musicUrl) {
           try {
             setFullGenMsg("Chargement de la musique de fond...");
-            const musicResp = await fetch(musicUrl);
+            // BÊTA : { cache: 'no-store' } pour récupérer la dernière version
+            // de la musique sur Blob (au cas où on la remplace en cours de dev).
+            const musicResp = await fetch(musicUrl, { cache: 'no-store' });
             const musicBuf = await actx.decodeAudioData(await musicResp.arrayBuffer());
 
             // ─── CROSSFADE 0.1s sur boucle musique (élimine le clic de jonction) ─
