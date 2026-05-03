@@ -175,28 +175,6 @@ input:focus { border-color: #b8955a; }
     </p>
   </div>
 
-  <div class="card" style="border: 1px solid #2a8a8f;">
-    <h2>🎼 Ralentissement avec préservation du pitch (WSOLA)</h2>
-    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.875rem;line-height:1.6">
-      Ralentit le MP3 final <strong style="color:#d4b483">en préservant le pitch</strong> (algorithme WSOLA, équivalent qualité Audacity "Changer le tempo" + Haute qualité). Bella reste féminine, pas de "voix d'homme".
-    </p>
-    <div style="margin-bottom:0.5rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
-        <span style="color:#f0e8d8">Vitesse finale du MP3</span>
-        <span id="wsolaSpeedVal" style="color:#2a8a8f;font-weight:600">0.85×</span>
-      </div>
-      <input type="range" min="0.50" max="1.00" step="0.01" value="0.85" id="wsolaSpeed"
-        oninput="document.getElementById('wsolaSpeedVal').textContent = parseFloat(this.value).toFixed(2) + '×'"
-        style="width:100%;accent-color:#2a8a8f" />
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6e70;margin-top:2px">
-        <span>0.50 (très lent)</span><span>0.85-0.90 (reco sophro)</span><span>1.00 (vitesse originale)</span>
-      </div>
-    </div>
-    <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">
-      1.00 = aucun traitement (audio ElevenLabs original conservé tel quel).
-    </p>
-  </div>
-
   <div class="card" id="progressCard" style="display:none">
     <h2>⏳ Génération en cours…</h2>
     <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
@@ -430,74 +408,6 @@ async function genererPreview() {
 }
 
 
-// ─── WSOLA (Waveform Similarity Overlap-Add) — préserve le pitch ─────
-// Algorithme inline équivalent qualité Audacity "Change Tempo + Haute qualité".
-// Aucune dépendance externe, fiable, ~50 lignes.
-function wsolaStretch(audioBuffer, tempo, sampleRate) {
-  if (Math.abs(tempo - 1.0) < 0.005) return audioBuffer;
-
-  const input = audioBuffer.getChannelData(0);
-  const inputLen = input.length;
-
-  // Paramètres adaptés à la voix sophro (taille fenêtre, sauts)
-  const N = 2048;
-  const Ha = Math.floor(N / 4);
-  const Hs = Math.floor(Ha / tempo);
-  const TolMax = 1024;
-
-  const outputLen = Math.floor(inputLen / tempo);
-  const output = new Float32Array(outputLen);
-
-  // Fenêtre Hann (préservée par OLA avec Hs)
-  const hann = new Float32Array(N);
-  for (let i = 0; i < N; i++) {
-    hann[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (N - 1)));
-  }
-
-  // Premier frame : pas de recherche
-  for (let i = 0; i < N && i < outputLen; i++) {
-    output[i] += input[i] * hann[i];
-  }
-
-  let xPos = Ha;
-  let yPos = Hs;
-
-  while (xPos + N + TolMax < inputLen && yPos + N < outputLen) {
-    const target = output.subarray(yPos - Ha, yPos);
-
-    let bestOffset = 0;
-    let bestCorr = -Infinity;
-    const maxOff = Math.min(TolMax, inputLen - xPos - N);
-    const minOff = Math.max(-TolMax, -xPos);
-
-    // Step 16 pour accélérer la recherche (-16x plus rapide, qualité quasi-identique)
-    for (let off = minOff; off <= maxOff; off += 16) {
-      let corr = 0;
-      for (let i = 0; i < Ha; i++) {
-        corr += input[xPos + off + i] * target[i];
-      }
-      if (corr > bestCorr) {
-        bestCorr = corr;
-        bestOffset = off;
-      }
-    }
-
-    xPos += bestOffset;
-
-    for (let i = 0; i < N && yPos + i < outputLen; i++) {
-      output[yPos + i] += input[xPos + i] * hann[i];
-    }
-
-    yPos += Hs;
-    xPos += Ha;
-  }
-
-  // Construire AudioBuffer de sortie
-  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const outBuf = tempCtx.createBuffer(1, outputLen, sampleRate);
-  outBuf.getChannelData(0).set(output);
-  return outBuf;
-}
 
 async function generer() {
   const elevenKey = document.getElementById('elevenKey').value.trim();
@@ -651,18 +561,9 @@ async function generer() {
     const ch = comb.getChannelData(0);
     let off = 0;
     for (const b of bufs) { ch.set(b.getChannelData(0), off); off += b.length; }
-    // ─── Application du ralentissement WSOLA (préserve le pitch) ─────
-    const wsolaSpeed = parseFloat(document.getElementById('wsolaSpeed').value);
-    let bufferToEncode = comb;
-    if (wsolaSpeed < 0.99) {
-      log('→ Ralentissement WSOLA à ' + wsolaSpeed.toFixed(2) + '× (préservation pitch)...');
-      setProgress(92, 'Ralentissement WSOLA à ' + wsolaSpeed.toFixed(2) + '×...');
-      bufferToEncode = wsolaStretch(comb, wsolaSpeed, sr);
-      log('✓ Audio ralenti (' + (comb.length/sr).toFixed(1) + 's → ' + (bufferToEncode.length/sr).toFixed(1) + 's)', 'ok');
-    }
 
     const mp3enc = new lamejs.Mp3Encoder(1, sr, 64);
-    const samples = bufferToEncode.getChannelData(0);
+    const samples = comb.getChannelData(0);
     const int16 = new Int16Array(samples.length);
     for (let i = 0; i < samples.length; i++) {
       int16[i] = Math.max(-32768, Math.min(32767, samples[i] * 32767));
