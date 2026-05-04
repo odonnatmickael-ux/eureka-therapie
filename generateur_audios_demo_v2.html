@@ -123,9 +123,10 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
     <select id="formatTest" style="width:100%;padding:0.75rem 1rem;background:#0d2a2c;border:1px solid #1a4548;border-radius:8px;color:#f0e8d8;font-family:'Raleway',sans-serif;font-size:13px;outline:none;margin-bottom:0.75rem">
       <option value="lettres">huit temps (lettres, sans virgule)</option>
       <option value="chiffre">8 temps (chiffre)</option>
-      <option value="virgule">huit, temps (virgule + espace) — actuel prod</option>
+      <option value="virgule">huit, temps (virgule + espace)</option>
       <option value="point">huit. Temps (point + majuscule, T capital)</option>
       <option value="tiret">huit-temps (tiret)</option>
+      <option value="ellipses" selected>huit... temps... (ellipses intra-phrases — format 1er mai)</option>
     </select>
 
     <p style="font-size:11px;color:#7a9ea0;margin-bottom:0.5rem"><strong>Voix utilisée pour le test :</strong> celle des sliders ci-dessous (donc règle d'abord les sliders si besoin)</p>
@@ -279,12 +280,12 @@ function resetSliders() {
 // de liaison "huit-e temps" selon le format sélectionné
 // ════════════════════════════════════════════════════════════════════
 const FORMATS_TEST = {
-  lettres:    "Et expirez tout doucement en huit temps... laissez partir toutes les tensions.",
-  chiffre:    "Et expirez tout doucement en 8 temps... laissez partir toutes les tensions.",
-  virgule:    "Et expirez tout doucement en huit, temps... laissez partir toutes les tensions.",
-  point:      "Et expirez tout doucement en huit. Temps... laissez partir toutes les tensions.",
-  tiret:      "Et expirez tout doucement en huit-temps... laissez partir toutes les tensions.",
-  phonetique: "Et expirez tout doucement en uite temps... laissez partir toutes les tensions."
+  lettres:  "Et expirez tout doucement en huit temps... laissez partir toutes les tensions.",
+  chiffre:  "Et expirez tout doucement en 8 temps... laissez partir toutes les tensions.",
+  virgule:  "Et expirez tout doucement en huit, temps... laissez partir toutes les tensions.",
+  point:    "Et expirez tout doucement en huit. Temps... laissez partir toutes les tensions.",
+  tiret:    "Et expirez tout doucement en huit-temps... laissez partir toutes les tensions.",
+  ellipses: "Et expirez tout doucement en huit... temps... laissez partir toutes les tensions."
 };
 
 function updateInconstanceCounter() {
@@ -418,13 +419,14 @@ function buildSystemPrompt(data) {
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2);
   // FIX #1 huit/virgule : "en huit, temps..." pour casser la liaison phonétique
-  // Format "huit temps" piloté par le select #formatTest (5 variantes testées)
+  // Format "huit temps" piloté par le select #formatTest (6 variantes testées)
   const HUIT_TEMPS_FORMS = {
-    lettres: "en huit temps...",
-    chiffre: "en 8 temps...",
-    virgule: "en huit, temps...",
-    point:   "en huit. Temps...",
-    tiret:   "en huit-temps..."
+    lettres:  "en huit temps...",
+    chiffre:  "en 8 temps...",
+    virgule:  "en huit, temps...",
+    point:    "en huit. Temps...",
+    tiret:    "en huit-temps...",
+    ellipses: "en huit... temps..."  // format 1er mai — ellipses intra-phrase
   };
   const formatChoix = document.getElementById('formatTest')?.value || 'lettres';
   const huitTempsStr = HUIT_TEMPS_FORMS[formatChoix] || HUIT_TEMPS_FORMS.lettres;
@@ -484,8 +486,11 @@ function buildSystemPrompt(data) {
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] (pas de phase suivante dans ce démo).\n" +
     "4. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
     "5. PAUSES AUDIO RÉELLES (>= 2s, créent un vrai silence audible) : installation=[PAUSE_3s] respiration=[PAUSE_6s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
-    "6. ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). Si tu en mets, le client entendra les phrases enchaînées sans respiration → effet 'agressif/précipité'. À la place, utilise OBLIGATOIREMENT 6 ellipses '......' entre les phrases courtes (= vraie pause prosodique d'environ 1 seconde dans la voix ElevenLabs).\n" +
-    "7. PAUSE ENTRE PHRASES COURTES : utilise '......' (6 ellipses). Exemple : 'Je vous invite à vous installer...... Laissez votre corps trouver sa place...... Vous êtes en sécurité ici......'\n\n" +
+    "6. ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel).\n" +
+    "7. STYLE PROSODIQUE — DEUX FORMATS SELON LA SECTION :\n" +
+    "   (a) RELAXATION CORPORELLE + PHASE ALPHA + DÉSOPHRONISATION → style 'ELLIPSES INTRA-PHRASES'. Chaque phrase contient 2-3 ellipses '...' INTERNES qui découpent la phrase en respirations prosodiques. Exemples : 'Vos sourcils s'écartent... s'ouvrent... [PAUSE_3s]', 'Devant vous... une lumière douce apparaît... [PAUSE_3s]', 'Doucement maintenant... vous commencez à revenir... [PAUSE_3s]'. C'est le RYTHME RESPIRÉ qui rend la voix contemplative.\n" +
+    "   (b) SCÈNES THÉRAPEUTIQUES → style 'BLOCS SÉMANTIQUES' avec '......' (6 ellipses) entre phrases d'un bloc + [PAUSE_2s] entre blocs (cf consignes spécifiques scènes).\n" +
+    "   ⚠ NE PAS mélanger les styles. La relaxation utilise des phrases avec ellipses internes '...'. Les scènes utilisent des blocs avec '......' entre phrases.\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
     "8. PHRASES COURTES - maximum 10 mots par phrase.\n" +
     "9. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
@@ -506,14 +511,30 @@ function buildSystemPrompt(data) {
 // ════════════════════════════════════════════════════════════════════
 function buildIntroUserPrompt(info, prenom, vakog) {
   return info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
-    "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases). Entre les phrases courtes : '......' (6 ellipses, JAMAIS [PAUSE_1s]).\n" +
-    "2. 3 respirations exactes (texte exact RÈGLE 3 du système, MOT POUR MOT pour les 3 cycles)\n" +
-    "3. Relaxation physique complète selon les groupes musculaires définis dans le système (une partie à la fois + [PAUSE_3s] + annonce de groupe + [PAUSE_5s])\n" +
-    "4. Je vais me taire...... [PAUSE_15s] Votre corps s'enfonce encore plus profondément...... [PAUSE_15s] Chaque respiration vous approfondit davantage...... [PAUSE_15s]\n" +
-    "5. Relaxation mentale canal " + vakog + " : lieu intérieur, descente dans l'espace avec décompte 10→1 (Dix...... Neuf...... Huit...... ... Un...) entre les paliers de descente. ⚠ Entre les phrases : '......' (6 ellipses, JAMAIS [PAUSE_1s] qui sera supprimé).\n" +
-    "6. Soyez simplement là...... [PAUSE_15s] Votre inconscient explore librement, à son propre rythme...... [PAUSE_15s]\n" +
+    "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases). Style RESPIRÉ avec ellipses intra-phrases. Exemple : '" + prenom + ", je vous invite à vous installer... confortablement... [PAUSE_3s] Laissez votre corps trouver sa propre position... [PAUSE_3s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_3s]'\n" +
+    "2. 3 respirations exactes (texte exact RÈGLE 3 du système, MOT POUR MOT pour les 3 cycles)\n\n" +
+    "3. RELAXATION PHYSIQUE — STYLE OBLIGATOIRE 'ellipses intra-phrases' :\n" +
+    "   Chaque partie du corps = phrase d'invitation AVEC 2-3 ellipses '...' INTERNES qui découpent la phrase en respirations prosodiques. Exemples du format ATTENDU :\n" +
+    "   - 'Vos sourcils s'écartent... s'ouvrent... [PAUSE_3s]'\n" +
+    "   - 'Vos paupières deviennent lourdes... si lourdes... [PAUSE_3s]'\n" +
+    "   - 'Votre langue repose... pesante... [PAUSE_3s]'\n" +
+    "   - 'Votre nuque s'abandonne... doucement... [PAUSE_3s]'\n" +
+    "   - 'Vos vertèbres cervicales se déposent... s'alignent... [PAUSE_3s]'\n" +
+    "   ⚠ INTERDIT le format sec sans ellipses (style 'Vos sourcils fondent vers le bas. [PAUSE_3s]' ❌). Le rythme respiré DOIT venir des ellipses internes.\n" +
+    "   Suivre l'ordre des groupes musculaires définis dans le système. Chaque partie + [PAUSE_3s], puis annonce de fin de groupe + [PAUSE_5s].\n\n" +
+    "4. Je vais me taire maintenant... laissez votre corps s'enfoncer encore plus loin... [PAUSE_15s] Sentez ce poids agréable... cette lourdeur douce... [PAUSE_15s] Chaque respiration vous invite à vous approfondir... encore davantage... [PAUSE_15s]\n\n" +
+    "5. RELAXATION MENTALE canal " + vakog + " — STYLE OBLIGATOIRE 'ellipses intra-phrases' (même style que la relaxation physique) :\n" +
+    "   Lieu intérieur, descente dans l'espace AVEC décompte 10→1 entre les paliers (Dix... Neuf... Huit... ... Un...). Exemple du format ATTENDU :\n" +
+    "   - 'Devant vous... une lumière douce apparaît... [PAUSE_3s]'\n" +
+    "   - 'Une couleur apaisante... que vous choisissez... [PAUSE_3s]'\n" +
+    "   - 'Elle prend une forme... stable... solide... [PAUSE_3s]'\n" +
+    "   - 'Vous descendez... lentement... vers le cœur de cet espace... [PAUSE_3s]'\n" +
+    "   - 'Un pas... encore un... [PAUSE_3s]'\n" +
+    "   - 'Plus profond... plus calme... [PAUSE_3s]'\n" +
+    "   ⚠ Entre les phrases : [PAUSE_3s] (vrai silence audio). À l'intérieur des phrases : '...' (3 points = mini-respiration). JAMAIS [PAUSE_1s] (supprimé par le parseur audio).\n\n" +
+    "6. Être simplement... ici... maintenant... [PAUSE_15s] Votre inconscient explore... librement... à son rythme... [PAUSE_15s]\n\n" +
     "STOP ici - ne pas commencer les scènes thérapeutiques.\n\n" +
-    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] dans cette section (cf RÈGLE 6 du système). Pour pause courte entre phrases : 6 ellipses '......'.";
+    "⚠ RAPPEL CRITIQUE FINAL : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (supprimés par le parseur). Le rythme RESPIRÉ vient des ELLIPSES INTRA-PHRASES '...' (3 points entre verbes/adjectifs/compléments), pas de marqueurs PAUSE entre phrases courtes.";
 }
 
 function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
@@ -538,14 +559,30 @@ function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
 
 function buildClotureUserPrompt(info, prenom, beliefSystem) {
   const FIN_PHRASE = "À très bientôt " + prenom + ".";
-  return info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT:\n" +
-    "1. Je cultive l'amour...... je cultive la vérité...... je cultive la paix...... je fais toujours de mon mieux maintenant......\n" +
-    "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes, séparées par '......', JAMAIS [PAUSE_1s])\n" +
-    "3. [PAUSE_15s]\n" +
-    "4. Désophronisation douce: revenir...... membres bougent...... étirement...... yeux s'ouvrent...... clôture chaleureuse avec " + prenom + ". Entre chaque petite phrase : '......' (6 ellipses), JAMAIS [PAUSE_1s].\n" +
-    "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de séance\n" +
-    "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'\n\n" +
-    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] dans cette section. Pour pause courte entre phrases : 6 ellipses '......'.";
+  return info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT.\n\n" +
+    "STYLE OBLIGATOIRE — ellipses intra-phrases (cohérence avec la relaxation) :\n" +
+    "Chaque phrase courte AVEC 2-3 ellipses '...' INTERNES qui découpent la prosodie. JAMAIS de [PAUSE_1s] entre phrases courtes (supprimé par le parseur audio).\n\n" +
+    "1. AFFIRMATION D'OUVERTURE :\n" +
+    "   Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux... maintenant... [PAUSE_3s]\n\n" +
+    "2. AFFIRMATIONS " + beliefSystem.toUpperCase() + " (max 4-5 phrases) — style ellipses intra-phrases. Exemple :\n" +
+    "   - 'Une lumière dorée rayonne... depuis votre centre... [PAUSE_3s]'\n" +
+    "   - 'Elle illumine... chaque cellule... de votre être... [PAUSE_3s]'\n" +
+    "   - 'Vous êtes relié... à une intelligence infinie... [PAUSE_3s]'\n\n" +
+    "3. [PAUSE_15s]\n\n" +
+    "4. DÉSOPHRONISATION DOUCE — style ellipses intra-phrases :\n" +
+    "   - 'Doucement maintenant... vous commencez à revenir... [PAUSE_3s]'\n" +
+    "   - 'À votre rythme... sans précipitation... [PAUSE_3s]'\n" +
+    "   - 'Bougez doucement... les doigts... les mains... [PAUSE_3s]'\n" +
+    "   - 'Puis les pieds... doucement... [PAUSE_3s]'\n" +
+    "   - 'Étirez les bras... si votre corps le demande... [PAUSE_3s]'\n" +
+    "   - 'Respirez profondément... une fois... [PAUSE_3s]'\n" +
+    "   - 'Sentez l'air frais... entrer en vous... [PAUSE_3s]'\n" +
+    "   - 'Quand vous vous sentez prêt... laissez les yeux s'ouvrir... [PAUSE_3s]'\n" +
+    "   - 'Doucement... comme l'aube qui arrive... [PAUSE_3s]'\n" +
+    "   Clôture chaleureuse avec " + prenom + " (1-2 phrases du même style).\n\n" +
+    "5. CONTRAINTE LONGUEUR : maximum 500 mots au total pour cette fin de séance.\n\n" +
+    "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne) : '" + FIN_PHRASE + "'\n\n" +
+    "⚠ RAPPEL CRITIQUE FINAL : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s]. Le rythme respiré DOIT venir des ELLIPSES INTRA-PHRASES '...', pas de marqueurs PAUSE entre phrases courtes.";
 }
 
 // ════════════════════════════════════════════════════════════════════
