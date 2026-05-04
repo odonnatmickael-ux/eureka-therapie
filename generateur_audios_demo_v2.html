@@ -105,10 +105,10 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
     <h2>🎚️ Paramètres voix Mickaël (modifiables en live)</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Ajuste les sliders, clique Générer, écoute. Itère. Aucun re-déploiement nécessaire.</p>
 
-    <label>Presets rapides</label>
+    <label>Presets rapides (facultatifs — sliders 100% libres ensuite)</label>
     <div class="grid-4" style="margin-bottom:1rem">
       <div class="opt" onclick="applyPreset('niveau1')" title="Stable, peu expressif">Niveau 1 (calme)</div>
-      <div class="opt selected" id="presetN2" onclick="applyPreset('niveau2')" title="Compromis validé">★ Niveau 2 (actuel)</div>
+      <div class="opt" onclick="applyPreset('niveau2')" title="Compromis validé en prod">Niveau 2 (prod)</div>
       <div class="opt" onclick="applyPreset('niveau3')" title="Plus expressif, plus risqué">Niveau 3 (expressif)</div>
       <div class="opt" onclick="applyPreset('v3validated')" title="Réglages v3 du PROJECT_STATE">v3 validé</div>
     </div>
@@ -135,7 +135,14 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <input type="checkbox" id="sBoost" checked style="margin-right:6px;accent-color:#b8955a"> Use speaker boost (amplifie fidélité voix)
     </label>
 
-    <button class="btn btn-gold" id="genBtn" disabled onclick="generer()" style="margin-top:1.5rem">Générer le test (3 resp + 3 scènes)</button>
+    <label style="margin-top:0.75rem;cursor:pointer">
+      <input type="checkbox" id="useChiffre" style="margin-right:6px;accent-color:#b8955a"> Écrire "8" en chiffre (au lieu de "huit") pour casser la liaison sans virgule
+    </label>
+
+    <div class="grid" style="margin-top:1rem">
+      <button class="btn btn-teal" onclick="resetSliders()" style="margin-top:0">↺ Vider (reset à zéro)</button>
+      <button class="btn btn-gold" id="genBtn" disabled onclick="generer()" style="margin-top:0">Générer le test</button>
+    </div>
   </div>
 
   <div class="card" id="progressCard" style="display:none">
@@ -214,6 +221,24 @@ function selectModel(el) {
   selModel = el.dataset.val;
 }
 
+function resetSliders() {
+  // Désélectionne tous les presets
+  document.querySelectorAll('.opt').forEach(o => {
+    if (o.onclick && o.onclick.toString().includes('applyPreset')) o.classList.remove('selected');
+  });
+  // Sliders à 0.50 (milieu) — neutre
+  document.getElementById('sStab').value = 0.50;
+  document.getElementById('sSim').value = 0.50;
+  document.getElementById('sStyle').value = 0.50;
+  document.getElementById('sSpeed').value = 1.00;
+  document.getElementById('sBoost').checked = false;
+  document.getElementById('useChiffre').checked = false;
+  document.getElementById('vStab').textContent = '0.50';
+  document.getElementById('vSim').textContent = '0.50';
+  document.getElementById('vStyle').textContent = '0.50';
+  document.getElementById('vSpeed').textContent = '1.00';
+}
+
 // ════════════════════════════════════════════════════════════════════
 // UI helpers
 // ════════════════════════════════════════════════════════════════════
@@ -268,7 +293,11 @@ function buildSystemPrompt(data) {
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2);
   // FIX #1 huit/virgule : "en huit, temps..." pour casser la liaison phonétique
-  const inTemps = (n) => (n === 8) ? "en huit, temps..." : "en " + NUM_FR[n] + " temps...";
+  // Test : "huit" en lettres OU en chiffre selon le toggle UI
+  // (le chiffre 8 lu par ElevenLabs = "huit" sans risque de liaison "huit-e temps")
+  const useChiffre = document.getElementById('useChiffre')?.checked;
+  const huit = useChiffre ? "8" : "huit";
+  const inTemps = (n) => (n === 8) ? "en " + huit + " temps..." : "en " + NUM_FR[n] + " temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
@@ -296,10 +325,10 @@ function buildSystemPrompt(data) {
     "2. JAMAIS résumer - tout écrire intégralement.\n" +
     "3. RESPIRATION EXACTE (cycle physiologique continu — pas de coupure entre inspire/bloque/expire pour préserver le rythme naturel du client) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " ...... Bloquez doucement " + buildCount(breath.hold) + " ...... Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
     "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
-    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit, temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ La virgule entre 'huit' et 'temps' est OBLIGATOIRE (elle casse la liaison phonétique 'huit-e temps' à l'audio). NE JAMAIS supprimer cette virgule. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
-    "    ⚠ 3ème respiration : remplace [PAUSE_" + expirePauseSec + "s] final par [PAUSE_10s] pour transitionner.\n" +
+    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en " + huit + " temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ Reproduire EXACTEMENT '" + huit + "' (ne pas le transformer en lettres si écrit en chiffre, ni en chiffre si écrit en lettres). NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
+    "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] (pas de phase suivante dans ce démo).\n" +
     "4. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
-    "5. PAUSES: respiration=[PAUSE_6s] dernière resp=[PAUSE_10s] alpha=[PAUSE_15s]\n\n" +
+    "5. PAUSES: respiration=[PAUSE_6s] alpha=[PAUSE_15s]\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
     "6. PHRASES COURTES - maximum 10 mots par phrase.\n" +
     "7. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
@@ -317,8 +346,7 @@ function buildSystemPrompt(data) {
 function buildRespirationsUserPrompt(info) {
   return info + "\n\nGénère UNIQUEMENT les 3 respirations exactes selon la RÈGLE 3 du système prompt. " +
     "ZERO TITRE. Commence DIRECTEMENT par 'Inspirez maintenant lentement...'. " +
-    "Reproduire le format MOT POUR MOT pour les 3 cycles. " +
-    "3ème respiration : remplace le PAUSE_6s final par [PAUSE_10s].";
+    "Reproduire le format MOT POUR MOT pour les 3 cycles, y compris le [PAUSE_6s] à la fin de chaque cycle.";
 }
 
 function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
