@@ -52,18 +52,19 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 <body>
 <div class="container">
   <h1>EUREKA</h1>
-  <p class="subtitle">Test rapide modifs Mickaël · 3 respirations + 3 scènes (1 fois)</p>
+  <p class="subtitle">Test séance complète Mickaël · intro + respirations + relax corps + alpha + 3 scènes ×1 + clôture/désophro</p>
 
   <div class="voice-badge">🎙️ Voix Mickaël · Paramètres ajustables ci-dessous (presets + sliders)</div>
 
   <div class="warning">
     ⚠️ Ce générateur teste les modifs récentes :
     <ul class="fix-list">
-      <li>Fix #1 — virgule dans "huit, temps" (audible dans la respiration)</li>
-      <li>Fix #2 — réglages voix Mickaël v2 niveau 2 (moins plate)</li>
-      <li>Fix #3 — pauses scènes en blocs sémantiques (vraies pauses audibles entre blocs)</li>
+      <li>Fix format respiration — choix entre 5 formats (lettres / chiffre / virgule / point / tiret)</li>
+      <li>Fix voix Mickaël — paramètres ajustables via sliders + 5 presets</li>
+      <li>Fix pauses scènes — blocs sémantiques (vraies pauses audibles entre blocs)</li>
+      <li><strong>NOUVEAU — Fix [PAUSE_1s] → ellipses '......'</strong> partout (intro, alpha, désophro). Évite les enchaînements précipités.</li>
     </ul>
-    Coût : ~5-7 min de TTS Mickaël (≈ 1 séance complète divisée par 6).
+    Coût : ~10-15 min de TTS Mickaël (≈ 1 séance complète sans les 7 cycles, avec contenu intégral).
   </div>
 
   <div class="card">
@@ -99,20 +100,32 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <div class="opt" data-val="pelerin" onclick="selectOpt('arch', this)">Pèlerin</div>
       <div class="opt" data-val="voyageur" onclick="selectOpt('arch', this)">Voyageur</div>
     </div>
+
+    <h2 style="margin-top:1.5rem">🧘 Direction relaxation corporelle</h2>
+    <div class="grid" id="dirGrid">
+      <div class="opt selected" data-val="TF" onclick="selectOpt('dir', this)">Tête → Pieds (classique)</div>
+      <div class="opt" data-val="FT" onclick="selectOpt('dir', this)">Pieds → Tête</div>
+    </div>
+
+    <h2 style="margin-top:1.5rem">🕊️ Spiritualité (clôture)</h2>
+    <div class="grid-4" id="beliefGrid">
+      <div class="opt" data-val="croyant" onclick="selectOpt('belief', this)">Croyant</div>
+      <div class="opt selected" data-val="spirituel" onclick="selectOpt('belief', this)">Spirituel</div>
+      <div class="opt" data-val="neutre" onclick="selectOpt('belief', this)">Neutre</div>
+    </div>
   </div>
 
   <div class="card" style="border-color:#b8955a">
     <h2>🧪 Test inconstance "huit temps" — ×5 par format</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Génère 5x la phrase d'expire avec le format choisi. Coche les audios où tu entends "huit-e temps". Le compteur affiche le taux d'inconstance.</p>
 
-    <label>Format à tester</label>
+    <label>Format à utiliser PARTOUT (test ×5 ET démo 3 resp + 3 scènes ci-dessous)</label>
     <select id="formatTest" style="width:100%;padding:0.75rem 1rem;background:#0d2a2c;border:1px solid #1a4548;border-radius:8px;color:#f0e8d8;font-family:'Raleway',sans-serif;font-size:13px;outline:none;margin-bottom:0.75rem">
       <option value="lettres">huit temps (lettres, sans virgule)</option>
       <option value="chiffre">8 temps (chiffre)</option>
       <option value="virgule">huit, temps (virgule + espace) — actuel prod</option>
       <option value="point">huit. Temps (point + majuscule, T capital)</option>
       <option value="tiret">huit-temps (tiret)</option>
-      <option value="phonetique">uite temps (workaround phonétique — sans 'h')</option>
     </select>
 
     <p style="font-size:11px;color:#7a9ea0;margin-bottom:0.5rem"><strong>Voix utilisée pour le test :</strong> celle des sliders ci-dessous (donc règle d'abord les sliders si besoin)</p>
@@ -127,11 +140,12 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Ajuste les sliders, clique Générer, écoute. Itère. Aucun re-déploiement nécessaire.</p>
 
     <label>Presets rapides (facultatifs — sliders 100% libres ensuite)</label>
-    <div class="grid-4" style="margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.5rem;margin-bottom:1rem">
       <div class="opt" onclick="applyPreset('niveau1')" title="Stable, peu expressif">Niveau 1 (calme)</div>
       <div class="opt" onclick="applyPreset('niveau2')" title="Compromis validé en prod">Niveau 2 (prod)</div>
       <div class="opt" onclick="applyPreset('niveau3')" title="Plus expressif, plus risqué">Niveau 3 (expressif)</div>
       <div class="opt" onclick="applyPreset('v3validated')" title="Réglages v3 du PROJECT_STATE">v3 validé</div>
+      <div class="opt" onclick="applyPreset('customMick')" title="Stab 0.65 / Sim 1.00 / Style 0.35 / Boost ON / Speed 1.00 — v2">Custom Mickaël</div>
     </div>
 
     <label>Modèle ElevenLabs</label>
@@ -156,9 +170,7 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <input type="checkbox" id="sBoost" checked style="margin-right:6px;accent-color:#b8955a"> Use speaker boost (amplifie fidélité voix)
     </label>
 
-    <label style="margin-top:0.75rem;cursor:pointer">
-      <input type="checkbox" id="useChiffre" style="margin-right:6px;accent-color:#b8955a"> Écrire "8" en chiffre (au lieu de "huit") pour casser la liaison sans virgule
-    </label>
+    <p style="font-size:11px;color:#4a6e70;margin-top:0.75rem;font-style:italic">Le format "huit/8/etc." est piloté par le select dans le bloc "Test inconstance" ci-dessus.</p>
 
     <div class="grid" style="margin-top:1rem">
       <button class="btn btn-teal" onclick="resetSliders()" style="margin-top:0">↺ Vider (reset à zéro)</button>
@@ -188,15 +200,18 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 // ════════════════════════════════════════════════════════════════════
 const VOICE_ID = "19cV422MaCP4oU6N8AFm";
 
-// Presets correspondant aux 3 niveaux discutés + v3 validé
+// Presets correspondant aux 3 niveaux discutés + v3 validé + custom Mickaël
 const PRESETS = {
   niveau1:     { stab:0.82, sim:0.75, style:0.10, boost:false, speed:0.95, model:"v2" },
   niveau2:     { stab:0.70, sim:0.75, style:0.25, boost:true,  speed:0.95, model:"v2" }, // ★ actuel en prod
   niveau3:     { stab:0.55, sim:0.85, style:0.40, boost:true,  speed:0.95, model:"v2" },
   v3validated: { stab:0.75, sim:0.80, style:0.20, boost:true,  speed:0.90, model:"v3" }, // PROJECT_STATE
+  customMick:  { stab:0.65, sim:1.00, style:0.35, boost:true,  speed:1.00, model:"v2" }, // demande Mickaël 2026-05-03
 };
 
 let selVakog = null, selArch = null;
+let selDir = "TF";       // direction relaxation corporelle (TF / FT)
+let selBelief = "spirituel"; // spiritualité clôture (croyant / spirituel / neutre)
 let selModel = "v2";
 let lastWavBlob = null;
 
@@ -253,7 +268,6 @@ function resetSliders() {
   document.getElementById('sStyle').value = 0.50;
   document.getElementById('sSpeed').value = 1.00;
   document.getElementById('sBoost').checked = false;
-  document.getElementById('useChiffre').checked = false;
   document.getElementById('vStab').textContent = '0.50';
   document.getElementById('vSim').textContent = '0.50';
   document.getElementById('vStyle').textContent = '0.50';
@@ -351,12 +365,15 @@ async function testInconstance() {
 // UI helpers
 // ════════════════════════════════════════════════════════════════════
 function selectOpt(type, el) {
-  const grid = type === 'vakog' ? document.getElementById('vakogGrid') : document.getElementById('archGrid');
+  const gridId = { vakog:'vakogGrid', arch:'archGrid', dir:'dirGrid', belief:'beliefGrid' }[type];
+  const grid = document.getElementById(gridId);
   grid.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   if (type === 'vakog') selVakog = el.dataset.val;
-  else selArch = el.dataset.val;
-  document.getElementById('genBtn').disabled = !(selVakog && selArch);
+  else if (type === 'arch') selArch = el.dataset.val;
+  else if (type === 'dir') selDir = el.dataset.val;
+  else if (type === 'belief') selBelief = el.dataset.val;
+  document.getElementById('genBtn').disabled = !(selVakog && selArch && selDir && selBelief);
 }
 
 function log(msg, type='') {
@@ -383,7 +400,7 @@ const ARCHETYPES = {
 };
 
 function buildSystemPrompt(data) {
-  const { vakog, problem, objectif, prenom, archetypeKey } = data;
+  const { vakog, problem, objectif, prenom, archetypeKey, relaxDir, beliefSystem } = data;
   const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.compagnon;
 
   // Big Five fixé à 50/50/50/50/50 (équilibré) pour ce test
@@ -401,11 +418,17 @@ function buildSystemPrompt(data) {
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2);
   // FIX #1 huit/virgule : "en huit, temps..." pour casser la liaison phonétique
-  // Test : "huit" en lettres OU en chiffre selon le toggle UI
-  // (le chiffre 8 lu par ElevenLabs = "huit" sans risque de liaison "huit-e temps")
-  const useChiffre = document.getElementById('useChiffre')?.checked;
-  const huit = useChiffre ? "8" : "huit";
-  const inTemps = (n) => (n === 8) ? "en " + huit + " temps..." : "en " + NUM_FR[n] + " temps...";
+  // Format "huit temps" piloté par le select #formatTest (5 variantes testées)
+  const HUIT_TEMPS_FORMS = {
+    lettres: "en huit temps...",
+    chiffre: "en 8 temps...",
+    virgule: "en huit, temps...",
+    point:   "en huit. Temps...",
+    tiret:   "en huit-temps..."
+  };
+  const formatChoix = document.getElementById('formatTest')?.value || 'lettres';
+  const huitTempsStr = HUIT_TEMPS_FORMS[formatChoix] || HUIT_TEMPS_FORMS.lettres;
+  const inTemps = (n) => (n === 8) ? huitTempsStr : "en " + NUM_FR[n] + " temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
@@ -418,6 +441,30 @@ function buildSystemPrompt(data) {
     compagnon: "chaleureux, protecteur, enveloppant, sécurisant",
     voyageur: "présent, sensoriel, vivant, ancré dans le corps"
   }[archetypeKey] || "équilibré et apaisant";
+
+  // Groupes musculaires (relaxation corps) selon direction
+  const groupesTF = "GROUPES TÊTE vers PIEDS:\n" +
+    "Groupe TÊTE: cuir chevelu, oreilles, front, sourcils, paupières, yeux, nez, joues, bouche, lèvres, intérieur bouche, langue, mâchoire, menton - chacun: phrase invitation détente + [PAUSE_3s] - puis annoncer toute la tête détendue [PAUSE_5s]\n" +
+    "Groupe COU: cou, nuque, vertèbres cervicales - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: épaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
+    "Groupe TRONC: vertèbres dorsales, lombaires, cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, deuxièmes, troisièmes, quatrièmes, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps détendu [PAUSE_5s]";
+
+  const groupesFT = "GROUPES PIEDS vers TÊTE:\n" +
+    "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf détendus [PAUSE_5s]\n" +
+    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
+    "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, épaules - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
+    "Groupe COU: vertèbres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
+    "Groupe TÊTE: menton, mâchoire, langue, intérieur bouche, lèvres, bouche, joues, nez, yeux, paupières, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tête détendue [PAUSE_5s]";
+
+  const groupes = relaxDir === 'FT' ? groupesFT : groupesTF;
+
+  // Bloc spirituel (clôture) selon croyance
+  const spirituel = beliefSystem === 'croyant' ?
+    "Puis affirmations connexion divine, lumière, victoire acquise, Namaste." :
+    beliefSystem === 'spirituel' ?
+    "Puis affirmations amour, paix, transformation, gratitude." :
+    "Puis affirmations ressources intérieures, courage, progression.";
 
   return "Tu es un sophrologue expert. Tu génères un script audio de séance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
@@ -433,28 +480,40 @@ function buildSystemPrompt(data) {
     "2. JAMAIS résumer - tout écrire intégralement.\n" +
     "3. RESPIRATION EXACTE (cycle physiologique continu — pas de coupure entre inspire/bloque/expire pour préserver le rythme naturel du client) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " ...... Bloquez doucement " + buildCount(breath.hold) + " ...... Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
     "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
-    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en " + huit + " temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ Reproduire EXACTEMENT '" + huit + "' (ne pas le transformer en lettres si écrit en chiffre, ni en chiffre si écrit en lettres). NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
+    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement " + huitTempsStr + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ Reproduire EXACTEMENT la forme '" + huitTempsStr + "' (ne pas la modifier — virgule, point, tiret, chiffre selon le format envoyé). NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] (pas de phase suivante dans ce démo).\n" +
     "4. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
-    "5. PAUSES: respiration=[PAUSE_6s] alpha=[PAUSE_15s]\n\n" +
+    "5. PAUSES AUDIO RÉELLES (>= 2s, créent un vrai silence audible) : installation=[PAUSE_3s] respiration=[PAUSE_6s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
+    "6. ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). Si tu en mets, le client entendra les phrases enchaînées sans respiration → effet 'agressif/précipité'. À la place, utilise OBLIGATOIREMENT 6 ellipses '......' entre les phrases courtes (= vraie pause prosodique d'environ 1 seconde dans la voix ElevenLabs).\n" +
+    "7. PAUSE ENTRE PHRASES COURTES : utilise '......' (6 ellipses). Exemple : 'Je vous invite à vous installer...... Laissez votre corps trouver sa place...... Vous êtes en sécurité ici......'\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
-    "6. PHRASES COURTES - maximum 10 mots par phrase.\n" +
-    "7. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
-    "8. LANGAGE SENSORIEL - utiliser le canal " + vakog + " à chaque étape. Faire RESSENTIR, pas expliquer.\n" +
-    "9. RÉPÉTITION HYPNOTIQUE - les mots clés reviennent... encore... et encore... comme une vague.\n" +
-    "10. PRÉSENT DIRECT - pas de conditionnel. Dire 'vous ressentez... vous lâchez... vous êtes'.\n" +
-    "11. VERBES D'ACTION LENTS - fondre, glisser, lâcher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
+    "8. PHRASES COURTES - maximum 10 mots par phrase.\n" +
+    "9. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
+    "10. LANGAGE SENSORIEL - utiliser le canal " + vakog + " à chaque étape. Faire RESSENTIR, pas expliquer.\n" +
+    "11. RÉPÉTITION HYPNOTIQUE - les mots clés reviennent... encore... et encore... comme une vague.\n" +
+    "12. PRÉSENT DIRECT - pas de conditionnel. Dire 'vous ressentez... vous lâchez... vous êtes'.\n" +
+    "13. VERBES D'ACTION LENTS - fondre, glisser, lâcher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
     "VIGILANCE ORTHOGRAPHIQUE FRANÇAISE — IMPÉRATIF:\n" +
-    "12. Tous les accents français doivent être présents : é è ê à â î ô û ç. Audio = chaque mot SERA prononcé.\n";
+    "14. Tous les accents français doivent être présents : é è ê à â î ô û ç. Audio = chaque mot SERA prononcé.\n\n" +
+    "GROUPES MUSCULAIRES (pour relaxation corporelle):\n" + groupes + "\n\n" +
+    "SPIRITUALITÉ (pour clôture):\n" +
+    "Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant......\n" +
+    spirituel;
 }
 
 // ════════════════════════════════════════════════════════════════════
 // USER PROMPTS — copie fidèle de v25 (avec FIX #3 blocs sémantiques)
 // ════════════════════════════════════════════════════════════════════
-function buildRespirationsUserPrompt(info) {
-  return info + "\n\nGénère UNIQUEMENT les 3 respirations exactes selon la RÈGLE 3 du système prompt. " +
-    "ZERO TITRE. Commence DIRECTEMENT par 'Inspirez maintenant lentement...'. " +
-    "Reproduire le format MOT POUR MOT pour les 3 cycles, y compris le [PAUSE_6s] à la fin de chaque cycle.";
+function buildIntroUserPrompt(info, prenom, vakog) {
+  return info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
+    "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases). Entre les phrases courtes : '......' (6 ellipses, JAMAIS [PAUSE_1s]).\n" +
+    "2. 3 respirations exactes (texte exact RÈGLE 3 du système, MOT POUR MOT pour les 3 cycles)\n" +
+    "3. Relaxation physique complète selon les groupes musculaires définis dans le système (une partie à la fois + [PAUSE_3s] + annonce de groupe + [PAUSE_5s])\n" +
+    "4. Je vais me taire...... [PAUSE_15s] Votre corps s'enfonce encore plus profondément...... [PAUSE_15s] Chaque respiration vous approfondit davantage...... [PAUSE_15s]\n" +
+    "5. Relaxation mentale canal " + vakog + " : lieu intérieur, descente dans l'espace avec décompte 10→1 (Dix...... Neuf...... Huit...... ... Un...) entre les paliers de descente. ⚠ Entre les phrases : '......' (6 ellipses, JAMAIS [PAUSE_1s] qui sera supprimé).\n" +
+    "6. Soyez simplement là...... [PAUSE_15s] Votre inconscient explore librement, à son propre rythme...... [PAUSE_15s]\n" +
+    "STOP ici - ne pas commencer les scènes thérapeutiques.\n\n" +
+    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] dans cette section (cf RÈGLE 6 du système). Pour pause courte entre phrases : 6 ellipses '......'.";
 }
 
 function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
@@ -467,14 +526,26 @@ function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
     "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO :\n" +
     "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio).\n" +
     "- ORGANISE chaque scène en BLOCS SÉMANTIQUES de 3-4 phrases liées (même image, même geste, même transition narrative). Les blocs trop courts (1-2 phrases isolées) sont INTERDITS car ElevenLabs les précipite.\n" +
-    "- À L'INTÉRIEUR d'un bloc : utilise 6 ellipses '......' entre les phrases. Exemple : 'Tu observes Mickael...... Ses yeux brillent, focalisés...... Sa posture est ancrée et majestueuse......'\n" +
-    "- ENTRE DEUX BLOCS sémantiques : insère un [PAUSE_2s] sur une ligne séparée (vraie pause audio garantie).\n" +
+    "- À L'INTÉRIEUR d'un bloc : utilise 6 ellipses '......' entre les phrases.\n" +
+    "- ENTRE DEUX BLOCS sémantiques : insère un [PAUSE_2s] sur une ligne séparée.\n" +
     "- ENTRE MOMENTS CLÉS forts (changement majeur de scène, transformation, ancrage), utilise [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
     "- Vise 2 à 4 vrais [PAUSE_2s] par scène (entre les blocs), pas plus.\n\n" +
     "Scène 1 (MAXIMUM 220 mots au total): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
     "Scène 2 (MAXIMUM 220 mots au total): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
     "Scène 3 (MAXIMUM 220 mots au total): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
     "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]";
+}
+
+function buildClotureUserPrompt(info, prenom, beliefSystem) {
+  const FIN_PHRASE = "À très bientôt " + prenom + ".";
+  return info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT:\n" +
+    "1. Je cultive l'amour...... je cultive la vérité...... je cultive la paix...... je fais toujours de mon mieux maintenant......\n" +
+    "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes, séparées par '......', JAMAIS [PAUSE_1s])\n" +
+    "3. [PAUSE_15s]\n" +
+    "4. Désophronisation douce: revenir...... membres bougent...... étirement...... yeux s'ouvrent...... clôture chaleureuse avec " + prenom + ". Entre chaque petite phrase : '......' (6 ellipses), JAMAIS [PAUSE_1s].\n" +
+    "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de séance\n" +
+    "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'\n\n" +
+    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] dans cette section. Pour pause courte entre phrases : 6 ellipses '......'.";
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -619,7 +690,7 @@ async function generer() {
   const prenom = document.getElementById('prenom').value.trim() || "Mickaël";
   const problem = document.getElementById('problem').value.trim();
   const objectif = document.getElementById('objectif').value.trim();
-  if (!problem || !objectif || !selVakog || !selArch) { alert('Champs manquants'); return; }
+  if (!problem || !objectif || !selVakog || !selArch || !selDir || !selBelief) { alert('Champs manquants'); return; }
 
   document.getElementById('progressCard').style.display = 'block';
   document.getElementById('audioCard').style.display = 'none';
@@ -627,24 +698,29 @@ async function generer() {
   document.getElementById('logEl').innerHTML = '';
 
   try {
-    const data = { vakog:selVakog, problem, objectif, prenom, archetypeKey:selArch };
+    const data = { vakog:selVakog, problem, objectif, prenom, archetypeKey:selArch, relaxDir:selDir, beliefSystem:selBelief };
     const sysPrompt = buildSystemPrompt(data);
     const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
-      " | ARCHETYPE: " + (ARCHETYPES[selArch]?.name || selArch) + " | VAKOG: " + selVakog;
+      " | ARCHETYPE: " + (ARCHETYPES[selArch]?.name || selArch) + " | VAKOG: " + selVakog +
+      " | Relaxation: " + (selDir === 'TF' ? 'Tete-Pieds' : 'Pieds-Tete') +
+      " | Spiritualite: " + selBelief;
 
-    setProgress(5, 'Génération script en parallèle...');
+    setProgress(5, 'Génération script en parallèle (3 appels Claude)...');
     const vs = readVoiceSettings();
     log(`Modèle : ${readModelId()}`, 'info');
     log(`Voix : stab=${vs.stability.toFixed(2)} sim=${vs.similarity_boost.toFixed(2)} style=${vs.style.toFixed(2)} boost=${vs.use_speaker_boost} speed=${vs.speed.toFixed(2)}`, 'info');
-    log('Appel Claude #1 : 3 respirations 4-2-8 (avec fix huit/virgule)');
-    log('Appel Claude #2 : 3 scènes thérapeutiques (avec fix blocs sémantiques)');
+    log('Appel Claude #1 : intro (accueil + 3 respirations + relax corps + alpha)');
+    log('Appel Claude #2 : 3 scènes thérapeutiques (1 cycle, blocs sémantiques)');
+    log('Appel Claude #3 : clôture spirituelle + désophronisation');
 
-    const respPromise = callClaude(sysPrompt, buildRespirationsUserPrompt(info), 800);
+    const introPromise = callClaude(sysPrompt, buildIntroUserPrompt(info, prenom, selVakog), 4096);
     const scenesPromise = callClaude(sysPrompt, buildScenesUserPrompt(info, prenom, problem, objectif, selVakog), 3000);
-    const [respirations, scenes] = await Promise.all([respPromise, scenesPromise]);
+    const cloturePromise = callClaude(sysPrompt, buildClotureUserPrompt(info, prenom, selBelief), 2500);
+    const [intro, scenes, cloture] = await Promise.all([introPromise, scenesPromise, cloturePromise]);
 
     log('✓ Script généré', 'ok');
-    const fullScript = cleaner(respirations) + "\n\n[PAUSE_5s]\n\n" + cleaner(scenes);
+    const ANNONCE_SCENES = "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "...... installez-vous encore plus profondément......";
+    const fullScript = cleaner(intro) + "\n\n" + ANNONCE_SCENES + "\n\n" + cleaner(scenes) + "\n\n" + cleaner(cloture);
     document.getElementById('scriptEl').textContent = fullScript;
     setProgress(20, 'Script OK. Découpage en chunks audio...');
 
