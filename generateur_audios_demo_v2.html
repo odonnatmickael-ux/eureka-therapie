@@ -54,7 +54,7 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
   <h1>EUREKA</h1>
   <p class="subtitle">Test rapide modifs Mickaël · 3 respirations + 3 scènes (1 fois)</p>
 
-  <div class="voice-badge">🎙️ Voix Mickaël v2 niveau 2 hardcodé · Stab 0.70 / Style 0.25 / Boost ON / Speed 0.95</div>
+  <div class="voice-badge">🎙️ Voix Mickaël · Paramètres ajustables ci-dessous (presets + sliders)</div>
 
   <div class="warning">
     ⚠️ Ce générateur teste les modifs récentes :
@@ -99,8 +99,43 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <div class="opt" data-val="pelerin" onclick="selectOpt('arch', this)">Pèlerin</div>
       <div class="opt" data-val="voyageur" onclick="selectOpt('arch', this)">Voyageur</div>
     </div>
+  </div>
 
-    <button class="btn btn-gold" id="genBtn" disabled onclick="generer()">Générer le test (3 resp + 3 scènes)</button>
+  <div class="card">
+    <h2>🎚️ Paramètres voix Mickaël (modifiables en live)</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Ajuste les sliders, clique Générer, écoute. Itère. Aucun re-déploiement nécessaire.</p>
+
+    <label>Presets rapides</label>
+    <div class="grid-4" style="margin-bottom:1rem">
+      <div class="opt" onclick="applyPreset('niveau1')" title="Stable, peu expressif">Niveau 1 (calme)</div>
+      <div class="opt selected" id="presetN2" onclick="applyPreset('niveau2')" title="Compromis validé">★ Niveau 2 (actuel)</div>
+      <div class="opt" onclick="applyPreset('niveau3')" title="Plus expressif, plus risqué">Niveau 3 (expressif)</div>
+      <div class="opt" onclick="applyPreset('v3validated')" title="Réglages v3 du PROJECT_STATE">v3 validé</div>
+    </div>
+
+    <label>Modèle ElevenLabs</label>
+    <div class="grid" style="margin-bottom:1rem">
+      <div class="opt selected" data-val="v2" onclick="selectModel(this)">eleven_multilingual_v2 (stable)</div>
+      <div class="opt" data-val="v3" onclick="selectModel(this)">eleven_v3 (alpha — plus expressif, ignore speed)</div>
+    </div>
+
+    <label>Stability : <span id="vStab" style="color:#b8955a">0.70</span> <span style="font-size:10px;color:#4a6e70">(haut = monotone, bas = expressif/instable)</span></label>
+    <input type="range" min="0" max="1" step="0.01" value="0.70" id="sStab" oninput="document.getElementById('vStab').textContent=parseFloat(this.value).toFixed(2)" style="width:100%;accent-color:#b8955a">
+
+    <label style="margin-top:0.75rem">Similarity boost : <span id="vSim" style="color:#b8955a">0.75</span> <span style="font-size:10px;color:#4a6e70">(haut = fidèle aux samples, bas = libre)</span></label>
+    <input type="range" min="0" max="1" step="0.01" value="0.75" id="sSim" oninput="document.getElementById('vSim').textContent=parseFloat(this.value).toFixed(2)" style="width:100%;accent-color:#b8955a">
+
+    <label style="margin-top:0.75rem">Style : <span id="vStyle" style="color:#b8955a">0.25</span> <span style="font-size:10px;color:#4a6e70">(0 = neutre, 1 = très expressif)</span></label>
+    <input type="range" min="0" max="1" step="0.01" value="0.25" id="sStyle" oninput="document.getElementById('vStyle').textContent=parseFloat(this.value).toFixed(2)" style="width:100%;accent-color:#b8955a">
+
+    <label style="margin-top:0.75rem">Speed : <span id="vSpeed" style="color:#b8955a">0.95</span> <span style="font-size:10px;color:#4a6e70">(ignoré en v3)</span></label>
+    <input type="range" min="0.60" max="1.10" step="0.01" value="0.95" id="sSpeed" oninput="document.getElementById('vSpeed').textContent=parseFloat(this.value).toFixed(2)" style="width:100%;accent-color:#b8955a">
+
+    <label style="margin-top:0.75rem;cursor:pointer">
+      <input type="checkbox" id="sBoost" checked style="margin-right:6px;accent-color:#b8955a"> Use speaker boost (amplifie fidélité voix)
+    </label>
+
+    <button class="btn btn-gold" id="genBtn" disabled onclick="generer()" style="margin-top:1.5rem">Générer le test (3 resp + 3 scènes)</button>
   </div>
 
   <div class="card" id="progressCard" style="display:none">
@@ -121,20 +156,63 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-// CONFIG — voix Mickaël v2 niveau 2 (modifs validées le 2026-05-03)
+// CONFIG — voix Mickaël (paramètres pilotés par les sliders)
 // ════════════════════════════════════════════════════════════════════
 const VOICE_ID = "19cV422MaCP4oU6N8AFm";
-const VOICE_SETTINGS = {
-  stability: 0.70,
-  similarity_boost: 0.75,
-  style: 0.25,
-  use_speaker_boost: true,
-  speed: 0.95
+
+// Presets correspondant aux 3 niveaux discutés + v3 validé
+const PRESETS = {
+  niveau1:     { stab:0.82, sim:0.75, style:0.10, boost:false, speed:0.95, model:"v2" },
+  niveau2:     { stab:0.70, sim:0.75, style:0.25, boost:true,  speed:0.95, model:"v2" }, // ★ actuel en prod
+  niveau3:     { stab:0.55, sim:0.85, style:0.40, boost:true,  speed:0.95, model:"v2" },
+  v3validated: { stab:0.75, sim:0.80, style:0.20, boost:true,  speed:0.90, model:"v3" }, // PROJECT_STATE
 };
-const MODEL_ID = "eleven_multilingual_v2";
 
 let selVakog = null, selArch = null;
+let selModel = "v2";
 let lastWavBlob = null;
+
+function readVoiceSettings() {
+  return {
+    stability: parseFloat(document.getElementById('sStab').value),
+    similarity_boost: parseFloat(document.getElementById('sSim').value),
+    style: parseFloat(document.getElementById('sStyle').value),
+    use_speaker_boost: document.getElementById('sBoost').checked,
+    speed: parseFloat(document.getElementById('sSpeed').value)
+  };
+}
+function readModelId() {
+  return selModel === "v3" ? "eleven_v3" : "eleven_multilingual_v2";
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('sStab').value = p.stab;
+  document.getElementById('sSim').value = p.sim;
+  document.getElementById('sStyle').value = p.style;
+  document.getElementById('sSpeed').value = p.speed;
+  document.getElementById('sBoost').checked = p.boost;
+  document.getElementById('vStab').textContent = p.stab.toFixed(2);
+  document.getElementById('vSim').textContent = p.sim.toFixed(2);
+  document.getElementById('vStyle').textContent = p.style.toFixed(2);
+  document.getElementById('vSpeed').textContent = p.speed.toFixed(2);
+  // Sélectionne le modèle correspondant au preset
+  document.querySelectorAll('[data-val="v2"], [data-val="v3"]').forEach(el => {
+    if (el.onclick && el.onclick.toString().includes('selectModel')) {
+      el.classList.toggle('selected', el.dataset.val === p.model);
+    }
+  });
+  selModel = p.model;
+}
+
+function selectModel(el) {
+  document.querySelectorAll('[data-val="v2"], [data-val="v3"]').forEach(o => {
+    if (o.onclick && o.onclick.toString().includes('selectModel')) o.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  selModel = el.dataset.val;
+}
 
 // ════════════════════════════════════════════════════════════════════
 // UI helpers
@@ -216,8 +294,8 @@ function buildSystemPrompt(data) {
     "RÈGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scène, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases thérapeutiques.\n" +
     "2. JAMAIS résumer - tout écrire intégralement.\n" +
-    "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
-    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ou ajouter des ellipses ou un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles.\n" +
+    "3. RESPIRATION EXACTE (cycle physiologique continu — pas de coupure entre inspire/bloque/expire pour préserver le rythme naturel du client) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " ...... Bloquez doucement " + buildCount(breath.hold) + " ...... Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
+    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
     "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit, temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ La virgule entre 'huit' et 'temps' est OBLIGATOIRE (elle casse la liaison phonétique 'huit-e temps' à l'audio). NE JAMAIS supprimer cette virgule. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : remplace [PAUSE_" + expirePauseSec + "s] final par [PAUSE_10s] pour transitionner.\n" +
     "4. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
@@ -278,15 +356,18 @@ async function callClaude(system, user, tokens) {
 }
 
 async function callTTS(text, prevText = "", nextText = "") {
-  const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 1000);
+  const isV3 = selModel === "v3";
+  const maxChars = isV3 ? 2800 : 4800;
+  const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, isV3 ? 600 : 1000);
   const body = {
-    text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, 4800),
+    text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, maxChars),
     voiceId: VOICE_ID,
-    modelId: MODEL_ID,
-    voiceSettings: VOICE_SETTINGS  // niveau 2 hardcodé
+    modelId: readModelId(),
+    voiceSettings: readVoiceSettings()  // lit les sliders en live
   };
-  if (prevText) body.previous_text = cleanCtx(prevText);
-  if (nextText) body.next_text = cleanCtx(nextText);
+  // v3 (alpha) ne supporte pas previous_text/next_text
+  if (!isV3 && prevText) body.previous_text = cleanCtx(prevText);
+  if (!isV3 && nextText) body.next_text = cleanCtx(nextText);
   const r = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -416,6 +497,9 @@ async function generer() {
       " | ARCHETYPE: " + (ARCHETYPES[selArch]?.name || selArch) + " | VAKOG: " + selVakog;
 
     setProgress(5, 'Génération script en parallèle...');
+    const vs = readVoiceSettings();
+    log(`Modèle : ${readModelId()}`, 'info');
+    log(`Voix : stab=${vs.stability.toFixed(2)} sim=${vs.similarity_boost.toFixed(2)} style=${vs.style.toFixed(2)} boost=${vs.use_speaker_boost} speed=${vs.speed.toFixed(2)}`, 'info');
     log('Appel Claude #1 : 3 respirations 4-2-8 (avec fix huit/virgule)');
     log('Appel Claude #2 : 3 scènes thérapeutiques (avec fix blocs sémantiques)');
 
