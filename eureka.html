@@ -1035,6 +1035,8 @@ function MentionsModal({ onClose }) {
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
             EUREKA Thérapie ne stocke aucune donnée sur ses propres serveurs. Les informations saisies (prénom, email, problème, objectif, profil Big Five / VAKOG) transitent en temps réel par des sous-traitants techniques (listés ci-dessous) avec leurs propres durées de rétention courtes, pour générer votre séance personnalisée.
             <br/><br/>
+            Votre séance générée (audio + script) est conservée <strong style={{ color:C.cream }}>localement sur votre navigateur</strong> (via IndexedDB) afin que vous puissiez la réécouter sans regénération. Vous pouvez l'effacer à tout moment en cliquant sur « Nouvelle séance » ou via les paramètres de votre navigateur (vider le cache et les données du site).
+            <br/><br/>
             Les informations relatives à votre état émotionnel ou ressenti sont considérées comme données de santé au sens de l'article 9 du RGPD. Elles bénéficient d'une protection renforcée et sont traitées sur la base de votre consentement explicite (case cochée à l'étape « anamnèse »).
           </p>
         </div>
@@ -1044,7 +1046,7 @@ function MentionsModal({ onClose }) {
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
             fontFamily:"'Raleway',sans-serif" }}>🤝 Sous-traitants techniques</p>
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            Pour générer votre séance, vos données transitent par des prestataires techniques avec qui des accords de traitement (DPA) sont en place :
+            Pour générer votre séance, vos données transitent par des prestataires techniques avec qui des accords de traitement (DPA) sont en place. <strong style={{ color:C.cream }}>Anthropic, ElevenLabs et EmailJS sont situés aux États-Unis</strong> — les transferts s'effectuent dans le cadre du <strong style={{ color:C.cream }}>EU-US Data Privacy Framework</strong> et de <strong style={{ color:C.cream }}>Clauses Contractuelles Types</strong> (CCT) approuvées par la Commission européenne.
           </p>
           <ul style={{ fontSize:"12px", color:C.muted, lineHeight:"1.85", paddingLeft:"1.25rem", marginTop:"0.5rem" }}>
             <li><strong style={{ color:C.cream }}>Anthropic</strong> (Claude API) — génération du script. Logs anonymisés sous 30 jours.</li>
@@ -1085,9 +1087,9 @@ function MentionsModal({ onClose }) {
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.75rem",
             fontFamily:"'Raleway',sans-serif" }}>❓ Questions fréquentes</p>
           {[
-            { q:"Quelles données conservez-vous sur moi ?", r:"Aucune sur nos serveurs. Vos données sont utilisées en temps réel pour générer votre séance et ne sont pas stockées chez nous." },
+            { q:"Quelles données conservez-vous sur moi ?", r:"Aucune sur nos serveurs. Vos données sont utilisées en temps réel pour générer votre séance et ne sont pas stockées chez nous. La séance générée (audio + script) est conservée localement sur votre navigateur (IndexedDB) pour que vous puissiez la réécouter — vous pouvez l'effacer à tout moment." },
             { q:"Et l'email que je reçois après ma séance ?", r:"Il est envoyé via EmailJS, qui conserve les logs d'envoi entre 30 et 90 jours selon leur politique standard, puis les supprime automatiquement." },
-            { q:"Comment supprimer mes données ?", r:"Il n'y a rien à supprimer chez nous puisque nous ne stockons rien. Pour les sous-traitants techniques (Anthropic, ElevenLabs, EmailJS), les rétentions sont courtes (30-90 jours) et automatiques." },
+            { q:"Comment supprimer mes données ?", r:"Côté serveurs : rien à supprimer chez nous (rien n'est stocké). Pour les sous-traitants techniques (Anthropic, ElevenLabs, EmailJS), les rétentions sont courtes (30-90 jours) et automatiques. Côté votre navigateur : cliquez sur « Nouvelle séance » pour effacer la séance sauvegardée, ou videz les données du site dans les paramètres de votre navigateur." },
             { q:"Comment exercer mes autres droits RGPD ?", r:"Écrivez à eureka.therapie@gmail.com — nous répondons sous 30 jours maximum." },
           ].map(({ q, r }, i) => (
             <div key={i} style={{ marginBottom:"0.875rem" }}>
@@ -2111,7 +2113,7 @@ function Anamnese({ onNext }) {
                 style={{ marginTop:"3px", accentColor:C.gold }} />
               <span style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>
                 Je consens explicitement au traitement de mes données — y compris des informations sur mon état émotionnel ou mon ressenti — pour la génération de ma séance personnalisée.
-                Ces données ne sont <strong style={{ color:C.cream }}>pas conservées sur nos serveurs</strong> et sont traitées uniquement en temps réel (RGPD article 9).
+                Ces données ne sont <strong style={{ color:C.cream }}>pas conservées sur nos serveurs</strong> et sont traitées uniquement en temps réel (RGPD article 9). Ma séance générée est conservée localement sur mon navigateur pour me permettre de la réécouter — je peux l'effacer à tout moment.
               </span>
             </label>
 
@@ -4848,4 +4850,8 @@ function App() {
   );
 }
 
-const root = ReactDOM.createRoot(document.getEl
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
