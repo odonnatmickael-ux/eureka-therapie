@@ -2312,7 +2312,7 @@ function PricingIntent({ prenom, archetype, onContinue }) {
         </button>
         <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
           marginTop:"0.75rem", textAlign:"center" }}>
-          100% anonyme · Aucun paiement réclamé · Juste pour valider la suite du projet.
+          Anonyme — aucun email ni nom transmis avec votre réponse · Aucun paiement réclamé · Juste pour valider la suite du projet.
         </p>
       </div>
     </Card>
@@ -4489,7 +4489,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               </button>
               <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
                 marginTop:"0.75rem", textAlign:"center" }}>
-                100% anonyme · Aucune donnée personnelle collectée.
+                Ce retour est anonyme — aucun email ni nom transmis avec votre commentaire.
               </p>
             </>
           )}
@@ -4848,8 +4848,4 @@ function App() {
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-</script>
-</body>
-</html>
+const root = ReactDOM.createRoot(document.getEl
