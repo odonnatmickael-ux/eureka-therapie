@@ -101,6 +101,27 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
     </div>
   </div>
 
+  <div class="card" style="border-color:#b8955a">
+    <h2>🧪 Test inconstance "huit temps" — ×5 par format</h2>
+    <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Génère 5x la phrase d'expire avec le format choisi. Coche les audios où tu entends "huit-e temps". Le compteur affiche le taux d'inconstance.</p>
+
+    <label>Format à tester</label>
+    <select id="formatTest" style="width:100%;padding:0.75rem 1rem;background:#0d2a2c;border:1px solid #1a4548;border-radius:8px;color:#f0e8d8;font-family:'Raleway',sans-serif;font-size:13px;outline:none;margin-bottom:0.75rem">
+      <option value="lettres">huit temps (lettres, sans virgule)</option>
+      <option value="chiffre">8 temps (chiffre)</option>
+      <option value="virgule">huit, temps (virgule + espace) — actuel prod</option>
+      <option value="point">huit. Temps (point + majuscule, T capital)</option>
+      <option value="tiret">huit-temps (tiret)</option>
+      <option value="phonetique">uite temps (workaround phonétique — sans 'h')</option>
+    </select>
+
+    <p style="font-size:11px;color:#7a9ea0;margin-bottom:0.5rem"><strong>Voix utilisée pour le test :</strong> celle des sliders ci-dessous (donc règle d'abord les sliders si besoin)</p>
+
+    <button class="btn btn-gold" onclick="testInconstance()" style="margin-top:0.5rem">Lancer 5 générations</button>
+
+    <div id="testResults" style="margin-top:1rem"></div>
+  </div>
+
   <div class="card">
     <h2>🎚️ Paramètres voix Mickaël (modifiables en live)</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Ajuste les sliders, clique Générer, écoute. Itère. Aucun re-déploiement nécessaire.</p>
@@ -237,6 +258,93 @@ function resetSliders() {
   document.getElementById('vSim').textContent = '0.50';
   document.getElementById('vStyle').textContent = '0.50';
   document.getElementById('vSpeed').textContent = '1.00';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// TEST INCONSTANCE — génère 5x la phrase d'expire pour mesurer le taux
+// de liaison "huit-e temps" selon le format sélectionné
+// ════════════════════════════════════════════════════════════════════
+const FORMATS_TEST = {
+  lettres:    "Et expirez tout doucement en huit temps... laissez partir toutes les tensions.",
+  chiffre:    "Et expirez tout doucement en 8 temps... laissez partir toutes les tensions.",
+  virgule:    "Et expirez tout doucement en huit, temps... laissez partir toutes les tensions.",
+  point:      "Et expirez tout doucement en huit. Temps... laissez partir toutes les tensions.",
+  tiret:      "Et expirez tout doucement en huit-temps... laissez partir toutes les tensions.",
+  phonetique: "Et expirez tout doucement en uite temps... laissez partir toutes les tensions."
+};
+
+function updateInconstanceCounter() {
+  const total = document.querySelectorAll('.test-liaison-cb').length;
+  if (total === 0) return;
+  const checked = document.querySelectorAll('.test-liaison-cb:checked').length;
+  const pct = Math.round(100 * checked / total);
+  const counterEl = document.getElementById('inconstanceCounter');
+  if (counterEl) {
+    let verdict = '';
+    if (checked === 0) verdict = ' → ✓ FIABLE à 100%';
+    else if (pct <= 20) verdict = ' → moyen (acceptable)';
+    else if (pct <= 50) verdict = ' → ⚠ inconstant';
+    else verdict = ' → ❌ mauvais';
+    counterEl.innerHTML = `<strong>${checked}/${total} ont la liaison "huit-e temps"</strong> (${pct}%)${verdict}`;
+    counterEl.style.color = checked === 0 ? '#4ade80' : (pct <= 20 ? '#d4b483' : '#f87171');
+  }
+}
+
+async function testInconstance() {
+  const elevenKey = document.getElementById('elevenKey').value.trim();
+  if (!elevenKey) { alert('Entrez votre clé ElevenLabs'); return; }
+
+  const format = document.getElementById('formatTest').value;
+  const text = FORMATS_TEST[format];
+  const resultsEl = document.getElementById('testResults');
+
+  const vs = readVoiceSettings();
+  const settingsLine = `stab=${vs.stability.toFixed(2)} sim=${vs.similarity_boost.toFixed(2)} style=${vs.style.toFixed(2)} boost=${vs.use_speaker_boost} speed=${vs.speed.toFixed(2)} · ${readModelId()}`;
+
+  resultsEl.innerHTML = `
+    <div style="background:#0d2a2c;border:1px solid #1a4548;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem">
+      <p style="color:#b8955a;font-size:12px;margin-bottom:4px"><strong>Texte testé :</strong></p>
+      <code style="color:#d4b483;font-size:11px;display:block;margin-bottom:6px">${text}</code>
+      <p style="color:#7a9ea0;font-size:10px;font-family:monospace">Voix : ${settingsLine}</p>
+    </div>
+    <div id="testGrid" style="display:grid;gap:0.5rem"></div>
+    <div id="inconstanceCounter" style="margin-top:1rem;padding:0.75rem;background:#0d2a2c;border-radius:8px;font-size:13px;color:#7a9ea0">En attente d'écoute — coche les audios où tu entends "huit-e temps"</div>
+  `;
+  const grid = document.getElementById('testGrid');
+
+  for (let i = 0; i < 5; i++) {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#0d2a2c;border:1px solid #1a4548;border-radius:8px;padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap';
+    card.innerHTML = `
+      <span style="color:#b8955a;font-weight:600;min-width:30px">#${i+1}</span>
+      <span class="test-status" style="color:#7a9ea0;font-size:11px;min-width:90px" id="testStatus_${i}">Génération...</span>
+    `;
+    grid.appendChild(card);
+
+    try {
+      const ab = await callTTS(text, "", "");
+      const blob = new Blob([ab], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = url;
+      audio.style.cssText = 'flex:1;min-width:200px;max-width:300px';
+      card.appendChild(audio);
+
+      const cbLabel = document.createElement('label');
+      cbLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;color:#f87171;cursor:pointer;margin-left:auto';
+      cbLabel.innerHTML = `<input type="checkbox" class="test-liaison-cb" style="accent-color:#f87171"> ✗ liaison entendue`;
+      card.appendChild(cbLabel);
+      cbLabel.querySelector('input').addEventListener('change', updateInconstanceCounter);
+
+      document.getElementById(`testStatus_${i}`).textContent = '✓ OK';
+      document.getElementById(`testStatus_${i}`).style.color = '#4ade80';
+    } catch (e) {
+      document.getElementById(`testStatus_${i}`).textContent = '❌ ' + e.message.substring(0, 60);
+      document.getElementById(`testStatus_${i}`).style.color = '#f87171';
+    }
+  }
+  updateInconstanceCounter();
 }
 
 // ════════════════════════════════════════════════════════════════════
