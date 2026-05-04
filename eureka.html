@@ -579,9 +579,10 @@ function buildSystemPrompt(data) {
   // (les [PAUSE_0.5s] étaient supprimés par le parseur SPLIT_THRESHOLD=2.0)
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2); // proportionnel à la durée d'expiration
-  // Fix bug "huit-e temps" : ellipse entre "huit" et "temps" UNIQUEMENT
-  // (le double T crée un schwa parasite. Pour les autres chiffres : aucune liaison, donc pas de pause).
-  const inTemps = (n) => (n === 8) ? "en huit, temps..." : "en " + NUM_FR[n] + " temps...";
+  // Format uniforme pour tous les chiffres : "en N temps..."
+  // Tests inconstance ×5 sur démo (2026-05-03) ont validé "huit temps" sans virgule
+  // pour la voix Mickaël v3 (réglages stab 0.75 / sim 0.80 / style 0.20 / boost ON).
+  const inTemps = (n) => "en " + NUM_FR[n] + " temps...";
 
   const vakogStyle = vakog === 'V' ? "Metaphores VISUELLES : couleurs, formes, lumieres, images" :
     vakog === 'A' ? "Metaphores AUDITIVES : sons, musiques, voix, melodies" :
@@ -668,7 +669,7 @@ function buildSystemPrompt(data) {
     "2. JAMAIS résumer - tout écrire intégralement. Interdit: voir cycle 1, idem, même texte.\n" +
     "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
     "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ou ajouter des ellipses ou un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles.\n" +
-    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit, temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ La virgule entre 'huit' et 'temps' est OBLIGATOIRE (elle casse la liaison phonétique 'huit-e temps' à l'audio). NE JAMAIS supprimer cette virgule. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
+    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] comme les autres cycles (consigne Mickaël — pas d'allongement de transition).\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
@@ -2894,6 +2895,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // L'utilisateur peut activer v3 via le toggle s'il veut tester (note explicative à côté).
   const voiceIsV3Capable = isV3Voice(selectedVoice);
   const [useV3Mode, setUseV3Mode] = useState(false);
+
+  // ─── v3 forcé par défaut pour Mickaël (consigne 2026-05-03 — option A)
+  // Tests inconstance + écoute longue ont validé eleven_v3 sur la voix Mickaël
+  // (réenregistrée au bon rythme, donc le speed natif de v3 reste acceptable).
+  // L'utilisateur peut toujours désactiver manuellement via le toggle plus bas.
+  useEffect(() => {
+    if (selectedVoice === "19cV422MaCP4oU6N8AFm") {
+      setUseV3Mode(true);
+    }
+  }, [selectedVoice]);
 
   // ─── RÉGLAGES VOIX AVANCÉS (panneau A/B test) ─────────────────────
   const [showAdvanced, setShowAdvanced] = useState(false);
