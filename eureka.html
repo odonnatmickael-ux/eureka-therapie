@@ -666,7 +666,10 @@ function buildSystemPrompt(data) {
     "RÈGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scène, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases thérapeutiques.\n" +
     "2. JAMAIS résumer - tout écrire intégralement. Interdit: voir cycle 1, idem, même texte.\n" +
-    "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " " + buildCount(breath.expire) + " [PAUSE_2s] Laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s] - ne pas changer un mot ni un marqueur PAUSE. 3e respiration = [PAUSE_10s].\n" +
+    "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
+    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ou ajouter des ellipses ou un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles.\n" +
+    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count (juste 'en huit temps... laissez partir' suivi du PAUSE de " + expirePauseSec + "s pour que le client expire en silence). NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire.\n" +
+    "    ⚠ 3ème respiration : remplace [PAUSE_" + expirePauseSec + "s] final par [PAUSE_10s] pour transitionner vers la relaxation corporelle.\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] dernière resp=[PAUSE_10s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
@@ -3292,7 +3295,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "4RZ84U1b4WCqpu57LvIq": { stability:0.90, similarity_boost:0.75, style:0,    use_speaker_boost:false, speed:0.85 }, // Bella — style:0 + stability:0.90 pour éliminer inspirations parasites entre chunks courts
         "YV28ox2c5Cuh5rim0LrW": { stability:0.82, similarity_boost:0.70, style:0.08, use_speaker_boost:false, speed:0.85 }, // Marcel
         "cQVn2FWawJsxa2z9X3l1": { stability:0.85, similarity_boost:0.70, style:0.05, use_speaker_boost:false, speed:0.90 }, // Valentin
-        "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:0.90 }, // Mickaël v2
+        "19cV422MaCP4oU6N8AFm": { stability:0.82, similarity_boost:0.75, style:0.10, use_speaker_boost:false, speed:1.00 }, // Mickaël v2 — speed 1.00 car voix réenregistrée au bon rythme (sinon double ralentissement = voix grave)
       };
       const VOICE_SETTINGS_V3 = {
         "19cV422MaCP4oU6N8AFm": { stability:0.75, similarity_boost:0.80, style:0.20, use_speaker_boost:true,  speed:0.90 }, // Mickaël v3
