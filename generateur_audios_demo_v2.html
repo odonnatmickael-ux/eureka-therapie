@@ -513,8 +513,8 @@ function buildSystemPrompt(data) {
 // ════════════════════════════════════════════════════════════════════
 function buildIntroUserPrompt(info, prenom, vakog) {
   return info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n\n" +
-    "1. ACCUEIL : commencer par '" + prenom + ", je vous invite...' (2-3 phrases). Style RYTHME RESPIRÉ (cf RÈGLE 7 du système). Exemple à imiter :\n" +
-    "   '" + prenom + ", je vous invite à vous installer confortablement... [PAUSE_3s] Laissez votre corps trouver sa propre position... [PAUSE_3s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_3s]'\n\n" +
+    "1. ACCUEIL : commencer par '" + prenom + ", je vous invite...' (2-3 phrases courtes). Style RYTHME RESPIRÉ (cf RÈGLE 7 du système). Pour des phrases courtes d'accueil, utilise [PAUSE_2s] entre elles (pas [PAUSE_3s] qui crée un effet d'attente). Exemple à imiter :\n" +
+    "   '" + prenom + ", je vous invite à vous installer confortablement... [PAUSE_2s] Laissez votre corps trouver sa propre position... [PAUSE_2s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_2s]'\n\n" +
     "2. 3 RESPIRATIONS EXACTES selon RÈGLE 3 du système (MOT POUR MOT pour les 3 cycles).\n\n" +
     "3. RELAXATION CORPORELLE — IMITE EXACTEMENT LE RYTHME ET LE STYLE de l'exemple ci-dessous (groupe TÊTE en TF). Adapte UNIQUEMENT les parties du corps selon la direction et l'ordre définis dans le système (groupes TF ou FT). NE COPIE PAS le texte tel quel — adapte aux groupes musculaires du système, mais GARDE EXACTEMENT le même style de phrasé (sujet+verbe collés, ellipses '...' aux respirations naturelles, [PAUSE_3s] entre parties, [PAUSE_5s] en fin de groupe) :\n\n" +
     "   ===== EXEMPLE STYLE À IMITER (groupe TÊTE) =====\n" +
@@ -545,9 +545,13 @@ function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
     "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio).\n" +
     "- ORGANISE chaque scène en MICRO-BLOCS de 2 phrases (max 3 si nécessaire). Les blocs longs créent un effet d'enchaînement plat — INTERDIT.\n" +
     "- À L'INTÉRIEUR d'un micro-bloc : utilise 6 ellipses '......' entre les 2 phrases.\n" +
+    "- ELLIPSES INTERNES (3 points '...') DANS UNE PHRASE : à utiliser UNIQUEMENT pour séparer une SUCCESSION DE QUALIFIANTS (adjectifs successifs, énumérations descriptives). Exemple : 'cet écran projette une image... floue... grise... sans contours nets.' (3 qualifiants successifs séparés). NE JAMAIS découper systématiquement le sujet+verbe+complément simple. Une phrase comme 'imagine un écran devant toi' reste entière sans ellipse interne.\n" +
     "- ENTRE CHAQUE MICRO-BLOC : insère [PAUSE_2s] sur une ligne séparée (vraie pause audio).\n" +
     "- AUX MOMENTS CLÉS forts (transformation majeure, ancrage final) : [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
     "- Vise 4 à 6 vrais [PAUSE_2s] par scène (rythme aéré). Pas moins de 4.\n\n" +
+    "EXEMPLE DE MICRO-BLOC BIEN FORMÉ :\n" +
+    "Mickaël... imagine un écran devant toi...... cet écran projette une image... floue... grise... sans contours nets.\n" +
+    "[PAUSE_2s]\n\n" +
     "Scène 1 (MAXIMUM 220 mots au total): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'effacement.\n\n" +
     "Scène 2 (MAXIMUM 220 mots au total): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
     "Scène 3 (MAXIMUM 220 mots au total): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
@@ -746,7 +750,7 @@ async function generer() {
     const [intro, scenes, cloture] = await Promise.all([introPromise, scenesPromise, cloturePromise]);
 
     log('✓ Script généré', 'ok');
-    const ANNONCE_SCENES = "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "...... installez-vous encore plus profondément......";
+    const ANNONCE_SCENES = "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "...... installez-vous encore plus profondément...... [PAUSE_2s]";
     const fullScript = cleaner(intro) + "\n\n" + ANNONCE_SCENES + "\n\n" + cleaner(scenes) + "\n\n" + cleaner(cloture);
     document.getElementById('scriptEl').textContent = fullScript;
     setProgress(20, 'Script OK. Découpage en chunks audio...');
