@@ -449,12 +449,12 @@ function buildSystemPrompt(data) {
     "Groupe TÊTE: cuir chevelu, oreilles, front, sourcils, paupières, yeux, nez, joues, bouche, lèvres, intérieur bouche, langue, mâchoire, menton - chacun: phrase invitation détente + [PAUSE_3s] - puis annoncer toute la tête détendue [PAUSE_5s]\n" +
     "Groupe COU: cou, nuque, vertèbres cervicales - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
     "Groupe MEMBRES SUP: épaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
-    "Groupe TRONC: vertèbres dorsales, lombaires, muscles du dos (trapèzes, rhomboïdes, dorsaux), cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
+    "Groupe TRONC: vertèbres dorsales, lombaires, trapèzes, tous les muscles du dos, cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
     "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, deuxièmes, troisièmes, quatrièmes, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps détendu [PAUSE_5s]";
 
   const groupesFT = "GROUPES PIEDS vers TÊTE:\n" +
     "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf détendus [PAUSE_5s]\n" +
-    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, muscles du dos (dorsaux, rhomboïdes, trapèzes), vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
+    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, tous les muscles du dos, trapèzes, vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
     "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, épaules - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
     "Groupe COU: vertèbres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
     "Groupe TÊTE: menton, mâchoire, langue, intérieur bouche, lèvres, bouche, joues, nez, yeux, paupières, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tête détendue [PAUSE_5s]";
@@ -525,8 +525,9 @@ function buildIntroUserPrompt(info, prenom, vakog) {
     "   'Je vais me taire maintenant... [PAUSE_15s] Laissez votre corps s'enfoncer encore plus loin... [PAUSE_15s] Sentez ce poids agréable... cette lourdeur douce... [PAUSE_15s] Chaque respiration vous invite à vous approfondir... encore davantage... [PAUSE_15s]'\n\n" +
     "5. RELAXATION MENTALE canal " + vakog + " — IMITE le style de l'exemple ci-dessous (descente lieu intérieur visuel). Adapte les images au canal " + vakog + " (Visuel = formes/lumières/couleurs ; Auditif = sons/mélodies ; Kinesthésique = sensations/chaleur/poids ; Rationnel = clarté/structure/logique). Le décompte 10→1 doit avoir une PHRASE NARRATIVE de descente APRÈS chaque chiffre, suivie d'un [PAUSE_2s] entre les chiffres (jamais de chiffres isolés sans accompagnement). Pour les phrases descriptives autour du décompte, utilise '......' (6 ellipses) entre phrases au lieu de [PAUSE_3s] (rythme plus fluide) :\n\n" +
     "   ===== EXEMPLE STYLE À IMITER (descente lieu intérieur + décompte) =====\n" +
-    "   Devant vous...... une lumière douce apparaît...... Une couleur apaisante...... que vous choisissez...... Elle prend une forme...... stable...... solide...... Vous voyez un lieu...... construit pour vous...... Des lignes claires...... des contours précis...... Un espace intérieur que vous reconnaissez...... Vous y entrez...... pas après pas...... [PAUSE_3s] Maintenant vous allez descendre... encore plus profondément...... [PAUSE_3s] Dix... vous descendez doucement... [PAUSE_2s] Neuf... la lumière s'intensifie... [PAUSE_2s] Huit... vous glissez plus profond... [PAUSE_2s] Sept... chaque pas vous rapproche du calme... [PAUSE_2s] Six... l'espace s'ouvre devant vous... [PAUSE_2s] Cinq... la sécurité vous enveloppe... [PAUSE_2s] Quatre... votre corps fond dans cette douceur... [PAUSE_2s] Trois... encore plus profond... [PAUSE_2s] Deux... vous touchez le centre... [PAUSE_2s] Un... vous êtes au cœur de cet espace... [PAUSE_3s] La lumière y est parfaite...... douce...... exactement comme il faut...... Vous êtes en sécurité ici...... complètement...... [PAUSE_3s]\n" +
-    "   ===== FIN EXEMPLE =====\n\n" +
+    "   Devant vous...... une lumière douce apparaît...... [PAUSE_2s] Une couleur apaisante...... que vous choisissez...... [PAUSE_2s] Elle prend une forme...... stable...... solide...... [PAUSE_3s] Vous voyez un lieu...... construit pour vous...... [PAUSE_2s] Des lignes claires...... des contours précis...... [PAUSE_2s] Un espace intérieur que vous reconnaissez...... [PAUSE_3s] Vous y entrez...... pas après pas...... [PAUSE_3s] Maintenant vous allez descendre... encore plus profondément...... [PAUSE_3s] Dix... vous descendez doucement... [PAUSE_2s] Neuf... la lumière s'intensifie... [PAUSE_2s] Huit... vous glissez plus profond... [PAUSE_2s] Sept... chaque pas vous rapproche du calme... [PAUSE_2s] Six... l'espace s'ouvre devant vous... [PAUSE_2s] Cinq... la sécurité vous enveloppe... [PAUSE_2s] Quatre... votre corps fond dans cette douceur... [PAUSE_2s] Trois... encore plus profond... [PAUSE_2s] Deux... vous touchez le centre... [PAUSE_2s] Un... vous êtes au cœur de cet espace... [PAUSE_3s] La lumière y est parfaite...... douce...... exactement comme il faut...... [PAUSE_2s] Vous êtes en sécurité ici...... complètement...... [PAUSE_3s]\n" +
+    "   ===== FIN EXEMPLE =====\n" +
+    "   ⚠ Note le rythme VARIÉ : [PAUSE_2s] toutes les 1-2 phrases descriptives, [PAUSE_3s] aux moments-clés (entrée dans l'espace, transitions). NE PAS enchaîner plus de 2 phrases sans une vraie pause audio. Le rythme uniforme (rien que des '......') donne un effet plat — INTERDIT.\n\n" +
     "6. INSTALLATION FINALE — même style. Exemple :\n" +
     "   'Être simplement... ici... maintenant... [PAUSE_15s] Votre inconscient explore... librement... à son rythme... [PAUSE_15s]'\n\n" +
     "STOP ici - ne pas commencer les scènes thérapeutiques.\n\n" +
@@ -540,16 +541,16 @@ function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
     "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
     "- Kinesth.: tu ressens, tu éprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
     "- Rationnel: tu comprends, tu réalises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
-    "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO :\n" +
+    "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO (RYTHME AÉRÉ, PAS D'ENCHAÎNEMENT) :\n" +
     "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio).\n" +
-    "- ORGANISE chaque scène en BLOCS SÉMANTIQUES de 3-4 phrases liées (même image, même geste, même transition narrative). Les blocs trop courts (1-2 phrases isolées) sont INTERDITS car ElevenLabs les précipite.\n" +
-    "- À L'INTÉRIEUR d'un bloc : utilise 6 ellipses '......' entre les phrases.\n" +
-    "- ENTRE DEUX BLOCS sémantiques : insère un [PAUSE_2s] sur une ligne séparée.\n" +
-    "- ENTRE MOMENTS CLÉS forts (changement majeur de scène, transformation, ancrage), utilise [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
-    "- Vise 2 à 4 vrais [PAUSE_2s] par scène (entre les blocs), pas plus.\n\n" +
-    "Scène 1 (MAXIMUM 220 mots au total): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
-    "Scène 2 (MAXIMUM 220 mots au total): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
-    "Scène 3 (MAXIMUM 220 mots au total): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
+    "- ORGANISE chaque scène en MICRO-BLOCS de 2 phrases (max 3 si nécessaire). Les blocs longs créent un effet d'enchaînement plat — INTERDIT.\n" +
+    "- À L'INTÉRIEUR d'un micro-bloc : utilise 6 ellipses '......' entre les 2 phrases.\n" +
+    "- ENTRE CHAQUE MICRO-BLOC : insère [PAUSE_2s] sur une ligne séparée (vraie pause audio).\n" +
+    "- AUX MOMENTS CLÉS forts (transformation majeure, ancrage final) : [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
+    "- Vise 4 à 6 vrais [PAUSE_2s] par scène (rythme aéré). Pas moins de 4.\n\n" +
+    "Scène 1 (MAXIMUM 220 mots au total): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'effacement.\n\n" +
+    "Scène 2 (MAXIMUM 220 mots au total): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
+    "Scène 3 (MAXIMUM 220 mots au total): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
     "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]";
 }
 
