@@ -416,7 +416,7 @@ function buildSystemPrompt(data) {
   const breath = { inspire:4, hold:2, expire:8 };
   const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
-  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
+  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "....").join(" ");  // 4 ellipses ≈ 1.3s par chiffre (au lieu de 6 ellipses ≈ 2s, trop lent à l'écoute Mickaël)
   const expirePauseSec = Math.max(6, breath.expire - 2);
   // FIX #1 huit/virgule : "en huit, temps..." pour casser la liaison phonétique
   // Format "huit temps" piloté par le select #formatTest (6 variantes testées)
@@ -492,7 +492,9 @@ function buildSystemPrompt(data) {
     "   • Phrase COURTE (3-4 mots) → AUCUNE ellipse interne. Exemples : 'Vos oreilles relâchent toute tension...', 'Votre nez se détend...', 'Votre menton s'alourdit...'.\n" +
     "   • Phrase MOYENNE-LONGUE → ellipse(s) aux RESPIRATIONS NATURELLES. Exemples : 'Votre front se lisse... doucement...', 'Vos sourcils s'écartent... s'ouvrent...', 'Vos paupières deviennent lourdes... si lourdes...', 'Tu observes ce brouillard épais... qui recouvre tout', 'Je vous invite maintenant... à commencer ce travail de transformation, Mickaël...'.\n" +
     "   • Énumération de QUALIFIANTS successifs (adjectifs, descripteurs) → ellipse entre chaque qualifiant. Exemple : 'cet écran projette une image... floue... grise... sans contours nets'.\n" +
-    "   ⚠ INTERDIT : séparer artificiellement le SUJET du VERBE par une ellipse. Le sujet et le verbe restent TOUJOURS COLLÉS. Mauvais : 'Vos oreilles... relâchent... s'apaisent...' ❌. Bon : 'Vos oreilles relâchent toute tension...' ✓.\n" +
+    "   ⚠ NUANCE SUJET/VERBE : la respiration suit la longueur du sujet.\n" +
+    "     • Sujet COURT (1-2 mots) → sujet+verbe restent COLLÉS. ✓ 'Vos oreilles relâchent toute tension...' / ❌ 'Vos oreilles... relâchent...' (séparation artificielle pour 2 mots).\n" +
+    "     • Sujet LONG (3+ mots) → respiration possible APRÈS le sujet (souffle naturel). ✓ 'Tout votre corps tout entier... se détend... profondément...', ✓ 'L'intérieur de votre bouche... se détend...', ✓ 'La plante de vos pieds... se relâche...'.\n" +
     "   ⚠ INTERDIT : enchaîner plus de ~7 mots SANS ellipse interne (la voix accélère). Si la phrase est longue, ELLE DOIT respirer.\n" +
     "   Pour les SCÈNES THÉRAPEUTIQUES, applique en plus le format MICRO-BLOCS (cf user prompt scènes).\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
@@ -533,7 +535,7 @@ function buildIntroUserPrompt(info, prenom, vakog) {
     "6. INSTALLATION FINALE — phase introspective avant les scènes, même règle [PAUSE_15s] (sécurité sophrologique). Exemple :\n" +
     "   'Être simplement... ici... maintenant... [PAUSE_15s] Votre inconscient explore... librement... à son rythme... [PAUSE_15s]'\n\n" +
     "STOP ici - ne pas commencer les scènes thérapeutiques.\n\n" +
-    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (supprimés par le parseur). Le rythme respiré vient des ELLIPSES '...' INTRA-PHRASE, en imitant le style des exemples ci-dessus. SUJET ET VERBE TOUJOURS COLLÉS.";
+    "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (supprimés par le parseur). Le rythme respiré vient des ELLIPSES '...' INTRA-PHRASE, en imitant le style des exemples ci-dessus. Sujet+verbe collés UNIQUEMENT si sujet court (1-2 mots) ; si sujet long (3+ mots), respiration après le sujet est OK.";
 }
 
 function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
