@@ -1663,6 +1663,22 @@ function detectCrisis(text) {
   return CRISIS_PATTERNS.some(rx => rx.test(text));
 }
 
+// ─── Détection de SENSIBILITÉ ÉMOTIONNELLE (plus permissif que detectCrisis) ───
+// Sert à activer la version DOUCE de la scène thérapeutique sur les cycles 1-2
+// pour les profils fragiles (anxiété chronique, deuil, post-traumatique, etc.).
+// NE déclenche PAS l'écran d'urgence (réservé à detectCrisis = cas graves).
+// Logique Variante 2 : cycles 1-2 douce (sécurité), cycles 3-7 standard (intensification).
+const SENSIBILITY_PATTERNS = [
+  /anxi[ée]t[ée]/i, /panique/i, /phobie/i, /traumati(?:s|qu)/i, /deuil/i,
+  /PTSD/i, /angoisse/i, /burn.?out/i, /d[ée]pression/i, /attaque/i,
+  /[ée]puis(?:é|ée|ement)/i, /effondre/i, /\b[ée]motions? (?:fortes|intenses)\b/i,
+  /crise/i, /stress chronique/i, /fragile/i,
+];
+function detectSensibility(text) {
+  if (!text) return false;
+  return SENSIBILITY_PATTERNS.some(rx => rx.test(text));
+}
+
 function Anamnese({ onNext }) {
   // ─── Sauvegarde anti-frustration : on restaure depuis localStorage si présent
   // Les textareas sont longues à remplir, perdre tout au refresh = abandon garanti.
@@ -1751,7 +1767,7 @@ function Anamnese({ onNext }) {
     if (crisisOverride) track("crisis_overridden");
     // Nettoyage : l'anamnèse est validée, plus besoin de garder l'état brouillon
     try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
-    onNext({ prenom, email, problem, objectif });
+    onNext({ prenom, email, problem, objectif, hasSupport, crisisOverride });
   };
 
   // ─── Écran de redirection vers le 3114 + ressources d'urgence ──────
@@ -2932,7 +2948,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const [lastModelUsed, setLastModelUsed] = useState(null);
 
   // ─── RELECTURE ORTHOGRAPHIQUE IA ────────────────────────────────
-  const [useSpellCheck, setUseSpellCheck] = useState(false);
+  // Activée par défaut (consigne Mickaël 2026-05-05) — qualité audio prioritaire en bêta.
+  // Coût : +1 appel Claude (~5-10c/séance) et +20s de génération. L'utilisateur peut décocher.
+  const [useSpellCheck, setUseSpellCheck] = useState(true);
   const [spellCheckPhase, setSpellCheckPhase] = useState(null);
   const [spellCheckMsg, setSpellCheckMsg] = useState("");
 
@@ -3134,6 +3152,19 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       setLoadMsg("Génération parallèle : intro + scènes + clôture...");
       const FIN_PHRASE = "À très bientôt " + prenom + ".";
 
+      // ─── PHASE A : Détection profil sensible (Variante 2 — consigne Mickaël 2026-05-05)
+      // 4 signaux combinés en OR. Si UN seul vrai → version DOUCE de la scène 1 utilisée
+      // sur cycles 1-2 (sécurité, le client découvre + s'habitue), version standard cycles 3-7
+      // (intensification après que le système nerveux soit conditionné).
+      const N = (bigFiveScores && bigFiveScores.N) || 50;
+      const isProfileSensible =
+        detectCrisis(problem) || detectCrisis(objectif) || userData.crisisOverride === true ||
+        N >= 65 ||
+        (userData.hasSupport === false && N >= 50) ||
+        detectSensibility(problem) || detectSensibility(objectif);
+      console.log("[EUREKA] Phase A — profil sensible:", isProfileSensible, "(N=" + N + ", hasSupport=" + userData.hasSupport + ", crisisOverride=" + userData.crisisOverride + ")");
+      track("phase_a_protection", { sensible: isProfileSensible ? 1 : 0, neuroticism: N });
+
       const part1Promise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n\n" +
         "1. ACCUEIL : commencer par '" + prenom + "... je vous invite...' (avec ellipse APRÈS le prénom). 2-3 phrases courtes. [PAUSE_2s] entre elles. Exemple à imiter :\n" +
@@ -3176,6 +3207,32 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
 
+      // ─── APPEL 4 (CONDITIONNEL) : VERSION DOUCE DES 3 SCÈNES — uniquement si profil sensible ───
+      // Phase A : protection scène 1 pour éviter de déclencher une crise chez les profils fragiles.
+      // Cette version douce sera utilisée sur les cycles 1-2 uniquement (cf assemblage cycles plus bas).
+      const scenesDoucePromise = isProfileSensible ? gpt(sysPrompt,
+        info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques en VERSION DOUCE - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
+        "⚠ MODE PROTECTION ACTIVÉ : ce client présente des signaux de fragilité émotionnelle (anxiété, deuil, post-trauma, ou Big Five Névrosisme élevé, ou pas de suivi pro). La SCÈNE 1 doit être ADOUCIE pour ne pas déclencher de réaction émotionnelle forte. Les scènes 2 et 3 (transformation positive) restent normales.\n\n" +
+        "RÈGLES SPÉCIFIQUES VERSION DOUCE — Scène 1 UNIQUEMENT :\n" +
+        "1. VERBES CONTEMPLATIFS : tu observes, tu remarques, tu prends conscience, tu portes ton attention sur. ÉVITE les verbes d'engagement émotionnel (tu es submergé, tu vis l'oppression, tu ressens la peur).\n" +
+        "2. ADJECTIFS NEUTRES : présent, là, visible, clair. ÉVITE les déclencheurs : lourd, oppressant, agressif, angoissant, écrasant, étouffant, terrifiant, douloureux, sombre, terne.\n" +
+        "3. DISTANCE : la scène 1 décrit le problème comme une IMAGE OBSERVÉE, jamais ressentie. Le client est SPECTATEUR, pas acteur.\n" +
+        "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Elle ne peut rien sur toi.'\n" +
+        "5. PHRASE DE SÉCURITÉ OBLIGATOIRE à la fin : 'Cette image n'a aucun pouvoir. Tu es simplement témoin.'\n" +
+        "6. LONGUEUR RÉDUITE : Scène 1 = 130-150 mots MAX (au lieu de 220). Moins d'exposition au déclencheur.\n" +
+        "7. EFFACEMENT RAPIDE : ne traîne pas dans le négatif. Dès que l'image du problème est posée (3-4 phrases brèves), enchaîne immédiatement sur la lumière qui dissout.\n\n" +
+        "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
+        "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu perçois, tu discernes, tu visualises\n" +
+        "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
+        "- Kinesth.: tu ressens, tu éprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
+        "- Rationnel: tu comprends, tu réalises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
+        "RÈGLE PAUSES (identique à la version standard) : MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] aux moments-clés.\n\n" +
+        "STRUCTURE :\n\n" +
+        "Scène 1 (130-150 mots MAX, version DOUCE) : Commence par la phrase de sécurité OBLIGATOIRE. Puis description NEUTRE et BRÈVE du problème '" + problem + "' selon canal " + vakog + " (verbes contemplatifs, adjectifs neutres). Effacement rapide par la lumière qui dissout. Termine par la phrase de sécurité de fin.\n\n" +
+        "Scène 2 (220 mots, NORMAL) : Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
+        "Scène 3 (220 mots, NORMAL) : " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
+        "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000) : Promise.resolve(null);
+
       // APPEL 3 : Clôture spirituelle + Désophronisation
       // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
       const part3Promise = gpt(sysPrompt,
@@ -3198,10 +3255,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       // Tracking : on mesure le gain de temps réel pour confirmer le bénéfice
       const _t0 = Date.now();
-      const [part1, scenes, part3Raw] = await Promise.all([part1Promise, scenesPromise, part3Promise]);
+      const [part1, scenes, part3Raw, scenesDouce] = await Promise.all([part1Promise, scenesPromise, part3Promise, scenesDoucePromise]);
       const _elapsed = Math.round((Date.now() - _t0) / 1000);
-      console.log("[EUREKA] 3 appels Claude parallèles terminés en " + _elapsed + "s (avant : ~3× ce temps en séquentiel)");
-      track("script_generated_parallel", { duration_s: _elapsed });
+      const _nbAppels = isProfileSensible ? 4 : 3;
+      console.log("[EUREKA] " + _nbAppels + " appels Claude parallèles terminés en " + _elapsed + "s" + (isProfileSensible ? " (Phase A : version douce générée)" : ""));
+      track("script_generated_parallel", { duration_s: _elapsed, sensible: isProfileSensible ? 1 : 0 });
 
       // ─── Construction du texte final (séquentielle, après les 3 appels) ──
       // JAVASCRIPT : Répéter les 3 scènes 7 fois exactement
@@ -3220,9 +3278,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Une dernière fois... pour ancrer cette transformation..."
       ];
       const annonces = annonces7;
+      // Phase A — Variante 2 : pour profil sensible, cycles 1-2 = version douce, cycles 3-7 = standard.
+      // Pour profil stable, tous les cycles = standard (comportement historique).
+      const sceneToUse = (i) => (isProfileSensible && i < 2 && scenesDouce) ? scenesDouce : scenes;
       let cycles = "";
       for (let i = 0; i < 7; i++) {
-        cycles += "\n\n" + annonces[i] + "\n\n" + scenes;
+        cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
       }
 
       // Filet de sécurité : si Claude n'a pas inclus la phrase de fin (sortie tronquée
@@ -3244,9 +3305,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       setScript(clean);
       // Stockage des sections pour permettre la reconstruction selon le mode (bêta 3 cycles / complète 7 cycles)
+      // Phase A : on stocke aussi scenesDouce + isProfileSensible pour que generateFullAudio
+      // puisse reproduire la logique cycles 1-2 douce / 3-7 standard.
       setScriptParts({
         intro: cleaner(part1),
         scenes: cleaner(scenes),
+        scenesDouce: scenesDouce ? cleaner(scenesDouce) : null,
+        isProfileSensible: isProfileSensible,
         cloture: cleaner(part3),
         annonces7: annonces7,
         annonces3: annonces3
@@ -3307,12 +3372,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     try {
       // ─── Reconstruction du script selon le mode ──────────────────
       // bêta = 3 cycles (annonces3) ; complète = 7 cycles (annonces7)
+      // Phase A : si profil sensible, cycles 1-2 utilisent scenesDouce, cycles 3+ standard
       let activeScript = script;
       if (scriptParts) {
         const annonces = mode === "beta" ? scriptParts.annonces3 : scriptParts.annonces7;
+        const sensible = scriptParts.isProfileSensible;
+        const douce = scriptParts.scenesDouce;
+        const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
         let cycles = "";
         for (let i = 0; i < annonces.length; i++) {
-          cycles += "\n\n" + annonces[i] + "\n\n" + scriptParts.scenes;
+          cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
         }
         activeScript = scriptParts.intro + cycles + "\n\n" + scriptParts.cloture;
         // On synchronise l'affichage pour que ce que l'utilisateur lit corresponde à ce qu'il entend
@@ -3448,7 +3517,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // ─── Fade-in/Fade-out 10ms anti-clic de jonction ───
       const applyFade = (buf) => {
         const ch = buf.getChannelData(0);
-        const fadeSamples = Math.min(Math.floor(sr * 0.01), Math.floor(ch.length / 4));
+        const fadeSamples = Math.min(Math.floor(sr * 0.03), Math.floor(ch.length / 4));  // 30ms (au lieu de 10ms) — atténue clicks et bruits sourds aux jonctions PAUSE_3s/5s/15s
         for (let i = 0; i < fadeSamples; i++) {
           ch[i] *= i / fadeSamples;
           ch[ch.length - 1 - i] *= i / fadeSamples;
