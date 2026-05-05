@@ -575,9 +575,9 @@ function buildSystemPrompt(data) {
   const breath = { inspire:4, hold:2, expire:8 };
   const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
-  // Fix bug : 6 ellipses force une pause d'environ 1s entre chaque mot dans ElevenLabs
-  // (les [PAUSE_0.5s] étaient supprimés par le parseur SPLIT_THRESHOLD=2.0)
-  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "......").join(" ");
+  // 4 ellipses ≈ 1.3s par chiffre (ElevenLabs Mickaël v3) — validé à l'écoute par Mickaël 2026-05-05.
+  // Avant : 6 ellipses ≈ 2s par chiffre = trop lent pour le rythme sophro 1s/chiffre attendu.
+  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "....").join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2); // proportionnel à la durée d'expiration
   // Format uniforme pour tous les chiffres : "en N temps..."
   // Tests inconstance ×5 sur démo (2026-05-03) ont validé "huit temps" sans virgule
@@ -593,12 +593,12 @@ function buildSystemPrompt(data) {
     "Groupe TÊTE: cuir chevelu, oreilles, front, sourcils, paupières, yeux, nez, joues, bouche, lèvres, intérieur bouche, langue, mâchoire, menton - chacun: phrase invitation détente + [PAUSE_3s] - puis annoncer toute la tête détendue [PAUSE_5s]\n" +
     "Groupe COU: cou, nuque, vertèbres cervicales - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
     "Groupe MEMBRES SUP: épaules, bras D, bras G, coudes, avant-bras, poignets, mains, pouces, index, majeurs, annulaires, auriculaires - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
-    "Groupe TRONC: vertèbres dorsales, lombaires, cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
+    "Groupe TRONC: vertèbres dorsales, lombaires, trapèzes, tous les muscles du dos, cage thoracique, poitrine, ventre, abdominaux, cœur, poumons, estomac, foie, reins, intestins - chacun [PAUSE_3s] - puis annoncer tronc et organes en paix [PAUSE_5s]\n" +
     "Groupe MEMBRES INF: bassin, fesses, cuisses, genoux, mollets, chevilles, pieds, talons, plante pieds, gros orteils, deuxièmes, troisièmes, quatrièmes, petits orteils - chacun [PAUSE_3s] - puis annoncer tout le corps détendu [PAUSE_5s]";
 
   const groupesFT = "GROUPES PIEDS vers TÊTE:\n" +
     "Groupe MEMBRES INF: petits orteils, 4e, 3e, 2e, gros orteils, plante pieds, talons, pieds, chevilles, mollets, genoux, cuisses, fesses, bassin - chacun [PAUSE_3s] - puis annoncer membres inf détendus [PAUSE_5s]\n" +
-    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
+    "Groupe TRONC: intestins, reins, foie, estomac, poumons, cœur, abdominaux, ventre, poitrine, cage thoracique, tous les muscles du dos, trapèzes, vertèbres lombaires, dorsales - chacun [PAUSE_3s] - puis annoncer tronc en paix [PAUSE_5s]\n" +
     "Groupe MEMBRES SUP: auriculaires, annulaires, majeurs, index, pouces, mains, poignets, avant-bras, coudes, bras G, bras D, épaules - chacun [PAUSE_3s] - puis annoncer membres sup détendus [PAUSE_5s]\n" +
     "Groupe COU: vertèbres cervicales, nuque, cou - chacun [PAUSE_3s] - puis annoncer cou détendu [PAUSE_5s]\n" +
     "Groupe TÊTE: menton, mâchoire, langue, intérieur bouche, lèvres, bouche, joues, nez, yeux, paupières, sourcils, front, oreilles, cuir chevelu - chacun [PAUSE_3s] - puis annoncer tête détendue [PAUSE_5s]";
@@ -667,14 +667,24 @@ function buildSystemPrompt(data) {
     "RÈGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scène, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases thérapeutiques.\n" +
     "2. JAMAIS résumer - tout écrire intégralement. Interdit: voir cycle 1, idem, même texte.\n" +
-    "3. RESPIRATION EXACTE (format multi-chunks pour éviter la précipitation TTS — chaque [PAUSE_2s] force ElevenLabs à articuler la phrase suivante avec emphase au lieu de l'avaler) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " [PAUSE_2s] Bloquez doucement " + buildCount(breath.hold) + " [PAUSE_2s] Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
-    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ou ajouter des ellipses ou un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles.\n" +
+    "3. RESPIRATION EXACTE (cycle physiologique continu — pas de coupure entre inspire/bloque/expire pour préserver le rythme naturel du client) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " ...... Bloquez doucement " + buildCount(breath.hold) + " ...... Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
+    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
     "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] comme les autres cycles (consigne Mickaël — pas d'allongement de transition).\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] (toutes les 3 respirations identiques) corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
-    "7. PAUSE ENTRE PHRASES: après chaque phrase courte ajouter [PAUSE_1s]. Exemple: Je vous invite à vous installer... [PAUSE_1s] Laissez votre corps s'abandonner... [PAUSE_1s] Vos mains reposent... [PAUSE_1s]\n\n" +
+    "7. RYTHME RESPIRÉ — règle PROSODIQUE pour TOUTES les sections (relaxation, alpha, scènes, désophronisation) :\n" +
+    "   ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). À la place, utilise des ellipses '...' INTRA-PHRASE pour le rythme respiré naturel.\n" +
+    "   ⭐ PRINCIPE GÉNÉRAL : Chaque phrase doit pouvoir être DITE À VOIX HAUTE en respirant naturellement aux ellipses '...'. Pour TOUTE phrase de plus de ~6-7 mots, identifie les POINTS DE RESPIRATION NATURELLE (là où on souffle quand on lit à voix haute) et insère une ellipse '...' à ces endroits. Ne pas découper artificiellement, juste suivre le rythme parlé.\n" +
+    "   • Phrase COURTE (3-4 mots) → AUCUNE ellipse interne. Exemples : 'Vos oreilles relâchent toute tension...', 'Votre nez se détend...', 'Votre menton s'alourdit...'.\n" +
+    "   • Phrase MOYENNE-LONGUE → ellipse(s) aux RESPIRATIONS NATURELLES. Exemples : 'Votre front se lisse... doucement...', 'Vos sourcils s'écartent... s'ouvrent...', 'Vos paupières deviennent lourdes... si lourdes...', 'Tu observes ce brouillard épais... qui recouvre tout', 'Je vous invite maintenant... à commencer ce travail de transformation'.\n" +
+    "   • Énumération de QUALIFIANTS successifs (adjectifs, descripteurs) → ellipse entre chaque qualifiant. Exemple : 'cet écran projette une image... floue... grise... sans contours nets'.\n" +
+    "   ⚠ NUANCE SUJET/VERBE : la respiration suit la longueur du sujet.\n" +
+    "     • Sujet COURT (1-2 mots) → sujet+verbe restent COLLÉS. ✓ 'Vos oreilles relâchent toute tension...' / ❌ 'Vos oreilles... relâchent...' (séparation artificielle pour 2 mots).\n" +
+    "     • Sujet LONG (3+ mots) → respiration possible APRÈS le sujet (souffle naturel). ✓ 'Tout votre corps tout entier... se détend... profondément...', ✓ 'L'intérieur de votre bouche... se détend...', ✓ 'La plante de vos pieds... se relâche...'.\n" +
+    "   ⚠ INTERDIT : enchaîner plus de ~7 mots SANS ellipse interne (la voix accélère).\n" +
+    "   Pour les SCÈNES THÉRAPEUTIQUES, applique en plus le format MICRO-BLOCS (cf user prompt scènes).\n\n" +
     "STYLE HYPNOTIQUE OBLIGATOIRE:\n" +
     "8. PHRASES COURTES - maximum 10 mots par phrase. Jamais de longue phrase explicative.\n" +
     "9. RYTHME BRISÉ - une idée par ligne. Espace entre chaque pensée. Laisser le silence travailler.\n" +
@@ -3125,14 +3135,24 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const FIN_PHRASE = "À très bientôt " + prenom + ".";
 
       const part1Promise = gpt(sysPrompt,
-        info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n" +
-        "1. Accueil: commencer par '" + prenom + ", je vous invite...' (2-3 phrases)\n" +
-        "2. 3 respirations exactes (texte exact RÈGLE 3)\n" +
-        "3. Relaxation physique complète (une partie à la fois + [PAUSE_3s] + annonce groupe + [PAUSE_5s])\n" +
-        "4. Je vais me taire... [PAUSE_15s] corps s'enfonce... [PAUSE_15s] s'approfondir... [PAUSE_15s]\n" +
-        "5. Relaxation mentale canal " + vakog + " : lieu intérieur, descente dans l'espace...\n" +
-        "6. Être simplement... [PAUSE_15s] inconscient explore... [PAUSE_15s]\n" +
-        "STOP ici - ne pas commencer les scènes.", 4096);
+        info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n\n" +
+        "1. ACCUEIL : commencer par '" + prenom + "... je vous invite...' (avec ellipse APRÈS le prénom). 2-3 phrases courtes. [PAUSE_2s] entre elles. Exemple à imiter :\n" +
+        "   '" + prenom + "... je vous invite à vous installer confortablement... [PAUSE_2s] Laissez votre corps trouver sa propre position... [PAUSE_2s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_2s]'\n\n" +
+        "2. 3 RESPIRATIONS EXACTES selon RÈGLE 3 du système (MOT POUR MOT pour les 3 cycles).\n\n" +
+        "3. RELAXATION CORPORELLE — IMITE EXACTEMENT LE RYTHME du style 'ellipses intra-phrases' (cf RÈGLE 7 du système). Adapte aux groupes musculaires définis dans le système (TF ou FT). Exemple à imiter (groupe TÊTE) :\n" +
+        "   ===== EXEMPLE STYLE À IMITER =====\n" +
+        "   Laissez votre cuir chevelu se détendre... [PAUSE_3s] Vos oreilles relâchent toute tension... [PAUSE_3s] Votre front se lisse... doucement... [PAUSE_3s] Vos sourcils s'écartent... s'ouvrent... [PAUSE_3s] Vos paupières deviennent lourdes... si lourdes... [PAUSE_3s] Vos yeux se reposent... profondément... [PAUSE_3s] Votre nez se détend... [PAUSE_3s] Vos joues fondent... doucement... [PAUSE_3s] Votre bouche se relâche... [PAUSE_3s] Vos lèvres s'écartent légèrement... [PAUSE_3s] L'intérieur de votre bouche se détend... [PAUSE_3s] Votre langue repose... pesante... [PAUSE_3s] Votre mâchoire glisse vers le bas... [PAUSE_3s] Votre menton s'alourdit... [PAUSE_3s] Toute votre tête est détendue maintenant... paisible... [PAUSE_5s]\n" +
+        "   ===== FIN EXEMPLE =====\n" +
+        "   Reproduis CE rythme respiré pour TOUS les groupes (TÊTE, COU, MEMBRES SUP, TRONC, MEMBRES INF — selon TF ou FT). Sujet+verbe TOUJOURS collés. Phrases courtes sans ellipse interne, phrases longues avec ellipses aux respirations naturelles.\n\n" +
+        "4. APPROFONDISSEMENT — phase CRITIQUE. La 1ère [PAUSE_15s] juste après 'Je vais me taire' matérialise le silence annoncé. [PAUSE_15s] entre TOUTES les phrases (sécurité sophrologique). Exemple :\n" +
+        "   'Je vais me taire maintenant... [PAUSE_15s] Laissez votre corps s'enfoncer encore plus loin... [PAUSE_15s] Sentez ce poids agréable... cette lourdeur douce... [PAUSE_15s] Chaque respiration vous invite à vous approfondir... encore davantage... [PAUSE_15s]'\n\n" +
+        "5. RELAXATION MENTALE canal " + vakog + " — IMITE le style ci-dessous (descente lieu intérieur). Adapte les images au canal " + vakog + ". Inclure DÉCOMPTE 10→1 avec une PHRASE NARRATIVE après chaque chiffre + [PAUSE_2s] entre chiffres. Exemple :\n" +
+        "   ===== EXEMPLE STYLE À IMITER =====\n" +
+        "   Devant vous...... une lumière douce apparaît...... [PAUSE_2s] Une couleur apaisante...... que vous choisissez...... [PAUSE_2s] Elle prend une forme...... stable...... solide...... [PAUSE_3s] Vous voyez un lieu...... construit pour vous...... [PAUSE_2s] Vous y entrez...... pas après pas...... [PAUSE_3s] Maintenant vous allez descendre... encore plus profondément...... [PAUSE_3s] Dix... vous descendez doucement... [PAUSE_2s] Neuf... la lumière s'intensifie... [PAUSE_2s] Huit... vous glissez plus profond... [PAUSE_2s] Sept... chaque pas vous rapproche du calme... [PAUSE_2s] Six... l'espace s'ouvre devant vous... [PAUSE_2s] Cinq... la sécurité vous enveloppe... [PAUSE_2s] Quatre... votre corps fond dans cette douceur... [PAUSE_2s] Trois... encore plus profond... [PAUSE_2s] Deux... vous touchez le centre... [PAUSE_2s] Un... vous êtes au cœur de cet espace... [PAUSE_3s] Vous êtes en sécurité ici... complètement... [PAUSE_3s]\n" +
+        "   ===== FIN EXEMPLE =====\n\n" +
+        "6. INSTALLATION FINALE — [PAUSE_15s] sécurité sophrologique :\n" +
+        "   'Être simplement... ici... maintenant... [PAUSE_15s] Votre inconscient explore... librement... à son rythme... [PAUSE_15s]'\n\n" +
+        "STOP ici - ne pas commencer les scènes thérapeutiques.", 4096);
 
       const scenesPromise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
@@ -3141,28 +3161,40 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
         "- Kinesth.: tu ressens, tu éprouves, tu incarnes, tu vis dans ton corps, tu sens, tu touches\n" +
         "- Rationnel: tu comprends, tu réalises, tu constates, tu analyses, tu mesures, tu confirmes\n\n" +
-        "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO :\n" +
-        "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio, ils n'existeront pas à l'écoute → enchaînement trop rapide).\n" +
-        "- ORGANISE chaque scène en BLOCS SÉMANTIQUES de 3-4 phrases liées (même image, même geste, même transition narrative). Les blocs trop courts (1-2 phrases isolées) sont INTERDITS car ElevenLabs les précipite.\n" +
-        "- À L'INTÉRIEUR d'un bloc : utilise 6 ellipses '......' entre les phrases. Exemple : 'Tu observes Mickael...... Ses yeux brillent, focalisés...... Sa posture est ancrée et majestueuse......'\n" +
-        "- ENTRE DEUX BLOCS sémantiques : insère un [PAUSE_2s] sur une ligne séparée (vraie pause audio garantie). Exemple : 'Tu observes Mickael...... Ses yeux brillent, focalisés...... Sa posture est ancrée......\\n[PAUSE_2s]\\nTu perçois autour de lui une aura dorée...... Elle pulse doucement......'\n" +
-        "- ENTRE MOMENTS CLÉS forts (changement majeur de scène, transformation, ancrage), utilise [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
-        "- Vise 2 à 4 vrais [PAUSE_2s] par scène (entre les blocs), pas plus.\n\n" +
-        "Scène 1 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
-        "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
-        "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en BLOCS de 3-4 phrases avec '......' à l'intérieur, [PAUSE_2s] entre blocs, [PAUSE_5s] aux moments clés.\n\n" +
+        "RÈGLE PAUSES — IMPÉRATIF POUR L'AUDIO (RYTHME AÉRÉ, PAS D'ENCHAÎNEMENT) :\n" +
+        "- INTERDIT : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (ces marqueurs sont SUPPRIMÉS par le parseur audio).\n" +
+        "- ORGANISE chaque scène en MICRO-BLOCS de 2 phrases (max 3 si nécessaire). Les blocs longs créent un effet d'enchaînement plat — INTERDIT.\n" +
+        "- À L'INTÉRIEUR d'un micro-bloc : utilise 6 ellipses '......' entre les 2 phrases.\n" +
+        "- ELLIPSES INTERNES (3 points '...') DANS UNE PHRASE : à utiliser UNIQUEMENT pour séparer une SUCCESSION DE QUALIFIANTS (adjectifs successifs, énumérations descriptives). Exemple : 'cet écran projette une image... floue... grise... sans contours nets.' (3 qualifiants successifs séparés). NE JAMAIS découper systématiquement sujet+verbe+complément simple. Une phrase comme 'imagine un écran devant toi' reste entière sans ellipse interne.\n" +
+        "- ENTRE CHAQUE MICRO-BLOC : insère [PAUSE_2s] sur une ligne séparée (vraie pause audio).\n" +
+        "- AUX MOMENTS CLÉS forts (transformation majeure, ancrage final) : [PAUSE_3s] ou [PAUSE_5s] sur ligne séparée.\n" +
+        "- Vise 4 à 6 vrais [PAUSE_2s] par scène (rythme aéré). Pas moins de 4.\n\n" +
+        "EXEMPLE DE MICRO-BLOC BIEN FORMÉ :\n" +
+        prenom + "... imagine un écran devant toi...... cet écran projette une image... floue... grise... sans contours nets.\n[PAUSE_2s]\n\n" +
+        "Scène 1 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'effacement.\n\n" +
+        "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
+        "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
 
       // APPEL 3 : Clôture spirituelle + Désophronisation
       // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
       const part3Promise = gpt(sysPrompt,
-        info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT:\n" +
-        "1. Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
-        "2. Affirmations " + beliefSystem + " (max 4-5 phrases courtes)\n" +
-        "3. [PAUSE_15s]\n" +
-        "4. Désophronisation douce: revenir... membres bougent... étirement... yeux s'ouvrent... clôture chaleureuse avec " + prenom + "\n" +
-        "5. CONTRAINTE LONGUEUR: maximum 500 mots au total pour cette fin de séance\n" +
-        "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne): '" + FIN_PHRASE + "'", 2500);
+        info + "\n\nGénère UNIQUEMENT la fin de séance - ZERO TITRE - commencer DIRECTEMENT.\n" +
+        "STYLE OBLIGATOIRE : RYTHME RESPIRÉ (cf RÈGLE 7 du système — phrases courtes sans ellipse interne, phrases longues avec ellipses aux respirations naturelles, sujet+verbe toujours collés).\n\n" +
+        "1. AFFIRMATION D'OUVERTURE :\n" +
+        "   Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux... maintenant... [PAUSE_3s]\n\n" +
+        "2. AFFIRMATIONS " + beliefSystem.toUpperCase() + " (max 4-5 phrases) — IMITE le style :\n" +
+        "   ===== EXEMPLE STYLE À IMITER =====\n" +
+        "   Une lumière dorée rayonne en vous... [PAUSE_3s] Elle illumine chaque cellule de votre être... [PAUSE_3s] Vous êtes connecté à quelque chose de vaste... et de lumineux... [PAUSE_3s]\n" +
+        "   ===== FIN EXEMPLE =====\n\n" +
+        "3. [PAUSE_15s]\n\n" +
+        "4. DÉSOPHRONISATION DOUCE — IMITE le style :\n" +
+        "   ===== EXEMPLE STYLE À IMITER =====\n" +
+        "   Doucement maintenant... vous commencez à revenir... [PAUSE_3s] À votre rythme... sans précipitation... [PAUSE_3s] Bougez doucement les doigts... [PAUSE_3s] Laissez les mains s'éveiller... [PAUSE_3s] Puis les pieds... doucement... [PAUSE_3s] Étirez les bras si votre corps le demande... [PAUSE_3s] Respirez profondément une fois... [PAUSE_3s] Sentez l'air frais entrer en vous... [PAUSE_3s] Quand vous vous sentez prêt... laissez les yeux s'ouvrir... [PAUSE_3s] Doucement... comme l'aube qui arrive... [PAUSE_3s]\n" +
+        "   ===== FIN EXEMPLE =====\n" +
+        "   Termine avec 1-2 phrases chaleureuses pour " + prenom + " (du même style).\n\n" +
+        "5. CONTRAINTE LONGUEUR : maximum 500 mots au total pour cette fin de séance.\n" +
+        "6. TERMINE OBLIGATOIREMENT par cette phrase exacte (sur sa propre ligne) : '" + FIN_PHRASE + "'", 2500);
 
       // Tracking : on mesure le gain de temps réel pour confirmer le bénéfice
       const _t0 = Date.now();
@@ -3174,7 +3206,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // ─── Construction du texte final (séquentielle, après les 3 appels) ──
       // JAVASCRIPT : Répéter les 3 scènes 7 fois exactement
       const annonces7 = [
-        "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondément...",
+        "Je vous invite maintenant... à commencer ce travail de transformation, " + prenom + "... [PAUSE_2s] Installez-vous... encore plus profondément... [PAUSE_2s]",
         "Nous recommençons une deuxième fois...",
         "Une troisième fois...",
         "Une quatrième fois...",
@@ -3183,7 +3215,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Une dernière fois... pour sceller cette transformation dans les profondeurs de votre être..."
       ];
       const annonces3 = [
-        "Je vous invite maintenant à commencer ce travail de transformation, " + prenom + "... installez-vous encore plus profondément...",
+        "Je vous invite maintenant... à commencer ce travail de transformation, " + prenom + "... [PAUSE_2s] Installez-vous... encore plus profondément... [PAUSE_2s]",
         "Nous recommençons une deuxième fois...",
         "Une dernière fois... pour ancrer cette transformation..."
       ];
