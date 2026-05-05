@@ -127,6 +127,7 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <option value="point">huit. Temps (point + majuscule, T capital)</option>
       <option value="tiret">huit-temps (tiret)</option>
       <option value="ellipses">huit... temps... (ellipses — format 1er mai)</option>
+      <option value="hui">hui temps (workaround phonétique sans 't' final)</option>
     </select>
 
     <p style="font-size:11px;color:#7a9ea0;margin-bottom:0.5rem"><strong>Voix utilisée pour le test :</strong> celle des sliders ci-dessous (donc règle d'abord les sliders si besoin)</p>
@@ -285,7 +286,8 @@ const FORMATS_TEST = {
   virgule:  "Et expirez tout doucement en huit, temps... laissez partir toutes les tensions.",
   point:    "Et expirez tout doucement en huit. Temps... laissez partir toutes les tensions.",
   tiret:    "Et expirez tout doucement en huit-temps... laissez partir toutes les tensions.",
-  ellipses: "Et expirez tout doucement en huit... temps... laissez partir toutes les tensions."
+  ellipses: "Et expirez tout doucement en huit... temps... laissez partir toutes les tensions.",
+  hui:      "Et expirez tout doucement en hui temps... laissez partir toutes les tensions."
 };
 
 function updateInconstanceCounter() {
@@ -419,14 +421,15 @@ function buildSystemPrompt(data) {
   const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "....").join(" ");  // 4 ellipses ≈ 1.3s par chiffre (au lieu de 6 ellipses ≈ 2s, trop lent à l'écoute Mickaël)
   const expirePauseSec = Math.max(6, breath.expire - 2);
   // FIX #1 huit/virgule : "en huit, temps..." pour casser la liaison phonétique
-  // Format "huit temps" piloté par le select #formatTest (6 variantes testées)
+  // Format "huit temps" piloté par le select #formatTest (7 variantes testées)
   const HUIT_TEMPS_FORMS = {
     lettres:  "en huit temps...",
     chiffre:  "en 8 temps...",
     virgule:  "en huit, temps...",
     point:    "en huit. Temps...",
     tiret:    "en huit-temps...",
-    ellipses: "en huit... temps..."
+    ellipses: "en huit... temps...",
+    hui:      "en hui temps..."  // workaround phonétique sans 't' final
   };
   const formatChoix = document.getElementById('formatTest')?.value || 'lettres';
   const huitTempsStr = HUIT_TEMPS_FORMS[formatChoix] || HUIT_TEMPS_FORMS.lettres;
@@ -680,7 +683,7 @@ async function decodeMp3(actx, arrayBuffer) {
 function applyFade(buf) {
   const sr = buf.sampleRate;
   const ch = buf.getChannelData(0);
-  const fadeSamples = Math.min(Math.floor(sr * 0.01), Math.floor(ch.length / 4));
+  const fadeSamples = Math.min(Math.floor(sr * 0.03), Math.floor(ch.length / 4));  // 30ms (au lieu de 10ms) — atténue clicks et bruits sourds aux jonctions PAUSE_3s/5s/15s
   for (let i = 0; i < fadeSamples; i++) {
     ch[i] *= i / fadeSamples;
     ch[ch.length - 1 - i] *= i / fadeSamples;
