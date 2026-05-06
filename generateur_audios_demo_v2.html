@@ -138,8 +138,16 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
   </div>
 
   <div class="card">
-    <h2>🎚️ Paramètres voix Mickaël (modifiables en live)</h2>
+    <h2>🎚️ Paramètres voix <span id="voiceLabel" style="color:#b8955a">Mickaël</span> (modifiables en live)</h2>
     <p style="font-size:12px;color:#7a9ea0;margin-bottom:0.75rem">Ajuste les sliders, clique Générer, écoute. Itère. Aucun re-déploiement nécessaire.</p>
+
+    <label>Voix ElevenLabs</label>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));margin-bottom:1rem">
+      <div class="opt" data-val="bella" onclick="selectVoice(this)" title="Féminine, douce">Bella</div>
+      <div class="opt" data-val="marcel" onclick="selectVoice(this)" title="Masculine, chaleureuse">Marcel</div>
+      <div class="opt selected" data-val="mickael" onclick="selectVoice(this)" title="Masculine, le sophrologue (par défaut)">Mickaël</div>
+      <div class="opt" data-val="valentin" onclick="selectVoice(this)" title="Masculine, whisper">Valentin</div>
+    </div>
 
     <label>Presets rapides (facultatifs — sliders 100% libres ensuite)</label>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.5rem;margin-bottom:1rem">
@@ -190,7 +198,17 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 
   <div class="card" id="audioCard" style="display:none">
     <h2>🎧 Résultat</h2>
-    <audio id="audioPlayer" controls></audio>
+    <audio id="audioPlayer" controls style="width:100%"></audio>
+    <!-- Slider vitesse de lecture (modif #8) — direct mapping audio.playbackRate -->
+    <div style="margin-top:0.75rem;display:flex;align-items:center;gap:0.75rem">
+      <span style="font-size:10px;color:#7a9ea0;letter-spacing:1.5px;text-transform:uppercase;min-width:55px;font-weight:600">Vitesse</span>
+      <input type="range" id="sPlaybackRate" min="0.70" max="1.25" step="0.01" value="1.00"
+        style="flex:1;accent-color:#b8955a;cursor:pointer"
+        oninput="onPlaybackRateChange(parseFloat(this.value))">
+      <span id="vPlaybackRate" style="font-size:11px;color:#7a9ea0;font-family:monospace;min-width:42px;text-align:right">×1.00</span>
+      <button id="resetPlaybackRate" onclick="onPlaybackRateChange(1.00)" title="Réinitialiser à ×1.00"
+        style="background:transparent;border:1px solid #1a4548;color:#7a9ea0;cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px;line-height:1;display:none">↺</button>
+    </div>
     <button class="btn btn-teal" id="dlBtn" style="display:none" onclick="downloadAudio()">⬇ Télécharger WAV</button>
     <h2 style="margin-top:1.5rem">📜 Script généré</h2>
     <div class="log" id="scriptEl"></div>
@@ -199,11 +217,33 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-// CONFIG — voix Mickaël (paramètres pilotés par les sliders)
+// CONFIG — voix multiples (paramètres pilotés par les sliders)
 // ════════════════════════════════════════════════════════════════════
-const VOICE_ID = "19cV422MaCP4oU6N8AFm";
+// Mapping voix → voiceId ElevenLabs
+const VOICES = {
+  bella:    { id: "4RZ84U1b4WCqpu57LvIq", name: "Bella" },
+  marcel:   { id: "YV28ox2c5Cuh5rim0LrW", name: "Marcel" },
+  mickael:  { id: "19cV422MaCP4oU6N8AFm", name: "Mickaël" },
+  valentin: { id: "cQVn2FWawJsxa2z9X3l1", name: "Valentin" }
+};
+let selVoiceKey = "mickael";
+function VOICE_ID() { return VOICES[selVoiceKey].id; }
 
-// Presets correspondant aux 3 niveaux discutés + v3 validé + custom Mickaël + anti-filler
+// Réglages recommandés par voix (alignés sur prod v25 — VOICE_SETTINGS_V3 / VOICE_SETTINGS_V2)
+const VOICE_DEFAULTS_V3 = {
+  bella:    { stab:0.55, sim:0.75, style:0.35, boost:true,  speed:0.78 },
+  marcel:   { stab:0.65, sim:0.70, style:0.30, boost:true,  speed:0.85 },
+  mickael:  { stab:0.75, sim:0.80, style:0.20, boost:true,  speed:0.90 },
+  valentin: { stab:0.88, sim:0.60, style:0.10, boost:false, speed:0.90 }
+};
+const VOICE_DEFAULTS_V2 = {
+  bella:    { stab:0.90, sim:0.75, style:0.00, boost:false, speed:0.85 },
+  marcel:   { stab:0.82, sim:0.70, style:0.08, boost:false, speed:0.85 },
+  mickael:  { stab:0.70, sim:0.75, style:0.25, boost:true,  speed:0.95 },
+  valentin: { stab:0.85, sim:0.70, style:0.05, boost:false, speed:0.90 }
+};
+
+// Presets génériques (testés sur Mickaël à l'origine, applicables sur n'importe quelle voix)
 const PRESETS = {
   niveau1:     { stab:0.82, sim:0.75, style:0.10, boost:false, speed:0.95, model:"v2" },
   niveau2:     { stab:0.70, sim:0.75, style:0.25, boost:true,  speed:0.95, model:"v2" }, // ★ actuel en prod
@@ -219,6 +259,33 @@ let selBelief = "spirituel"; // spiritualité clôture (croyant / spirituel / ne
 let selModel = "v2";
 let lastWavBlob = null;
 
+// Sélectionne une voix : update label + auto-load des réglages recommandés selon le modèle actuel
+function selectVoice(el) {
+  document.querySelectorAll('[data-val]').forEach(o => {
+    if (o.onclick && o.onclick.toString().includes('selectVoice')) o.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  selVoiceKey = el.dataset.val;
+  document.getElementById('voiceLabel').textContent = VOICES[selVoiceKey].name;
+  // Auto-load les réglages recommandés pour cette voix selon le modèle actuel
+  const defaults = (selModel === "v3") ? VOICE_DEFAULTS_V3[selVoiceKey] : VOICE_DEFAULTS_V2[selVoiceKey];
+  if (defaults) {
+    document.getElementById('sStab').value = defaults.stab;
+    document.getElementById('sSim').value = defaults.sim;
+    document.getElementById('sStyle').value = defaults.style;
+    document.getElementById('sSpeed').value = defaults.speed;
+    document.getElementById('sBoost').checked = defaults.boost;
+    document.getElementById('vStab').textContent = defaults.stab.toFixed(2);
+    document.getElementById('vSim').textContent = defaults.sim.toFixed(2);
+    document.getElementById('vStyle').textContent = defaults.style.toFixed(2);
+    document.getElementById('vSpeed').textContent = defaults.speed.toFixed(2);
+    // Désélectionne tous les presets car on charge des réglages spécifiques voix
+    document.querySelectorAll('.opt').forEach(o => {
+      if (o.onclick && o.onclick.toString().includes('applyPreset')) o.classList.remove('selected');
+    });
+  }
+}
+
 function readVoiceSettings() {
   return {
     stability: parseFloat(document.getElementById('sStab').value),
@@ -231,6 +298,26 @@ function readVoiceSettings() {
 function readModelId() {
   return selModel === "v3" ? "eleven_v3" : "eleven_multilingual_v2";
 }
+
+// Handler du slider de vitesse de lecture (modif #8) — applique audio.playbackRate
+// + persistance localStorage + bouton reset visible si valeur ≠ 1.00.
+function onPlaybackRateChange(v) {
+  document.getElementById('sPlaybackRate').value = v;
+  document.getElementById('vPlaybackRate').textContent = "×" + v.toFixed(2);
+  document.getElementById('vPlaybackRate').style.color = (Math.abs(v - 1.00) > 0.005) ? "#b8955a" : "#7a9ea0";
+  document.getElementById('vPlaybackRate').style.fontStyle = (Math.abs(v - 1.00) > 0.005) ? "italic" : "normal";
+  document.getElementById('resetPlaybackRate').style.display = (Math.abs(v - 1.00) > 0.005) ? "inline-block" : "none";
+  const audio = document.getElementById('audioPlayer');
+  if (audio) audio.playbackRate = v;
+  try { localStorage.setItem("eureka_demo_speed_player", String(v)); } catch {}
+}
+// Restaurer la préférence au chargement
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = parseFloat(localStorage.getItem("eureka_demo_speed_player"));
+    if (saved >= 0.70 && saved <= 1.25) onPlaybackRateChange(saved);
+  } catch {}
+});
 
 function applyPreset(name) {
   const p = PRESETS[name];
@@ -489,10 +576,20 @@ function buildSystemPrompt(data) {
     "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
     "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement " + huitTempsStr + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. ⚠ Reproduire EXACTEMENT la forme '" + huitTempsStr + "' (ne pas la modifier — virgule, point, tiret, chiffre selon le format envoyé). NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] (pas de phase suivante dans ce démo).\n" +
-    "4. ⚠⚠⚠ JAMAIS DE NÉGATION dans TOUT le script — règle SOPHROLOGIQUE FONDAMENTALE. L'inconscient ne traite pas les marqueurs négatifs ('ne pas', 'aucun', 'rien', 'sans', 'plus', 'jamais'). Ils créent l'image qu'on cherche à éviter. Toujours formuler en POSITIF.\n" +
-    "   ❌ Mauvais : 'n'a aucun pouvoir', 'ne peut rien', 'n'a plus peur', 'sans douleur', 'pas d'angoisse', 'jamais inquiet', 'cette image n'a aucun pouvoir', 'elle ne peut rien sur toi', 'tu n'es plus stressé', 'elle ne vacille jamais', 'rien ne peut t'ébranler'.\n" +
-    "   ✅ Bon : 'vous êtes libre', 'vous êtes maître', 'vous êtes l'observateur', 'vous êtes serein', 'vous êtes en paix', 'vous êtes calme', 'son emprise s'est évaporée', 'la paix vous habite', 'la lumière vous remplit', 'cet espace vous appartient', 'elle est stable / immobile / constante', 'votre paix est inébranlable'.\n" +
-    "   Avant de finaliser CHAQUE phrase, vérifier : contient-elle 'ne...pas/plus/jamais', 'aucun', 'rien', 'sans' ? Si oui, REFORMULER en positif.\n" +
+    "4. ⚠⚠⚠ NÉGATIONS — distinguer 2 types (règle SOPHROLOGIQUE NUANCÉE) :\n" +
+    "   ❌ INTERDIT — NÉGATIONS RÉACTIVANTES (qui mentionnent un mot émotionnel négatif qu'on cherche à désamorcer) :\n" +
+    "     - 'vous n'avez pas peur' (réactive 'peur')\n" +
+    "     - 'ne pensez plus à votre angoisse' (réactive 'angoisse')\n" +
+    "     - 'sans tension', 'aucune inquiétude', 'rien à craindre', 'pas de douleur', 'jamais stressé'\n" +
+    "     - 'cette image n'a aucun pouvoir', 'elle ne peut rien sur toi', 'tu n'es plus stressé', 'elle ne vacille jamais'\n" +
+    "   ✅ AUTORISÉ — NÉGATIONS TRANSFORMATRICES (qui marquent un état de libération, effacement, ou bascule, SANS réactiver de mot émotionnel négatif) :\n" +
+    "     - 'tu n'es plus spectateur' (bascule positive, aucun mot négatif)\n" +
+    "     - 'cette image n'est plus là' (effacement neutre)\n" +
+    "     - 'il n'y a plus rien qui te retienne' (libération)\n" +
+    "     - 'son emprise s'est évaporée' (effacement, sans négation explicite — toujours préférable)\n" +
+    "   ✅ FORMULATIONS POSITIVES PRIVILÉGIÉES (toujours préférables aux négations transformatrices quand possible) : 'vous êtes libre', 'vous êtes maître', 'vous êtes l'observateur', 'vous êtes serein', 'vous êtes en paix', 'la paix vous habite', 'la lumière vous remplit', 'elle est stable / immobile / constante', 'votre paix est inébranlable'.\n" +
+    "   PRINCIPE-CLÉ : la négation n'est interdite QUE si elle réactive un mot émotionnel négatif (peur, angoisse, tension, stress, douleur, inquiétude, etc.). Les négations qui marquent une transformation/effacement/libération sont AUTORISÉES et NÉCESSAIRES — sans elles, impossible d'exprimer le passage du problème vers la solution.\n" +
+    "   Avant de finaliser CHAQUE phrase contenant 'ne...pas/plus/jamais', 'aucun', 'rien', 'sans' : vérifier si elle mentionne un mot émotionnel négatif. Si oui → reformuler en positif. Si non (transformation/effacement) → garder telle quelle.\n" +
     "5. PAUSES AUDIO RÉELLES (>= 2s, créent un vrai silence audible) : installation=[PAUSE_3s] respiration=[PAUSE_6s] corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "6. ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). À la place, utilise des ellipses '...' INTRA-PHRASE pour le rythme respiré naturel (cf règle 7).\n" +
     "7. RYTHME RESPIRÉ — règle PROSODIQUE pour TOUTES les sections (relaxation, alpha, scènes, désophronisation) :\n" +
@@ -549,15 +646,53 @@ function buildIntroUserPrompt(info, prenom, vakog) {
     "⚠ RAPPEL CRITIQUE : N'utilise JAMAIS [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] (supprimés par le parseur). Le rythme respiré vient des ELLIPSES '...' INTRA-PHRASE, en imitant le style des exemples ci-dessus. Sujet+verbe collés UNIQUEMENT si sujet court (1-2 mots) ; si sujet long (3+ mots), respiration après le sujet est OK.";
 }
 
-function buildScenesUserPrompt(info, prenom, problem, objectif, vakog) {
+function buildScenesUserPrompt(info, prenom, problem, objectif, vakog, archetypeName) {
   return info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-    "⭐ DISPOSITIF DISSOCIATIF OBLIGATOIRE pour les 3 scènes (sécurité thérapeutique) :\n" +
-    "Le client est TOUJOURS positionné comme OBSERVATEUR DISSOCIÉ. Les images sont projetées sur un GRAND ÉCRAN ou TABLEAU lumineux qu'il regarde en levant légèrement la tête.\n" +
+    "⭐ DISPOSITIF DES 3 ÉCRANS — visualisation thérapeutique progressive (élément issu de la Méthode Silva, intégré dans le cadre sophrologique Caycedien et enrichi par les principes ericksoniens — triple expertise du sophrologue : Sophrologie CFFS 2017 + Silva Mindvalley 2020 + Hypnose Ericksonienne) :\n" +
+    "Position des 3 écrans : tous légèrement au-dessus du regard (environ 20° vers le haut, le client lève légèrement la tête).\n" +
+    "Latéralité progressive vers la GAUCHE :\n" +
+    "  • Scène 1 = écran DEVANT soi (0°)\n" +
+    "  • Scène 2 = écran déplacé à 15° à GAUCHE\n" +
+    "  • Scène 3 = écran encore plus à gauche, à 30° à GAUCHE\n" +
+    "Gradient COULEURS : Scène 1 = SOMBRE/gris/N&B → Scène 2 = couleurs apparaissent → Scène 3 = couleurs VIVES, dorée, lumineuse.\n" +
+    "Gradient TAILLES : Scène 1 = PETIT (TV à distance) → Scène 2 = moyen → Scène 3 = GRAND IMMERSIF (cinéma enveloppant).\n" +
     "Évoquer SUBTILEMENT le dispositif au début de chaque scène :\n" +
-    "• Scène 1 : commencer par évoquer 'un grand écran lumineux apparaît devant toi... tu lèves légèrement la tête pour le contempler... tu y vois...' (ou variante équivalente : tableau lumineux, surface lumineuse).\n" +
-    "• Scène 2 : transition par 'sur ce tableau lumineux... une nouvelle image se dessine maintenant...' (ou 'l'écran change... une scène différente apparaît...').\n" +
-    "• Scène 3 : transition par 'l'écran te montre maintenant la version transformée...' (ou variante).\n" +
-    "JAMAIS écrire 'tu es dans cette scène' ou 'tu vis cette image' (engagement émotionnel = risque). TOUJOURS écrire 'tu vois', 'tu observes', 'tu contemples', 'tu aperçois' CETTE IMAGE qui est SUR L'ÉCRAN devant toi.\n\n" +
+    "  • Scène 1 : 'Un petit écran apparaît devant toi... tu lèves légèrement la tête pour le contempler... il est en tons gris, sombres... tu y vois...'\n" +
+    "  • Scène 2 : 'L'écran se déplace doucement vers ta gauche... il devient plus grand... les couleurs commencent à apparaître...'\n" +
+    "  • Scène 3 : 'L'écran continue son mouvement vers ta gauche... il devient immense... les couleurs sont vives, dorées, lumineuses... il t'enveloppe...' (préparer l'immersion 1ère personne)\n\n" +
+    "⚠ DISSOCIATION VARIABLE selon la scène (principe dissociatif observateur/observé — fondement TCC, EMDR, et techniques Silva) :\n" +
+    "  • Scènes 1 et 2 : DISSOCIATION FORTE — le client est OBSERVATEUR. JAMAIS 'tu es dans la scène'. TOUJOURS 'tu vois / tu observes / tu contemples Mickaël qui...' (3e personne).\n" +
+    "  • INTERDICTION CATÉGORIQUE en SCÈNE 1 (problème) : ne jamais utiliser de formulations d'appropriation du contenu négatif (formules du type 'elle t'appartient', 'c'est ton/ta', 'elle est tienne' appliquées au problème, à la tension, à l'angoisse). Ces formules ne sont JUSTES qu'en scène 3 appliquées au POSITIF (paix, force, calme). En scène 1, TOUJOURS distance observateur : 'tu en es l'observateur', 'tu en es témoin', 'elle est sous ton regard', 'tu la regardes depuis ta sécurité'.\n" +
+    "  • Scène 3 : IDENTIFICATION 1ère PERSONNE — moment-clé de bascule au milieu de la scène 3. Bascule du 'TU observes Mickaël' vers le 'TU es Mickaël transformé' :\n" +
+    "    Exemple : '...et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme accompli... TU ressens cette paix qui t'appartient... TU vis cette vie nouvelle...'\n" +
+    "    Engagement sensoriel et émotionnel maximal en scène 3 : ce que TU vois, TU entends, TU ressens dans ton corps, l'émotion positive qui t'habite.\n\n" +
+    "⚠ MÉTAPHORISATION ADAPTATIVE DU PROBLÈME (scène 1) — principe ericksonien :\n" +
+    "Le problème \"" + problem + "\" ne doit JAMAIS être nommé par son étiquette clinique en scène 1.\n" +
+    "Mots cliniques INTERDITS dans la description du problème : angoisse, crise, panique, dépression, peur, phobie, stress, burnout, tristesse, colère, rage, addiction, deuil, trauma, blocage (tels quels).\n" +
+    "À LA PLACE, tu construis une métaphore visuelle SUR MESURE en croisant 3 dimensions :\n" +
+    "  1. NATURE DU PROBLÈME — extrais l'essence sensorielle/émotionnelle (qu'est-ce qui PÈSE, OPPRESSE, ENVAHIT, DÉSORGANISE, FIGE, AGITE, EFFRITE, ÉROUE chez ce client ?).\n" +
+    "  2. ARCHÉTYPE " + archetypeName + " — adapte l'univers métaphorique :\n" +
+    "     • Bâtisseur → construction, chantier, architecture, fondations, plans, briques\n" +
+    "     • Compagnon → liens, présence, cercle, voix familière, lumière partagée\n" +
+    "     • Pèlerin → chemin, étape, traversée, sommet, vallée, sentier\n" +
+    "     • Voyageur → mer, vent, horizon, navigation, port, voile\n" +
+    "  3. CANAL " + vakog + " — adapte la modalité sensorielle :\n" +
+    "     • Visuel → image, forme, couleur, lumière, brouillard, ombre\n" +
+    "     • Auditif → son, écho, résonance, silence, vacarme, dissonance\n" +
+    "     • Kinesthésique → poids, chaleur, pression, vibration, mouvement, tension\n" +
+    "     • Rationnel → structure, équation, schéma, logique brisée, ordre rompu\n" +
+    "EXEMPLES (inspirer la méthode, ne pas recopier littéralement) :\n" +
+    "  • 'angoisse de prise de parole' + Voyageur + Kinesth → 'tu te sens comme sur un pont qui tangue, ton corps cherche un appui qui se dérobe à chaque mot'\n" +
+    "  • 'angoisse' + Bâtisseur + Visuel → 'un chantier secoué par une tempête, les fondations vibrent, la poussière voile les plans'\n" +
+    "  • 'deuil' + Compagnon + Auditif → 'tu entends un silence qui résonne là où une voix familière chantait avant'\n" +
+    "  • 'dépression légère' + Pèlerin + Visuel → 'un sentier qui s'efface dans un brouillard épais, chaque pas plus lourd que le précédent'\n" +
+    "  • 'burnout' + Bâtisseur + Kinesth → 'tes outils sont devenus trop lourds, les briques se multiplient dans tes mains'\n" +
+    "  • 'phobie sociale' + Compagnon + Visuel → 'un cercle de visages aux contours flous, des regards qui te traversent sans accrocher'\n" +
+    "PRINCIPE ERICKSONIEN-CLÉ : le client doit RECONNAÎTRE intuitivement son problème dans la métaphore, sans qu'il soit jamais désigné par son nom médical. Évocation > désignation.\n" +
+    "GARDE-FOUS :\n" +
+    "  - Aucune description physique clinique (interdits : 'respiration courte', 'épaules remontées', 'mains moites', 'corps tendu', 'cœur qui s'emballe'). Préfère les évocations indirectes ('un poids invisible', 'un voile sur le souffle', 'une vibration sourde').\n" +
+    "  - Garde l'ESSENCE du problème, pas sa LETTRE.\n" +
+    "  - Métaphore PERSONNELLE (intégrer prénom + spécificité du problème) pas générique.\n\n" +
     "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
     "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu perçois, tu discernes, tu visualises\n" +
     "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
@@ -605,14 +740,28 @@ function buildClotureUserPrompt(info, prenom, beliefSystem) {
 // API CALLS
 // ════════════════════════════════════════════════════════════════════
 async function callClaude(system, user, tokens) {
-  const r = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, user, tokens })
-  });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error);
-  return d.text || "";
+  // Retry automatique sur erreurs API Anthropic transitoires (Overloaded, rate limit)
+  // Backoff exponentiel : 1s → 3s → 7s (11s max d'attente totale)
+  const RETRY_DELAYS_MS = [1000, 3000, 7000];
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const r = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system, user, tokens })
+    });
+    const d = await r.json();
+    if (!d.error) return d.text || "";
+    const isTransient = /overloaded|rate.?limit|temporarily|service.?unavailable|too.?many/i.test(d.error);
+    const hasMoreRetries = attempt < RETRY_DELAYS_MS.length;
+    if (isTransient && hasMoreRetries) {
+      const delay = RETRY_DELAYS_MS[attempt];
+      console.warn("[DEMO] API Claude transitoire (" + d.error + "), retry " + (attempt + 1) + "/" + RETRY_DELAYS_MS.length + " dans " + delay + "ms");
+      await new Promise(res => setTimeout(res, delay));
+      continue;
+    }
+    throw new Error(d.error);
+  }
+  throw new Error("Échec API Claude après " + (RETRY_DELAYS_MS.length + 1) + " tentatives");
 }
 
 async function callTTS(text, prevText = "", nextText = "") {
@@ -621,7 +770,7 @@ async function callTTS(text, prevText = "", nextText = "") {
   const cleanCtx = (t) => t.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, isV3 ? 600 : 1000);
   const body = {
     text: text.replace(/\[PAUSE_[\d.]+s\]/gi, "").trim().substring(0, maxChars),
-    voiceId: VOICE_ID,
+    voiceId: VOICE_ID(),
     modelId: readModelId(),
     voiceSettings: readVoiceSettings()  // lit les sliders en live
   };
@@ -767,7 +916,7 @@ async function generer() {
     log('Appel Claude #3 : clôture spirituelle + désophronisation');
 
     const introPromise = callClaude(sysPrompt, buildIntroUserPrompt(info, prenom, selVakog), 4096);
-    const scenesPromise = callClaude(sysPrompt, buildScenesUserPrompt(info, prenom, problem, objectif, selVakog), 3000);
+    const scenesPromise = callClaude(sysPrompt, buildScenesUserPrompt(info, prenom, problem, objectif, selVakog, ARCHETYPES[selArch]?.name || "Bâtisseur"), 3000);
     const cloturePromise = callClaude(sysPrompt, buildClotureUserPrompt(info, prenom, selBelief), 2500);
     const [intro, scenes, cloture] = await Promise.all([introPromise, scenesPromise, cloturePromise]);
 
@@ -818,7 +967,10 @@ async function generer() {
     const wav = bufferToWav(finalBuf, sr);
     lastWavBlob = wav;
     const url = URL.createObjectURL(wav);
-    document.getElementById('audioPlayer').src = url;
+    const audioEl = document.getElementById('audioPlayer');
+    audioEl.src = url;
+    // Réapplique la vitesse de lecture choisie par l'utilisateur (modif #8)
+    audioEl.playbackRate = parseFloat(document.getElementById('sPlaybackRate').value);
     document.getElementById('audioCard').style.display = 'block';
     document.getElementById('dlBtn').style.display = 'block';
     setProgress(100, '✓ Audio prêt');
