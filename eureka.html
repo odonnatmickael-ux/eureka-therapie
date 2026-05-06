@@ -3168,15 +3168,25 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       setLoadMsg("Génération parallèle : intro + scènes + clôture...");
       const FIN_PHRASE = "À très bientôt " + prenom + ".";
 
-      // ─── PHASE A : Détection profil sensible (Variante 2 — consigne Mickaël 2026-05-05)
+      // ─── PHASE A : Détection profil sensible (Variante 3 — consigne Mickaël 2026-05-06)
       // 4 signaux combinés en OR. Si UN seul vrai → version DOUCE de la scène 1 utilisée
       // sur cycles 1-2 (sécurité, le client découvre + s'habitue), version standard cycles 3-7
       // (intensification après que le système nerveux soit conditionné).
+      // Variante 3 (2026-05-06) :
+      //   - Suppression de la condition `hasSupport===false && N>=50` (créait un paradoxe :
+      //     les personnes en thérapie active = potentiellement les plus fragiles, n'étaient
+      //     PAS protégées via cette voie ; et la condition sur-classifiait les profils normaux
+      //     sans psy à N médian comme sensibles à tort).
+      //   - Abaissement du seuil N de 65 à 60 pour cohérence avec la définition "Névrosisme
+      //     ÉLEVÉ" utilisée ligne 616 dans bigFiveDirectives (seuil 60), et pour mieux capter
+      //     les profils sensibles mais pas en crise (ex : Mickaël N=63 = stress ressenti à
+      //     l'évocation, sans crise) que la variante 2 ratait.
+      //   - hasSupport reste utilisé ailleurs (affichage message "complément, pas substitut",
+      //     analytics) mais ne joue plus de rôle dans Phase A.
       const N = (bigFiveScores && bigFiveScores.N) || 50;
       const isProfileSensible =
         detectCrisis(problem) || detectCrisis(objectif) || userData.crisisOverride === true ||
-        N >= 65 ||
-        (userData.hasSupport === false && N >= 50) ||
+        N >= 60 ||
         detectSensibility(problem) || detectSensibility(objectif);
       console.log("[EUREKA] Phase A — profil sensible:", isProfileSensible, "(N=" + N + ", hasSupport=" + userData.hasSupport + ", crisisOverride=" + userData.crisisOverride + ")");
       track("phase_a_protection", { sensible: isProfileSensible ? 1 : 0, neuroticism: N });
