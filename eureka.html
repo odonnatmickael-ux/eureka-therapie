@@ -672,7 +672,10 @@ function buildSystemPrompt(data) {
     "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] comme les autres cycles (consigne Mickaël — pas d'allongement de transition).\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
-    "5. PAS DE NÉGATION - son emprise s'est évaporée - pas n'a plus de pouvoir.\n" +
+    "5. ⚠⚠⚠ JAMAIS DE NÉGATION dans TOUT le script — règle SOPHROLOGIQUE FONDAMENTALE. L'inconscient ne traite pas les marqueurs négatifs ('ne pas', 'aucun', 'rien', 'sans', 'plus', 'jamais'). Ils créent l'image qu'on cherche à éviter. Toujours formuler en POSITIF.\n" +
+    "   ❌ Mauvais : 'n'a aucun pouvoir', 'ne peut rien', 'n'a plus peur', 'sans douleur', 'pas d'angoisse', 'jamais inquiet', 'cette image n'a aucun pouvoir', 'elle ne peut rien sur toi', 'tu n'es plus stressé'.\n" +
+    "   ✅ Bon : 'vous êtes libre', 'vous êtes maître', 'vous êtes l'observateur', 'vous êtes serein', 'vous êtes en paix', 'vous êtes calme', 'son emprise s'est évaporée', 'la paix vous habite', 'la lumière vous remplit', 'cet espace vous appartient'.\n" +
+    "   Avant de finaliser CHAQUE phrase, vérifier : contient-elle 'ne...pas/plus/jamais', 'aucun', 'rien', 'sans' ? Si oui, REFORMULER en positif.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] (toutes les 3 respirations identiques) corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "7. RYTHME RESPIRÉ — règle PROSODIQUE pour TOUTES les sections (relaxation, alpha, scènes, désophronisation) :\n" +
     "   ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). À la place, utilise des ellipses '...' INTRA-PHRASE pour le rythme respiré naturel.\n" +
@@ -3037,7 +3040,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           user: "Voici le script à corriger orthographiquement :\n\n" + rawScript,
           tokens: 8000
         })
-      }, { timeoutMs: 60000, maxRetries: 1 });
+      }, { timeoutMs: 180000, maxRetries: 1 });  // 3 min — couvre 99% des cas (Claude répond en 30-90s) avec échec rapide si vrai blocage
       const d = await r.json();
       if (d.error) throw new Error(d.error);
       const corrected = (d.text || "").trim();
@@ -3217,8 +3220,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "1. VERBES CONTEMPLATIFS : tu observes, tu remarques, tu prends conscience, tu portes ton attention sur. ÉVITE les verbes d'engagement émotionnel (tu es submergé, tu vis l'oppression, tu ressens la peur).\n" +
         "2. ADJECTIFS NEUTRES : présent, là, visible, clair. ÉVITE les déclencheurs : lourd, oppressant, agressif, angoissant, écrasant, étouffant, terrifiant, douloureux, sombre, terne.\n" +
         "3. DISTANCE : la scène 1 décrit le problème comme une IMAGE OBSERVÉE, jamais ressentie. Le client est SPECTATEUR, pas acteur.\n" +
-        "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Elle ne peut rien sur toi.'\n" +
-        "5. PHRASE DE SÉCURITÉ OBLIGATOIRE à la fin : 'Cette image n'a aucun pouvoir. Tu es simplement témoin.'\n" +
+        "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début (FORMULATION POSITIVE — sophrologie : pas de négation) : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.'\n" +
+        "5. PHRASE DE SÉCURITÉ OBLIGATOIRE à la fin (FORMULATION POSITIVE) : 'Tu es l'observateur paisible. Tu es libre, tu es maître. Tu es simplement témoin.'\n" +
         "6. LONGUEUR RÉDUITE : Scène 1 = 130-150 mots MAX (au lieu de 220). Moins d'exposition au déclencheur.\n" +
         "7. EFFACEMENT RAPIDE : ne traîne pas dans le négatif. Dès que l'image du problème est posée (3-4 phrases brèves), enchaîne immédiatement sur la lumière qui dissout.\n\n" +
         "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
