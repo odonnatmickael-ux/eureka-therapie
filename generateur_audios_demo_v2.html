@@ -146,8 +146,9 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
       <div class="opt" onclick="applyPreset('niveau1')" title="Stable, peu expressif">Niveau 1 (calme)</div>
       <div class="opt" onclick="applyPreset('niveau2')" title="Compromis validé en prod">Niveau 2 (prod)</div>
       <div class="opt" onclick="applyPreset('niveau3')" title="Plus expressif, plus risqué">Niveau 3 (expressif)</div>
-      <div class="opt" onclick="applyPreset('v3validated')" title="Réglages v3 du PROJECT_STATE">v3 validé</div>
+      <div class="opt" onclick="applyPreset('v3validated')" title="Réglages v3 du PROJECT_STATE — actuel prod Mickaël v3">v3 validé (prod)</div>
       <div class="opt" onclick="applyPreset('customMick')" title="Stab 0.65 / Sim 1.00 / Style 0.35 / Boost ON / Speed 1.00 — v2">Custom Mickaël</div>
+      <div class="opt" onclick="applyPreset('antifiller')" title="Stab 0.85 / Sim 0.80 / Style 0.15 / Boost ON / Speed 0.90 — v3 — réduit les fillers parasites (bou, be) en désophro">Anti-filler (test)</div>
     </div>
 
     <label>Modèle ElevenLabs</label>
@@ -202,13 +203,14 @@ audio { width: 100%; margin-top: 0.75rem; accent-color: #b8955a; }
 // ════════════════════════════════════════════════════════════════════
 const VOICE_ID = "19cV422MaCP4oU6N8AFm";
 
-// Presets correspondant aux 3 niveaux discutés + v3 validé + custom Mickaël
+// Presets correspondant aux 3 niveaux discutés + v3 validé + custom Mickaël + anti-filler
 const PRESETS = {
   niveau1:     { stab:0.82, sim:0.75, style:0.10, boost:false, speed:0.95, model:"v2" },
   niveau2:     { stab:0.70, sim:0.75, style:0.25, boost:true,  speed:0.95, model:"v2" }, // ★ actuel en prod
   niveau3:     { stab:0.55, sim:0.85, style:0.40, boost:true,  speed:0.95, model:"v2" },
   v3validated: { stab:0.75, sim:0.80, style:0.20, boost:true,  speed:0.90, model:"v3" }, // PROJECT_STATE
   customMick:  { stab:0.65, sim:1.00, style:0.35, boost:true,  speed:1.00, model:"v2" }, // demande Mickaël 2026-05-03
+  antifiller:  { stab:0.85, sim:0.80, style:0.15, boost:true,  speed:0.90, model:"v3" }, // test 2026-05-05 : réduire fillers ('bou', 'be') en désophro
 };
 
 let selVakog = null, selArch = null;
