@@ -672,10 +672,20 @@ function buildSystemPrompt(data) {
     "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
     "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] comme les autres cycles (consigne Mickaël — pas d'allongement de transition).\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
-    "5. ⚠⚠⚠ JAMAIS DE NÉGATION dans TOUT le script — règle SOPHROLOGIQUE FONDAMENTALE. L'inconscient ne traite pas les marqueurs négatifs ('ne pas', 'aucun', 'rien', 'sans', 'plus', 'jamais'). Ils créent l'image qu'on cherche à éviter. Toujours formuler en POSITIF.\n" +
-    "   ❌ Mauvais : 'n'a aucun pouvoir', 'ne peut rien', 'n'a plus peur', 'sans douleur', 'pas d'angoisse', 'jamais inquiet', 'cette image n'a aucun pouvoir', 'elle ne peut rien sur toi', 'tu n'es plus stressé'.\n" +
-    "   ✅ Bon : 'vous êtes libre', 'vous êtes maître', 'vous êtes l'observateur', 'vous êtes serein', 'vous êtes en paix', 'vous êtes calme', 'son emprise s'est évaporée', 'la paix vous habite', 'la lumière vous remplit', 'cet espace vous appartient'.\n" +
-    "   Avant de finaliser CHAQUE phrase, vérifier : contient-elle 'ne...pas/plus/jamais', 'aucun', 'rien', 'sans' ? Si oui, REFORMULER en positif.\n" +
+    "5. ⚠⚠⚠ NÉGATIONS — distinguer 2 types (règle SOPHROLOGIQUE NUANCÉE) :\n" +
+    "   ❌ INTERDIT — NÉGATIONS RÉACTIVANTES (qui mentionnent un mot émotionnel négatif qu'on cherche à désamorcer) :\n" +
+    "     - 'vous n'avez pas peur' (réactive 'peur')\n" +
+    "     - 'ne pensez plus à votre angoisse' (réactive 'angoisse')\n" +
+    "     - 'sans tension', 'aucune inquiétude', 'rien à craindre', 'pas de douleur', 'jamais stressé'\n" +
+    "     - 'cette image n'a aucun pouvoir', 'elle ne peut rien sur toi', 'tu n'es plus stressé'\n" +
+    "   ✅ AUTORISÉ — NÉGATIONS TRANSFORMATRICES (qui marquent un état de libération, effacement, ou bascule, SANS réactiver de mot émotionnel négatif) :\n" +
+    "     - 'tu n'es plus spectateur' (bascule positive, aucun mot négatif)\n" +
+    "     - 'cette image n'est plus là' (effacement neutre)\n" +
+    "     - 'il n'y a plus rien qui te retienne' (libération)\n" +
+    "     - 'son emprise s'est évaporée' (effacement, sans négation explicite — toujours préférable)\n" +
+    "   ✅ FORMULATIONS POSITIVES PRIVILÉGIÉES (toujours préférables aux négations transformatrices quand possible) : 'vous êtes libre', 'vous êtes maître', 'vous êtes l'observateur', 'vous êtes serein', 'vous êtes en paix', 'la paix vous habite', 'la lumière vous remplit'.\n" +
+    "   PRINCIPE-CLÉ : la négation n'est interdite QUE si elle réactive un mot émotionnel négatif (peur, angoisse, tension, stress, douleur, inquiétude, etc.). Les négations qui marquent une transformation/effacement/libération sont AUTORISÉES et NÉCESSAIRES — sans elles, impossible d'exprimer le passage du problème vers la solution.\n" +
+    "   Avant de finaliser CHAQUE phrase contenant 'ne...pas/plus/jamais', 'aucun', 'rien', 'sans' : vérifier si elle mentionne un mot émotionnel négatif. Si oui → reformuler en positif. Si non (transformation/effacement) → garder telle quelle.\n" +
     "6. PAUSES: installation=[PAUSE_3s] respiration=[PAUSE_6s] (toutes les 3 respirations identiques) corps=[PAUSE_3s] groupe=[PAUSE_5s] alpha=[PAUSE_15s]\n" +
     "7. RYTHME RESPIRÉ — règle PROSODIQUE pour TOUTES les sections (relaxation, alpha, scènes, désophronisation) :\n" +
     "   ⚠⚠⚠ INTERDIT ABSOLU : [PAUSE_1s], [PAUSE_0.5s], [PAUSE_1.5s] — ces marqueurs sont SUPPRIMÉS par le parseur audio (seuil >= 2s pour devenir un silence réel). À la place, utilise des ellipses '...' INTRA-PHRASE pour le rythme respiré naturel.\n" +
@@ -3280,14 +3290,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "  • Scène 2 : 'L'écran se déplace doucement vers ta gauche... il devient plus grand... les couleurs commencent à apparaître...'\n" +
         "  • Scène 3 : 'L'écran continue son mouvement vers ta gauche... il devient immense... les couleurs sont vives, dorées, lumineuses... il t'enveloppe...' (préparer l'immersion 1ère personne)\n\n" +
         "⚠ DISSOCIATION VARIABLE selon la scène :\n" +
-        "  • Scène 1 (PROBLÈME — sensible) : DISSOCIATION ULTRA-FORTE — observateur lointain, version douce, phrases de sécurité au début et à la fin (FORMULATION POSITIVE).\n" +
+        "  • Scène 1 (PROBLÈME — sensible) : DISSOCIATION ULTRA-FORTE — observateur lointain, version douce, phrases de sécurité au début et à la fin (formulation positive privilégiée — cf règle 5 du système : éviter les négations RÉACTIVANTES uniquement, les négations TRANSFORMATRICES type 'tu n'es plus spectateur' restent autorisées).\n" +
         "  • Scène 2 (ACTION) : dissociation moyenne, observateur engagé. 'Tu vois Mickaël qui agit...'\n" +
         "  • Scène 3 (RÉSULTAT POSITIF) : IDENTIFICATION 1ère PERSONNE — bénéfique pour TOUS y compris profil sensible (scène positive = sans risque). Bascule au milieu de la scène 3 : '...et maintenant... l'écran t'enveloppe... tu n'es plus spectateur... TU ES cet homme accompli... TU ressens cette paix qui t'appartient... TU vis cette vie nouvelle...'\n\n" +
         "RÈGLES SPÉCIFIQUES VERSION DOUCE — Scène 1 UNIQUEMENT :\n" +
         "1. VERBES CONTEMPLATIFS : tu observes, tu remarques, tu prends conscience, tu portes ton attention sur. ÉVITE les verbes d'engagement émotionnel (tu es submergé, tu vis l'oppression, tu ressens la peur).\n" +
         "2. ADJECTIFS NEUTRES : présent, là, visible, clair. ÉVITE les déclencheurs : lourd, oppressant, agressif, angoissant, écrasant, étouffant, terrifiant, douloureux, sombre, terne.\n" +
         "3. DISTANCE : la scène 1 décrit le problème comme une IMAGE OBSERVÉE, jamais ressentie. Le client est SPECTATEUR, pas acteur.\n" +
-        "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début (FORMULATION POSITIVE — sophrologie : pas de négation) : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.'\n" +
+        "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début (formulation positive ; règle 5 du système — distinguer négations réactivantes interdites vs transformatrices autorisées) : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.'\n" +
         "5. PHRASE DE SÉCURITÉ OBLIGATOIRE à la fin (FORMULATION POSITIVE) : 'Tu es l'observateur paisible. Tu es libre, tu es maître. Tu es simplement témoin.'\n" +
         "5bis. INTERDICTION CATÉGORIQUE d'appropriation du négatif : aucune formule du type 'elle t'appartient', 'c'est ton/ta', 'elle est tienne' appliquée au problème ou à la tension. Ces formules sont réservées au positif en scène 3 (paix, force). En scène 1 douce, TOUJOURS distance observateur : 'tu en es l'observateur', 'elle est sous ton regard', 'tu la regardes depuis ta sécurité intérieure'.\n" +
         "6. LONGUEUR RÉDUITE : Scène 1 = 130-150 mots MAX (au lieu de 220). Moins d'exposition au déclencheur.\n" +
