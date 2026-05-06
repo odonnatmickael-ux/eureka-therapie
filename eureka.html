@@ -3193,13 +3193,29 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       const scenesPromise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "⭐ DISPOSITIF DISSOCIATIF OBLIGATOIRE pour les 3 scènes (sécurité thérapeutique) :\n" +
-        "Le client est TOUJOURS positionné comme OBSERVATEUR DISSOCIÉ. Les images sont projetées sur un GRAND ÉCRAN ou TABLEAU lumineux qu'il regarde en levant légèrement la tête.\n" +
+        "⭐ PROTOCOLE SILVA PUR — DISPOSITIF DES 3 ÉCRANS (méthode Silva enseignée à Mindvalley, formation du sophrologue Mickaël Odonnat) :\n" +
+        "Position des 3 écrans : tous légèrement au-dessus du regard (environ 20° vers le haut, le client lève légèrement la tête).\n" +
+        "Latéralité progressive vers la GAUCHE :\n" +
+        "  • Scène 1 = écran DEVANT soi (0°)\n" +
+        "  • Scène 2 = écran déplacé à 15° à GAUCHE\n" +
+        "  • Scène 3 = écran encore plus à gauche, à 30° à GAUCHE\n" +
+        "Gradient COULEURS (de la scène 1 vers la 3) :\n" +
+        "  • Scène 1 = SOMBRE, gris, noir & blanc, tons éteints\n" +
+        "  • Scène 2 = couleurs APPARAISSENT progressivement, l'image s'éclaire\n" +
+        "  • Scène 3 = couleurs VIVES, dorée, lumineuse, éclatante\n" +
+        "Gradient TAILLES (de la scène 1 vers la 3) :\n" +
+        "  • Scène 1 = écran PETIT (taille TV à distance), image lointaine\n" +
+        "  • Scène 2 = écran MOYEN, image plus proche\n" +
+        "  • Scène 3 = écran GRAND et IMMERSIF (cinéma, écran enveloppant), image très proche\n" +
         "Évoquer SUBTILEMENT le dispositif au début de chaque scène :\n" +
-        "• Scène 1 : commencer par évoquer 'un grand écran lumineux apparaît devant toi... tu lèves légèrement la tête pour le contempler... tu y vois...' (ou variante équivalente : tableau lumineux, surface lumineuse).\n" +
-        "• Scène 2 : transition par 'sur ce tableau lumineux... une nouvelle image se dessine maintenant...' (ou 'l'écran change... une scène différente apparaît...').\n" +
-        "• Scène 3 : transition par 'l'écran te montre maintenant la version transformée...' (ou variante).\n" +
-        "JAMAIS écrire 'tu es dans cette scène' ou 'tu vis cette image' (engagement émotionnel = risque). TOUJOURS écrire 'tu vois', 'tu observes', 'tu contemples', 'tu aperçois' CETTE IMAGE qui est SUR L'ÉCRAN devant toi.\n\n" +
+        "  • Scène 1 : 'Un petit écran apparaît devant toi... tu lèves légèrement la tête pour le contempler... il est en tons gris, sombres... tu y vois...'\n" +
+        "  • Scène 2 : 'L'écran se déplace doucement vers ta gauche... il devient plus grand... les couleurs commencent à apparaître... tu vois maintenant...'\n" +
+        "  • Scène 3 : 'L'écran continue son mouvement vers ta gauche... il devient immense... les couleurs sont vives, dorées, lumineuses... il t'enveloppe...' (préparer l'immersion 1ère personne)\n\n" +
+        "⚠ DISSOCIATION VARIABLE selon la scène (Silva pur) :\n" +
+        "  • Scènes 1 et 2 : DISSOCIATION FORTE — le client est OBSERVATEUR. JAMAIS 'tu es dans la scène'. TOUJOURS 'tu vois / tu observes / tu contemples Mickaël qui...' (3e personne, le prénom est nommé ou implicite).\n" +
+        "  • Scène 3 : IDENTIFICATION 1ère PERSONNE — moment-clé de bascule. Au milieu de la scène 3, après avoir observé brièvement la version transformée, le client ENTRE dans l'image. Bascule du 'TU observes Mickaël' vers le 'TU es Mickaël transformé' :\n" +
+        "    Exemple de bascule : '...et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme accompli... TU ressens cette paix qui t'appartient... TU vis cette vie nouvelle... ici, maintenant, c'est TON expérience.'\n" +
+        "    Cette identification immersive est BÉNÉFIQUE pour TOUS (sans risque car scène positive = transformation accomplie). Engagement sensoriel et émotionnel maximal en scène 3 : décrire ce que TU vois, TU entends, TU ressens dans ton corps, l'émotion positive qui t'habite.\n\n" +
         "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
         "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu perçois, tu discernes, tu visualises\n" +
         "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
@@ -3226,12 +3242,19 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const scenesDoucePromise = isProfileSensible ? gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques en VERSION DOUCE - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
         "⚠ MODE PROTECTION ACTIVÉ : ce client présente des signaux de fragilité émotionnelle (anxiété, deuil, post-trauma, ou Big Five Névrosisme élevé, ou pas de suivi pro). La SCÈNE 1 doit être ADOUCIE pour ne pas déclencher de réaction émotionnelle forte. Les scènes 2 et 3 (transformation positive) restent normales.\n\n" +
-        "⭐ DISPOSITIF DISSOCIATIF OBLIGATOIRE pour les 3 scènes (sécurité thérapeutique RENFORCÉE pour profil sensible) :\n" +
-        "Le client est TOUJOURS positionné comme OBSERVATEUR DISSOCIÉ. Les images sont projetées sur un GRAND ÉCRAN ou TABLEAU lumineux qu'il regarde en levant légèrement la tête.\n" +
-        "• Scène 1 : commencer par 'un grand écran lumineux apparaît devant toi... tu lèves légèrement la tête pour le contempler... tu y vois...' (puis phrase de sécurité 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.').\n" +
-        "• Scène 2 : 'sur ce tableau lumineux... une nouvelle image se dessine maintenant...'\n" +
-        "• Scène 3 : 'l'écran te montre maintenant la version transformée...'\n" +
-        "JAMAIS écrire 'tu es dans cette scène' ou 'tu vis cette image'. TOUJOURS 'tu vois / tu observes / tu contemples cette image SUR l'écran'.\n\n" +
+        "⭐ PROTOCOLE SILVA PUR — DISPOSITIF DES 3 ÉCRANS (avec ADAPTATION pour profil sensible : scène 1 ultra-douce + dissociation maximale, scènes 2 et 3 normales Silva) :\n" +
+        "Position des 3 écrans : tous légèrement au-dessus du regard (environ 20° vers le haut, le client lève légèrement la tête).\n" +
+        "Latéralité progressive vers la GAUCHE : Scène 1 = 0° (devant soi), Scène 2 = 15° à gauche, Scène 3 = 30° à gauche.\n" +
+        "Gradient COULEURS : Scène 1 = SOMBRE/gris/N&B → Scène 2 = couleurs apparaissent → Scène 3 = couleurs VIVES, dorée.\n" +
+        "Gradient TAILLES : Scène 1 = PETIT (TV à distance, encore plus petit en version douce) → Scène 2 = moyen → Scène 3 = GRAND IMMERSIF.\n\n" +
+        "Évoquer SUBTILEMENT le dispositif :\n" +
+        "  • Scène 1 (DOUCE) : 'Un petit écran apparaît devant toi... très loin... tu lèves légèrement la tête pour l'apercevoir... il est en tons gris, distants, à peine visibles...' PUIS phrase de sécurité OBLIGATOIRE 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.' PUIS description NEUTRE et BRÈVE du problème.\n" +
+        "  • Scène 2 : 'L'écran se déplace doucement vers ta gauche... il devient plus grand... les couleurs commencent à apparaître...'\n" +
+        "  • Scène 3 : 'L'écran continue son mouvement vers ta gauche... il devient immense... les couleurs sont vives, dorées, lumineuses... il t'enveloppe...' (préparer l'immersion 1ère personne)\n\n" +
+        "⚠ DISSOCIATION VARIABLE selon la scène :\n" +
+        "  • Scène 1 (PROBLÈME — sensible) : DISSOCIATION ULTRA-FORTE — observateur lointain, version douce, phrases de sécurité au début et à la fin (FORMULATION POSITIVE).\n" +
+        "  • Scène 2 (ACTION) : dissociation moyenne, observateur engagé. 'Tu vois Mickaël qui agit...'\n" +
+        "  • Scène 3 (RÉSULTAT POSITIF) : IDENTIFICATION 1ère PERSONNE — bénéfique pour TOUS y compris profil sensible (scène positive = sans risque). Bascule au milieu de la scène 3 : '...et maintenant... l'écran t'enveloppe... tu n'es plus spectateur... TU ES cet homme accompli... TU ressens cette paix qui t'appartient... TU vis cette vie nouvelle...'\n\n" +
         "RÈGLES SPÉCIFIQUES VERSION DOUCE — Scène 1 UNIQUEMENT :\n" +
         "1. VERBES CONTEMPLATIFS : tu observes, tu remarques, tu prends conscience, tu portes ton attention sur. ÉVITE les verbes d'engagement émotionnel (tu es submergé, tu vis l'oppression, tu ressens la peur).\n" +
         "2. ADJECTIFS NEUTRES : présent, là, visible, clair. ÉVITE les déclencheurs : lourd, oppressant, agressif, angoissant, écrasant, étouffant, terrifiant, douloureux, sombre, terne.\n" +
