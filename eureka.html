@@ -1175,6 +1175,63 @@ function MentionsModal({ onClose }) {
 // ÉTAPES DU FUNNEL
 // ══════════════════════════════════════════════════════════════════
 
+// ─── SpeedSlider — slider de vitesse de lecture audio (0.70 → 1.25)
+// Default 1.00 = vitesse de l'audio tel que généré (peu importe le speed TTS interne).
+// Mapping direct sliderValue → audio.playbackRate (le navigateur préserve le pitch).
+// Persistence localStorage pour que le client retrouve sa préférence.
+// Utilisé sur : (1) DemoAudio (preview voix landing) — (2) player principal page résultat.
+function SpeedSlider({ audioRef, storageKey = "eureka_speed_player" }) {
+  const [speed, setSpeed] = useState(() => {
+    try {
+      const saved = parseFloat(localStorage.getItem(storageKey));
+      return (saved >= 0.70 && saved <= 1.25) ? saved : 1.00;
+    } catch { return 1.00; }
+  });
+  // Réapplique playbackRate à chaque fois que l'audio (re-)charge ou que speed change
+  useEffect(() => {
+    if (audioRef && audioRef.current) audioRef.current.playbackRate = speed;
+  }, [speed, audioRef]);
+  // Applique aussi quand l'audio commence à jouer (au cas où l'audio est rechargé entre temps)
+  useEffect(() => {
+    const a = audioRef && audioRef.current;
+    if (!a) return;
+    const onPlay = () => { a.playbackRate = speed; };
+    a.addEventListener("play", onPlay);
+    return () => a.removeEventListener("play", onPlay);
+  }, [speed, audioRef]);
+  const onChange = (v) => {
+    setSpeed(v);
+    try { localStorage.setItem(storageKey, String(v)); } catch {}
+    if (audioRef && audioRef.current) audioRef.current.playbackRate = v;
+  };
+  const isCustom = Math.abs(speed - 1.00) > 0.005;
+  return (
+    <div style={{ marginTop:"0.75rem", display:"flex", alignItems:"center", gap:"0.75rem" }}
+      title="Ajustez la vitesse de lecture sans changer la voix. ×1.00 = vitesse normale.">
+      <span style={{ fontSize:"10px", color:C.muted, letterSpacing:"1.5px",
+        textTransform:"uppercase", minWidth:"55px", fontWeight:"600" }}>
+        Vitesse
+      </span>
+      <input type="range" min="0.70" max="1.25" step="0.01" value={speed}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ flex:1, accentColor:C.gold, cursor:"pointer" }} />
+      <span style={{ fontSize:"11px", color: isCustom ? C.gold : C.muted,
+        fontFamily:"monospace", minWidth:"42px", textAlign:"right",
+        fontStyle: isCustom ? "italic" : "normal", fontWeight: isCustom ? "600" : "400" }}>
+        ×{speed.toFixed(2)}
+      </span>
+      {isCustom && (
+        <button onClick={() => onChange(1.00)} title="Réinitialiser à ×1.00"
+          style={{ background:"transparent", border:`1px solid ${C.border}`,
+            color:C.muted, cursor:"pointer", fontSize:"12px", padding:"2px 6px",
+            borderRadius:"4px", lineHeight:"1" }}>
+          ↺
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Mini-démo audio — un court échantillon vocal jouable avant inscription
 // L'audio est généré à la demande via /api/tts puis caché en mémoire (URL.createObjectURL).
 // Match strict des réglages séance (eleven_v3 + voice_settings) pour ne pas tromper l'utilisateur.
@@ -1294,6 +1351,10 @@ function DemoAudio() {
             background:`linear-gradient(90deg, ${C.gold}, ${C.teal})`,
             transition:"width .15s linear" }} />
         </div>
+      )}
+      {/* Slider de vitesse — visible quand l'audio est prêt (pas en idle ni loading) */}
+      {(state === "playing" || state === "paused") && (
+        <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" />
       )}
     </div>
   );
@@ -4104,6 +4165,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
               onTimeUpdate={handleAudioTimeUpdate}
               onLoadedMetadata={e => setDuration(e.target.duration)} />
+            {/* Slider de vitesse de lecture (modif #7 — 2026-05-06) */}
+            <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" />
 
             {/* Si échantillon : flèche claire vers la section séance complète */}
             {!isPersonalized && (
