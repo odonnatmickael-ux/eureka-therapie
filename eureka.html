@@ -3193,7 +3193,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       const scenesPromise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
-        "⭐ PROTOCOLE SILVA PUR — DISPOSITIF DES 3 ÉCRANS (méthode Silva enseignée à Mindvalley, formation du sophrologue Mickaël Odonnat) :\n" +
+        "⭐ DISPOSITIF DES 3 ÉCRANS — visualisation thérapeutique progressive (élément issu de la Méthode Silva, intégré dans le cadre sophrologique Caycedien et enrichi par les principes ericksoniens — triple expertise du sophrologue Mickaël Odonnat : Sophrologie CFFS 2017 + Silva Mindvalley 2020 + Hypnose Ericksonienne) :\n" +
         "Position des 3 écrans : tous légèrement au-dessus du regard (environ 20° vers le haut, le client lève légèrement la tête).\n" +
         "Latéralité progressive vers la GAUCHE :\n" +
         "  • Scène 1 = écran DEVANT soi (0°)\n" +
@@ -3211,8 +3211,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "  • Scène 1 : 'Un petit écran apparaît devant toi... tu lèves légèrement la tête pour le contempler... il est en tons gris, sombres... tu y vois...'\n" +
         "  • Scène 2 : 'L'écran se déplace doucement vers ta gauche... il devient plus grand... les couleurs commencent à apparaître... tu vois maintenant...'\n" +
         "  • Scène 3 : 'L'écran continue son mouvement vers ta gauche... il devient immense... les couleurs sont vives, dorées, lumineuses... il t'enveloppe...' (préparer l'immersion 1ère personne)\n\n" +
-        "⚠ DISSOCIATION VARIABLE selon la scène (Silva pur) :\n" +
+        "⚠ DISSOCIATION VARIABLE selon la scène (principe dissociatif observateur/observé — fondement TCC, EMDR, et techniques Silva) :\n" +
         "  • Scènes 1 et 2 : DISSOCIATION FORTE — le client est OBSERVATEUR. JAMAIS 'tu es dans la scène'. TOUJOURS 'tu vois / tu observes / tu contemples Mickaël qui...' (3e personne, le prénom est nommé ou implicite).\n" +
+        "  • INTERDICTION CATÉGORIQUE en SCÈNE 1 (problème) : ne jamais utiliser de formulations d'appropriation du contenu négatif (formules du type 'elle t'appartient', 'c'est ton/ta', 'elle est tienne' appliquées au problème, à la tension, à l'angoisse). Ces formules ne sont JUSTES qu'en scène 3 appliquées au POSITIF (paix, force, calme). En scène 1, TOUJOURS distance observateur : 'tu en es l'observateur', 'tu en es témoin', 'elle est sous ton regard', 'tu la regardes depuis ta sécurité'.\n" +
         "  • Scène 3 : IDENTIFICATION 1ère PERSONNE — moment-clé de bascule. Au milieu de la scène 3, après avoir observé brièvement la version transformée, le client ENTRE dans l'image. Bascule du 'TU observes Mickaël' vers le 'TU es Mickaël transformé' :\n" +
         "    Exemple de bascule : '...et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme accompli... TU ressens cette paix qui t'appartient... TU vis cette vie nouvelle... ici, maintenant, c'est TON expérience.'\n" +
         "    Cette identification immersive est BÉNÉFIQUE pour TOUS (sans risque car scène positive = transformation accomplie). Engagement sensoriel et émotionnel maximal en scène 3 : décrire ce que TU vois, TU entends, TU ressens dans ton corps, l'émotion positive qui t'habite.\n\n" +
@@ -3242,7 +3243,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const scenesDoucePromise = isProfileSensible ? gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques en VERSION DOUCE - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
         "⚠ MODE PROTECTION ACTIVÉ : ce client présente des signaux de fragilité émotionnelle (anxiété, deuil, post-trauma, ou Big Five Névrosisme élevé, ou pas de suivi pro). La SCÈNE 1 doit être ADOUCIE pour ne pas déclencher de réaction émotionnelle forte. Les scènes 2 et 3 (transformation positive) restent normales.\n\n" +
-        "⭐ PROTOCOLE SILVA PUR — DISPOSITIF DES 3 ÉCRANS (avec ADAPTATION pour profil sensible : scène 1 ultra-douce + dissociation maximale, scènes 2 et 3 normales Silva) :\n" +
+        "⭐ DISPOSITIF DES 3 ÉCRANS — version DOUCE pour profil sensible (scène 1 ultra-douce + dissociation maximale, scènes 2 et 3 normales) :\n" +
         "Position des 3 écrans : tous légèrement au-dessus du regard (environ 20° vers le haut, le client lève légèrement la tête).\n" +
         "Latéralité progressive vers la GAUCHE : Scène 1 = 0° (devant soi), Scène 2 = 15° à gauche, Scène 3 = 30° à gauche.\n" +
         "Gradient COULEURS : Scène 1 = SOMBRE/gris/N&B → Scène 2 = couleurs apparaissent → Scène 3 = couleurs VIVES, dorée.\n" +
@@ -3261,6 +3262,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "3. DISTANCE : la scène 1 décrit le problème comme une IMAGE OBSERVÉE, jamais ressentie. Le client est SPECTATEUR, pas acteur.\n" +
         "4. PHRASE DE SÉCURITÉ OBLIGATOIRE au tout début (FORMULATION POSITIVE — sophrologie : pas de négation) : 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.'\n" +
         "5. PHRASE DE SÉCURITÉ OBLIGATOIRE à la fin (FORMULATION POSITIVE) : 'Tu es l'observateur paisible. Tu es libre, tu es maître. Tu es simplement témoin.'\n" +
+        "5bis. INTERDICTION CATÉGORIQUE d'appropriation du négatif : aucune formule du type 'elle t'appartient', 'c'est ton/ta', 'elle est tienne' appliquée au problème ou à la tension. Ces formules sont réservées au positif en scène 3 (paix, force). En scène 1 douce, TOUJOURS distance observateur : 'tu en es l'observateur', 'elle est sous ton regard', 'tu la regardes depuis ta sécurité intérieure'.\n" +
         "6. LONGUEUR RÉDUITE : Scène 1 = 130-150 mots MAX (au lieu de 220). Moins d'exposition au déclencheur.\n" +
         "7. EFFACEMENT RAPIDE : ne traîne pas dans le négatif. Dès que l'image du problème est posée (3-4 phrases brèves), enchaîne immédiatement sur la lumière qui dissout.\n\n" +
         "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
@@ -3323,8 +3325,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Phase A — Variante 2 : pour profil sensible, cycles 1-2 = version douce, cycles 3-7 = standard.
       // Pour profil stable, tous les cycles = standard (comportement historique).
       const sceneToUse = (i) => (isProfileSensible && i < 2 && scenesDouce) ? scenesDouce : scenes;
+      // Phase A — texte-pont entre cycle 2 (douce) et cycle 3 (standard) : prépare psychologiquement
+      // au passage "silhouette/forme abstraite" → "Mickael nommé/crise d'angoisse" (exposition graduelle).
+      const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêt à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
       let cycles = "";
       for (let i = 0; i < 7; i++) {
+        // Insertion du pont AVANT le cycle 3 (i===2) uniquement en mode sensible
+        if (i === 2 && isProfileSensible && scenesDouce) {
+          cycles += "\n\n" + PONT_SENSIBLE;
+        }
         cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
       }
 
@@ -3421,8 +3430,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         const sensible = scriptParts.isProfileSensible;
         const douce = scriptParts.scenesDouce;
         const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
+        // Phase A — texte-pont identique à l'assemblage initial (synchronisation script ↔ audio)
+        const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêt à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
         let cycles = "";
         for (let i = 0; i < annonces.length; i++) {
+          if (i === 2 && sensible && douce) {
+            cycles += "\n\n" + PONT_SENSIBLE;
+          }
           cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
         }
         activeScript = scriptParts.intro + cycles + "\n\n" + scriptParts.cloture;
