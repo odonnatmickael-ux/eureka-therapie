@@ -694,7 +694,10 @@ function buildSystemPrompt(data) {
     "10. LANGAGE SENSORIEL - utiliser le canal " + vakog + " à chaque étape. Faire RESSENTIR, pas expliquer.\n" +
     "11. RÉPÉTITION HYPNOTIQUE - les mots clés reviennent... encore... et encore... comme une vague.\n" +
     "12. PRÉSENT DIRECT - pas de conditionnel. Pas 'vous pourriez'. Dire 'vous ressentez... vous lâchez... vous êtes'.\n" +
-    "13. VERBES D'ACTION LENTS - fondre, glisser, lâcher, s'ouvrir, s'approfondir, se dissoudre.\n\n" +
+    "13. VERBES D'ACTION LENTS — privilégier le vocabulaire USUEL en relaxation :\n" +
+    "   • Verbes principaux (à utiliser fréquemment) : se détendre, se relâcher, s'alourdir, se reposer, s'apaiser, se libérer, s'abandonner, lâcher.\n" +
+    "   • Verbes secondaires (max 1-2 par groupe musculaire pour varier) : glisser, s'ouvrir, s'approfondir.\n" +
+    "   • À ÉVITER : 'fondre' (terme métaphorique peu accessible au client lambda — préférer 's'alourdir' ou 'se détendre').\n\n" +
     "VIGILANCE ORTHOGRAPHIQUE FRANÇAISE — IMPÉRATIF:\n" +
     "14. Avant d'écrire CHAQUE verbe à l'impératif, vérifie son orthographe française complète.\n" +
     "    Erreurs courantes à NE JAMAIS commettre :\n" +
@@ -3190,6 +3193,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
 
       const scenesPromise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
+        "⭐ DISPOSITIF DISSOCIATIF OBLIGATOIRE pour les 3 scènes (sécurité thérapeutique) :\n" +
+        "Le client est TOUJOURS positionné comme OBSERVATEUR DISSOCIÉ. Les images sont projetées sur un GRAND ÉCRAN ou TABLEAU lumineux qu'il regarde en levant légèrement la tête.\n" +
+        "Évoquer SUBTILEMENT le dispositif au début de chaque scène :\n" +
+        "• Scène 1 : commencer par évoquer 'un grand écran lumineux apparaît devant toi... tu lèves légèrement la tête pour le contempler... tu y vois...' (ou variante équivalente : tableau lumineux, surface lumineuse).\n" +
+        "• Scène 2 : transition par 'sur ce tableau lumineux... une nouvelle image se dessine maintenant...' (ou 'l'écran change... une scène différente apparaît...').\n" +
+        "• Scène 3 : transition par 'l'écran te montre maintenant la version transformée...' (ou variante).\n" +
+        "JAMAIS écrire 'tu es dans cette scène' ou 'tu vis cette image' (engagement émotionnel = risque). TOUJOURS écrire 'tu vois', 'tu observes', 'tu contemples', 'tu aperçois' CETTE IMAGE qui est SUR L'ÉCRAN devant toi.\n\n" +
         "VERBES CANAL - ne jamais répéter le même verbe plus de 2 fois par scène:\n" +
         "- Visuel: tu aperçois, tu observes, tu contemples, tu distingues, tu perçois, tu discernes, tu visualises\n" +
         "- Auditif: tu entends, tu perçois, tu captes, tu écoutes, tu ressens la résonance, tu distingues\n" +
@@ -3216,6 +3226,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const scenesDoucePromise = isProfileSensible ? gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT les 3 scènes thérapeutiques en VERSION DOUCE - UNE SEULE FOIS - ZERO TITRE - commencer directement.\n\n" +
         "⚠ MODE PROTECTION ACTIVÉ : ce client présente des signaux de fragilité émotionnelle (anxiété, deuil, post-trauma, ou Big Five Névrosisme élevé, ou pas de suivi pro). La SCÈNE 1 doit être ADOUCIE pour ne pas déclencher de réaction émotionnelle forte. Les scènes 2 et 3 (transformation positive) restent normales.\n\n" +
+        "⭐ DISPOSITIF DISSOCIATIF OBLIGATOIRE pour les 3 scènes (sécurité thérapeutique RENFORCÉE pour profil sensible) :\n" +
+        "Le client est TOUJOURS positionné comme OBSERVATEUR DISSOCIÉ. Les images sont projetées sur un GRAND ÉCRAN ou TABLEAU lumineux qu'il regarde en levant légèrement la tête.\n" +
+        "• Scène 1 : commencer par 'un grand écran lumineux apparaît devant toi... tu lèves légèrement la tête pour le contempler... tu y vois...' (puis phrase de sécurité 'Tu observes cette image en sécurité, depuis ta position d'observateur. Tu es libre, tu es l'observateur paisible.').\n" +
+        "• Scène 2 : 'sur ce tableau lumineux... une nouvelle image se dessine maintenant...'\n" +
+        "• Scène 3 : 'l'écran te montre maintenant la version transformée...'\n" +
+        "JAMAIS écrire 'tu es dans cette scène' ou 'tu vis cette image'. TOUJOURS 'tu vois / tu observes / tu contemples cette image SUR l'écran'.\n\n" +
         "RÈGLES SPÉCIFIQUES VERSION DOUCE — Scène 1 UNIQUEMENT :\n" +
         "1. VERBES CONTEMPLATIFS : tu observes, tu remarques, tu prends conscience, tu portes ton attention sur. ÉVITE les verbes d'engagement émotionnel (tu es submergé, tu vis l'oppression, tu ressens la peur).\n" +
         "2. ADJECTIFS NEUTRES : présent, là, visible, clair. ÉVITE les déclencheurs : lourd, oppressant, agressif, angoissant, écrasant, étouffant, terrifiant, douloureux, sombre, terne.\n" +
