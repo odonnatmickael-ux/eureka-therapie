@@ -2961,26 +2961,47 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
   };
   const SORTIE_DOUCE_BASE_URL = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/sortie_douce_";
 
+  // PRÉCHARGEMENT — dès que le composant est monté (= séance générée), on télécharge
+  // le MP3 sortie douce en arrière-plan. Au clic du bouton, l'audio sera déjà bufferisé
+  // et démarrera instantanément (au lieu d'attendre 2-5 sec de fetch réseau).
+  useEffect(() => {
+    if (sortieAudioRef.current && selectedVoice) {
+      const voiceName = SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "mickael";
+      const url = SORTIE_DOUCE_BASE_URL + voiceName + ".mp3";
+      try {
+        sortieAudioRef.current.src = url;
+        sortieAudioRef.current.preload = "auto";
+        sortieAudioRef.current.load();
+        console.log("[EUREKA] Sortie douce préchargée :", voiceName);
+      } catch (e) { console.warn("Préchargement sortie douce échoué:", e); }
+    }
+  }, [selectedVoice]);
+
   const handleEmergencyExit = () => {
     if (exiting) return;
     setExiting(true);
     track("emergency_exit_clicked", { voice: SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "unknown" });
-    // 1. Pause de l'audio principal de la séance
+    // 1. Coupure RENFORCÉE de l'audio principal (pause + mute en backup)
     try {
-      if (audioRef && audioRef.current) audioRef.current.pause();
-    } catch (e) { console.warn("Erreur pause audio principal:", e); }
-    // 2. Charge et lance la sortie douce
-    const voiceName = SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "mickael";
-    const url = SORTIE_DOUCE_BASE_URL + voiceName + ".mp3";
+      if (audioRef && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.muted = true; // backup au cas où pause() ne propage pas immédiatement
+      }
+    } catch (e) { console.warn("Erreur coupure audio principal:", e); }
+    // 2. Joue la sortie douce (déjà préchargée, démarrage instantané)
     if (sortieAudioRef.current) {
-      sortieAudioRef.current.src = url;
+      // src est déjà set par le préchargement, mais on s'assure qu'il l'est
+      if (!sortieAudioRef.current.src) {
+        const voiceName = SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "mickael";
+        sortieAudioRef.current.src = SORTIE_DOUCE_BASE_URL + voiceName + ".mp3";
+      }
+      sortieAudioRef.current.currentTime = 0;
       sortieAudioRef.current.play().catch(e => {
         console.error("Erreur lecture sortie douce:", e);
-        // Fallback : si la lecture échoue (réseau, MP3 manquant, etc.) → afficher direct le modal
+        // Fallback : si la lecture échoue → afficher direct le modal final
         setShowFinalModal(true);
       });
     } else {
-      // Pas de player → afficher direct le modal
       setShowFinalModal(true);
     }
   };
@@ -3004,8 +3025,10 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
 
   return (
     <>
-      {/* Bouton flottant top-right — taille thumb-friendly (96px) pour clic facile en cas de crise.
-          Visible en permanence pendant la séance, pleine opacité (pas de fade), ombre prononcée. */}
+      {/* Bouton flottant top-right — 288px (= 3× la version initiale 96px).
+          Cible : extrêmement facile à toucher au pouce sur mobile en cas de crise, sans précision requise.
+          Sécurité : min() avec 80vmin évite que le bouton dépasse 80% du plus petit côté de l'écran
+                    (sur très petits téléphones < 360px, le bouton est légèrement réduit pour rester visible). */}
       <button onClick={handleEmergencyExit} disabled={exiting}
         title="Sortir doucement de la séance"
         aria-label="Sortir doucement de la séance"
@@ -3013,38 +3036,70 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
           position: "fixed",
           top: "1rem",
           right: "1rem",
-          width: "96px",
-          height: "96px",
+          width: "min(288px, 80vmin)",
+          height: "min(288px, 80vmin)",
           borderRadius: "50%",
-          border: `3px solid ${C.gold}`,
+          border: `4px solid ${C.gold}`,
           background: exiting ? "rgba(184,149,90,.40)" : "rgba(8,25,26,0.95)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           color: C.gold,
-          fontSize: "44px",
+          fontSize: "min(128px, 36vmin)",
           cursor: exiting ? "default" : "pointer",
           opacity: exiting ? 0.5 : 1.0,
           transition: "transform .15s, box-shadow .15s",
           zIndex: 1000,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 0 rgba(184,149,90,0.0)",
+          boxShadow: "0 12px 36px rgba(0,0,0,0.5), 0 0 0 0 rgba(184,149,90,0.0)",
           padding: 0,
           lineHeight: 1
         }}
         onMouseEnter={(e) => {
           if (exiting) return;
-          e.currentTarget.style.transform = "scale(1.05)";
-          e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.5), 0 0 0 4px rgba(184,149,90,0.25)";
+          e.currentTarget.style.transform = "scale(1.03)";
+          e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.6), 0 0 0 6px rgba(184,149,90,0.30)";
         }}
         onMouseLeave={(e) => {
           if (exiting) return;
           e.currentTarget.style.transform = "scale(1)";
-          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.4), 0 0 0 0 rgba(184,149,90,0.0)";
+          e.currentTarget.style.boxShadow = "0 12px 36px rgba(0,0,0,0.5), 0 0 0 0 rgba(184,149,90,0.0)";
         }}>
         🌅
       </button>
 
-      {/* Audio caché pour la sortie douce (joué seulement au clic du bouton) */}
-      <audio ref={sortieAudioRef} onEnded={handleSortieDouceEnded} style={{ display: "none" }} />
+      {/* Audio caché pour la sortie douce — préchargé au mount */}
+      <audio ref={sortieAudioRef} preload="auto" onEnded={handleSortieDouceEnded} style={{ display: "none" }} />
+
+      {/* Overlay plein écran pendant la sortie douce — apparaît IMMÉDIATEMENT au clic
+          (avant que la voix démarre) pour rassurer le client : il voit que l'action a bien démarré. */}
+      {exiting && !showFinalModal && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(8,25,26,0.96)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          zIndex: 1500,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexDirection: "column",
+          padding: "2rem",
+          animation: "fadeUp .4s ease"
+        }}>
+          <div style={{ fontSize: "120px", marginBottom: "1.5rem", lineHeight: 1 }}>🌅</div>
+          <h2 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "32px", color: C.cream, fontWeight: 300,
+            letterSpacing: "2px", marginBottom: "1.25rem", textAlign: "center"
+          }}>
+            Sortie progressive
+          </h2>
+          <p style={{
+            fontSize: "14px", color: C.muted, lineHeight: 1.7,
+            maxWidth: "320px", textAlign: "center"
+          }}>
+            Restez allongé(e), prenez votre temps.<br/>
+            La voix vous accompagne vers le retour…
+          </p>
+        </div>
+      )}
 
       {/* Modal final "Vous êtes en sécurité" */}
       {showFinalModal && (
@@ -3147,6 +3202,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const handleAudioPlay = () => {
     setIsPlaying(true);
   };
+  // ─── PERSISTANCE POSITION ÉCOUTE (v26 — consigne Mickaël) ─────────
+  // Sauvegarde la position d'écoute toutes les 5 sec en localStorage, avec timestamp.
+  // Au rechargement de l'audio (resume séance), si la pause < 1h → reprise au point arrêt -5s.
+  // Si pause > 1h → séance recommencée depuis le début (clear localStorage).
+  // Clé par seanceNum pour ne pas confondre les séances entre elles.
+  const POSITION_KEY = `eureka_seance_${seanceNum}_position`;
+  const lastPositionSaveRef = useRef(0);
+
   const handleAudioTimeUpdate = (e) => {
     setProgress(e.target.currentTime);
     // Streak : seulement après 30s d'écoute, et seulement sur audio personnalisé
@@ -3156,6 +3219,46 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       console.log("[EUREKA] Streak incrémenté :", newStreak.streak, "/ 21 jours");
       track("audio_played_30s", { streak: newStreak.streak, model: lastModelUsed || "?" });
     }
+    // Persistance position (throttle 5s, ne sauve qu'au-delà de 5 sec d'écoute)
+    const now = Date.now();
+    if (now - lastPositionSaveRef.current > 5000 && e.target.currentTime > 5) {
+      lastPositionSaveRef.current = now;
+      try {
+        localStorage.setItem(POSITION_KEY, JSON.stringify({
+          time: e.target.currentTime,
+          timestamp: now
+        }));
+      } catch (err) { /* ignore quota errors */ }
+    }
+  };
+
+  // Restauration position au chargement de l'audio (resume séance)
+  const handleAudioLoadedMetadata = (e) => {
+    setDuration(e.target.duration);
+    try {
+      const raw = localStorage.getItem(POSITION_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || !saved.time || !saved.timestamp) return;
+      const elapsed = Date.now() - saved.timestamp;
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      if (elapsed < ONE_HOUR_MS) {
+        // Reprise au point d'arrêt -5 sec (re-immersion contextuelle)
+        const targetTime = Math.max(0, saved.time - 5);
+        e.target.currentTime = targetTime;
+        console.log("[EUREKA] Reprise séance " + seanceNum + " à " + Math.round(targetTime) + "s (pause de " + Math.round(elapsed/60000) + " min)");
+      } else {
+        // Pause > 1h : séance recommencée depuis le début (consigne Mickaël)
+        localStorage.removeItem(POSITION_KEY);
+        console.log("[EUREKA] Pause > 1h détectée, séance " + seanceNum + " recommencée à zéro");
+      }
+    } catch (err) { /* ignore */ }
+  };
+
+  // Nettoyage position quand la séance se termine naturellement (atteint la fin)
+  const handleAudioEnded = () => {
+    try { localStorage.removeItem(POSITION_KEY); } catch (err) { /* ignore */ }
+    console.log("[EUREKA] Séance terminée, position effacée");
   };
 
   // ─── ELEVENLABS V3 (Mickaël uniquement) ─────────────────────────
@@ -4232,10 +4335,17 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     );
   }
 
+  // v26 — bouton 🌅 visible UNIQUEMENT après génération de la séance complète/découverte
+  //        (pas pendant l'audio démo Vercel Blob qui sert juste de preview).
+  //        Reprise IndexedDB : audio chargé directement = considéré comme "séance complète".
+  const seanceFullyGenerated = isResume || fullGenPhase === "done";
+
   return (
     <>
-      {/* Bouton sortie d'urgence 🌅 (v26) — toujours visible pendant la séance */}
-      <EmergencyExitButton audioRef={audioRef} selectedVoice={selectedVoice} onExit={onRestart} />
+      {/* Bouton sortie d'urgence 🌅 (v26) — apparaît seulement quand la vraie séance est prête */}
+      {seanceFullyGenerated && (
+        <EmergencyExitButton audioRef={audioRef} selectedVoice={selectedVoice} onExit={onRestart} />
+      )}
 
     <Card style={{ maxWidth:"640px" }}>
       <Logo small />
@@ -4324,7 +4434,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
               onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
               onTimeUpdate={handleAudioTimeUpdate}
-              onLoadedMetadata={e => setDuration(e.target.duration)} />
+              onLoadedMetadata={handleAudioLoadedMetadata}
+              onEnded={handleAudioEnded} />
             {/* Slider de vitesse de lecture (modif #7 — 2026-05-06) */}
             <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" />
 
