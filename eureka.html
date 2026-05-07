@@ -2940,6 +2940,163 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
   );
 }
 
+// ─── EmergencyExitButton — bouton flottant 🌅 « Sortir doucement » (v26)
+// Affiché en permanence pendant la séance (fixed top-right). Au clic :
+//   1. Met en pause l'audio principal de la séance
+//   2. Joue la "sortie douce" pré-enregistrée (~45s par voix, depuis Vercel Blob)
+//   3. À la fin de la sortie douce, affiche un modal rassurant + bouton retour accueil
+// Pas de modal de choix au clic — la personne en fragilité ne doit PAS être confrontée à un choix.
+// La pause normale (sans sortie) reste possible via les controls natifs HTML5 du player audio.
+function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
+  const [exiting, setExiting] = useState(false);
+  const [showFinalModal, setShowFinalModal] = useState(false);
+  const sortieAudioRef = useRef(null);
+
+  // Mapping voix réelle → nom du fichier MP3 sortie douce sur Vercel Blob
+  const SORTIE_DOUCE_VOICE_NAMES = {
+    "4RZ84U1b4WCqpu57LvIq": "bella",
+    "YV28ox2c5Cuh5rim0LrW": "marcel",
+    "cQVn2FWawJsxa2z9X3l1": "valentin",
+    "19cV422MaCP4oU6N8AFm": "mickael"
+  };
+  const SORTIE_DOUCE_BASE_URL = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/sortie_douce_";
+
+  const handleEmergencyExit = () => {
+    if (exiting) return;
+    setExiting(true);
+    track("emergency_exit_clicked", { voice: SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "unknown" });
+    // 1. Pause de l'audio principal de la séance
+    try {
+      if (audioRef && audioRef.current) audioRef.current.pause();
+    } catch (e) { console.warn("Erreur pause audio principal:", e); }
+    // 2. Charge et lance la sortie douce
+    const voiceName = SORTIE_DOUCE_VOICE_NAMES[selectedVoice] || "mickael";
+    const url = SORTIE_DOUCE_BASE_URL + voiceName + ".mp3";
+    if (sortieAudioRef.current) {
+      sortieAudioRef.current.src = url;
+      sortieAudioRef.current.play().catch(e => {
+        console.error("Erreur lecture sortie douce:", e);
+        // Fallback : si la lecture échoue (réseau, MP3 manquant, etc.) → afficher direct le modal
+        setShowFinalModal(true);
+      });
+    } else {
+      // Pas de player → afficher direct le modal
+      setShowFinalModal(true);
+    }
+  };
+
+  const handleSortieDouceEnded = () => {
+    setShowFinalModal(true);
+  };
+
+  const handleReturnHome = () => {
+    setShowFinalModal(false);
+    setExiting(false);
+    if (sortieAudioRef.current) {
+      try {
+        sortieAudioRef.current.pause();
+        sortieAudioRef.current.removeAttribute("src");
+        sortieAudioRef.current.load();
+      } catch (e) { /* ignore */ }
+    }
+    if (onExit) onExit();
+  };
+
+  return (
+    <>
+      {/* Bouton flottant top-right — toujours visible pendant la séance */}
+      <button onClick={handleEmergencyExit} disabled={exiting}
+        title="Sortir doucement de la séance"
+        aria-label="Sortir doucement de la séance"
+        style={{
+          position: "fixed",
+          top: "1rem",
+          right: "1rem",
+          width: "56px",
+          height: "56px",
+          borderRadius: "50%",
+          border: `2px solid ${C.gold}`,
+          background: exiting ? "rgba(184,149,90,.30)" : "rgba(8,25,26,0.85)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          color: C.gold,
+          fontSize: "26px",
+          cursor: exiting ? "default" : "pointer",
+          opacity: exiting ? 0.5 : 0.85,
+          transition: "all .2s",
+          zIndex: 1000,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          padding: 0,
+          lineHeight: 1
+        }}
+        onMouseEnter={(e) => { if (!exiting) e.currentTarget.style.opacity = "1"; }}
+        onMouseLeave={(e) => { if (!exiting) e.currentTarget.style.opacity = "0.85"; }}>
+        🌅
+      </button>
+
+      {/* Audio caché pour la sortie douce (joué seulement au clic du bouton) */}
+      <audio ref={sortieAudioRef} onEnded={handleSortieDouceEnded} style={{ display: "none" }} />
+
+      {/* Modal final "Vous êtes en sécurité" */}
+      {showFinalModal && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(8,25,26,0.92)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          zIndex: 2000,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "1.5rem"
+        }}>
+          <div style={{
+            background: C.panel,
+            border: `1.5px solid ${C.gold}`,
+            borderRadius: "20px",
+            padding: "2.5rem 2rem",
+            maxWidth: "480px",
+            width: "100%",
+            textAlign: "center",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.5)"
+          }}>
+            <div style={{ fontSize: "48px", marginBottom: "1rem" }}>🌅</div>
+            <h2 style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "26px", color: C.cream, fontWeight: 400,
+              marginBottom: "1rem"
+            }}>
+              Vous êtes en sécurité.
+            </h2>
+            <p style={{
+              fontSize: "14px", color: C.muted, lineHeight: 1.7,
+              marginBottom: "1.75rem"
+            }}>
+              Votre séance est suspendue, mais le travail intérieur continue à son rythme.
+              Prenez un moment pour vous, buvez un verre d'eau si vous le souhaitez,
+              et revenez quand vous serez prêt(e).
+            </p>
+            <button onClick={handleReturnHome}
+              style={{
+                background: `linear-gradient(135deg, ${C.gold}, #9a7a40)`,
+                color: "#1a0e00",
+                border: "none",
+                borderRadius: "10px",
+                padding: "0.875rem 2rem",
+                fontFamily: "'Raleway', sans-serif",
+                fontSize: "12px",
+                fontWeight: 600,
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                cursor: "pointer"
+              }}>
+              Retour à l'accueil
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ÉTAPE 5 : Génération & Player
 function SeancePlayer({ userData, resumeData, onRestart }) {
   const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
@@ -4077,6 +4234,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   }
 
   return (
+    <>
+      {/* Bouton sortie d'urgence 🌅 (v26) — toujours visible pendant la séance */}
+      <EmergencyExitButton audioRef={audioRef} selectedVoice={selectedVoice} onExit={onRestart} />
+
     <Card style={{ maxWidth:"640px" }}>
       <Logo small />
       <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
@@ -4799,6 +4960,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         )}
       </div>
     </Card>
+    </>
   );
 }
 
