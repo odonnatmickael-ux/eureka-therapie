@@ -33,6 +33,7 @@
   @keyframes breathe { 0%,100% { transform:scale(1); opacity:.6; } 50% { transform:scale(1.15); opacity:1; } }
   @keyframes orbit { from { transform:rotate(0deg) translateX(120px) rotate(0deg); } to { transform:rotate(360deg) translateX(120px) rotate(-360deg); } }
   @keyframes ripple { 0% { transform:scale(0); opacity:.6; } 100% { transform:scale(4); opacity:0; } }
+  @keyframes eurekaHalo { 0%,100% { box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 0 rgba(184,149,90,0.0); } 50% { box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 18px rgba(184,149,90,0.20); } }
   audio { width:100%; accent-color:#b8955a; }
   input::placeholder, textarea::placeholder { color:#5a7e80; }
   .opt-card:hover { border-color:#b8955a !important; background:rgba(184,149,90,.08) !important; transform:translateY(-2px); }
@@ -3025,10 +3026,9 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
 
   return (
     <>
-      {/* Bouton flottant top-right — 288px (= 3× la version initiale 96px).
-          Cible : extrêmement facile à toucher au pouce sur mobile en cas de crise, sans précision requise.
-          Sécurité : min() avec 80vmin évite que le bouton dépasse 80% du plus petit côté de l'écran
-                    (sur très petits téléphones < 360px, le bouton est légèrement réduit pour rester visible). */}
+      {/* Bouton flottant top-right — 288px avec icône 🌅 + texte « Sortir doucement »
+          + animation halo doré pulsé (4s, très lent, signale "disponible" sans crier "urgence").
+          Pulsation désactivée pendant la phase exiting (action en cours = pas de pulse parasite). */}
       <button onClick={handleEmergencyExit} disabled={exiting}
         title="Sortir doucement de la séance"
         aria-label="Sortir doucement de la séance"
@@ -3044,26 +3044,38 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           color: C.gold,
-          fontSize: "min(128px, 36vmin)",
           cursor: exiting ? "default" : "pointer",
           opacity: exiting ? 0.5 : 1.0,
-          transition: "transform .15s, box-shadow .15s",
+          transition: "transform .15s",
           zIndex: 1000,
-          boxShadow: "0 12px 36px rgba(0,0,0,0.5), 0 0 0 0 rgba(184,149,90,0.0)",
           padding: 0,
-          lineHeight: 1
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "'Raleway', sans-serif",
+          animation: exiting ? "none" : "eurekaHalo 4s ease-in-out infinite",
+          boxShadow: "0 12px 36px rgba(0,0,0,0.5)"
         }}
         onMouseEnter={(e) => {
           if (exiting) return;
           e.currentTarget.style.transform = "scale(1.03)";
-          e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.6), 0 0 0 6px rgba(184,149,90,0.30)";
         }}
         onMouseLeave={(e) => {
           if (exiting) return;
           e.currentTarget.style.transform = "scale(1)";
-          e.currentTarget.style.boxShadow = "0 12px 36px rgba(0,0,0,0.5), 0 0 0 0 rgba(184,149,90,0.0)";
         }}>
-        🌅
+        <span style={{ fontSize: "min(96px, 26vmin)", lineHeight: 1, marginBottom: "min(12px, 1.6vmin)" }}>🌅</span>
+        <span style={{
+          fontSize: "min(22px, 5.5vmin)",
+          fontWeight: 600,
+          letterSpacing: "1.5px",
+          textAlign: "center",
+          lineHeight: 1.2,
+          textTransform: "uppercase"
+        }}>
+          Sortir<br/>doucement
+        </span>
       </button>
 
       {/* Audio caché pour la sortie douce — préchargé au mount */}
@@ -5353,19 +5365,4 @@ function App() {
             EUREKA Thérapie · Sophrologie · Protocole personnalisé
           </p>
           <button onClick={() => setShowMentions(true)}
-            style={{ background:"transparent", border:"none", color:C.hint, fontSize:"10px",
-              cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
-              letterSpacing:"1px", padding:0 }}>
-            Mentions légales
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-</script>
-</body>
-</html>
+            style={{ background:"transparent", border
