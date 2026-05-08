@@ -3249,8 +3249,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       track("audio_played_30s", { streak: newStreak.streak, model: lastModelUsed || "?" });
     }
     // Persistance position (throttle 5s, ne sauve qu'au-delà de 5 sec d'écoute)
+    // v26 fix : ne sauver QUE pour la séance complète (pas pour l'échantillon),
+    // sinon la position de l'échantillon polluait la séance complète au chargement.
+    const isFullSeance = isResume || fullGenPhase === "done";
     const now = Date.now();
-    if (now - lastPositionSaveRef.current > 5000 && e.target.currentTime > 5) {
+    if (isFullSeance && now - lastPositionSaveRef.current > 5000 && e.target.currentTime > 5) {
       lastPositionSaveRef.current = now;
       try {
         localStorage.setItem(POSITION_KEY, JSON.stringify({
@@ -3262,8 +3265,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   };
 
   // Restauration position au chargement de l'audio (resume séance)
+  // v26 fix : ne restaurer QUE pour la séance complète. Sur l'échantillon, toujours démarrer à 0.
+  // (avant ce fix, la position échantillon polluait la séance complète au moment du switch d'audio)
   const handleAudioLoadedMetadata = (e) => {
     setDuration(e.target.duration);
+    const isFullSeance = isResume || fullGenPhase === "done";
+    if (!isFullSeance) {
+      // Échantillon : forcer démarrage à 0 et ne rien lire en localStorage
+      try { e.target.currentTime = 0; } catch (err) { /* ignore */ }
+      return;
+    }
     try {
       const raw = localStorage.getItem(POSITION_KEY);
       if (!raw) return;
@@ -3836,6 +3847,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const generateFullAudio = async (mode) => {
     const key = elevenClientKey.trim();
     if (!key) return;
+    // v26 fix : nettoyer toute position résiduelle (échantillon ou ancienne séance)
+    // pour garantir un démarrage à 0 sec sur la nouvelle séance complète.
+    try { localStorage.removeItem(POSITION_KEY); } catch (err) { /* ignore */ }
+    lastPositionSaveRef.current = 0;
     setFullGenMode(mode);
     setFullGenPhase("generating");
     setFullGenMsg(mode === "beta" ? "Préparation de votre séance découverte..." : "Préparation de votre séance complète...");
