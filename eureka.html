@@ -206,6 +206,9 @@ function incrementStreakOnPlay() {
 
 function resetStreak() {
   try { localStorage.removeItem('eureka_streak'); } catch {}
+  // v26 — au reset du streak, on retire aussi le flag bilan T+21
+  // pour qu'un nouveau cycle de 21 jours puisse déclencher un nouveau bilan
+  try { localStorage.removeItem('eureka_bilan21_sent'); } catch {}
 }
 
 // ── IndexedDB : sauvegarde de la séance personnelle (audio + script + profil) ──
@@ -3245,6 +3248,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     if (!streakCountedRef.current && fullGenPhase === "done" && e.target.currentTime >= 30) {
       streakCountedRef.current = true;
       const newStreak = incrementStreakOnPlay();
+      // v26 — re-render pour déclencher la bascule en mode bilan si streak passe à 21
+      setCurrentStreakLevel(newStreak.streak);
       console.log("[EUREKA] Streak incrémenté :", newStreak.streak, "/ 21 jours");
       track("audio_played_30s", { streak: newStreak.streak, model: lastModelUsed || "?" });
     }
@@ -3442,6 +3447,19 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const [fbSending, setFbSending] = useState(false);
   const [fbError, setFbError] = useState("");
 
+  // ─── BILAN T+21 JOURS ─────────────────────────────────────────────
+  // Au 21e jour de streak, le formulaire feedback bascule en mode "Bilan parcours"
+  // (wording adapté + notification_type distinct côté email Mickaël).
+  // Une fois envoyé ou passé, le flag eureka_bilan21_sent empêche le re-prompt.
+  // Le flag est retiré automatiquement au resetStreak() (cycle suivant possible).
+  const [bilan21AlreadySent, setBilan21AlreadySent] = useState(() => {
+    try { return localStorage.getItem('eureka_bilan21_sent') === '1'; } catch { return false; }
+  });
+  const [currentStreakLevel, setCurrentStreakLevel] = useState(() => {
+    try { return loadStreak().streak; } catch { return 0; }
+  });
+  const isBilanMode = currentStreakLevel >= 21 && !bilan21AlreadySent;
+
   const submitFeedback = async () => {
     setFbError("");
     // Si rien n'est rempli, on ne fait rien
@@ -3460,22 +3478,34 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
-          notification_type: "Feedback séance n°" + seanceNum,
+          notification_type: isBilanMode ? "BILAN 21 JOURS — visiteur anonyme" : ("Feedback séance n°" + seanceNum),
           date: new Date().toLocaleDateString("fr-FR"),
           'g-recaptcha-response': captchaToken,
-          script: "FEEDBACK SÉANCE n°" + seanceNum + " — visiteur anonyme" +
+          script: (isBilanMode
+                    ? "BILAN 21 JOURS — visiteur anonyme (parcours complet)"
+                    : ("FEEDBACK SÉANCE n°" + seanceNum + " — visiteur anonyme")) +
                   "\n\nRessenti : " + (fbFeel || "(non précisé)") +
                   "\nPaierait : " + (fbPay || "(non précisé)") +
                   "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)")
         });
       }
-      track("feedback_sent", { feel: fbFeel || "?", pay: fbPay || "?", has_comment: !!fbComment.trim() });
+      track(isBilanMode ? "bilan21_sent" : "feedback_sent", { feel: fbFeel || "?", pay: fbPay || "?", has_comment: !!fbComment.trim() });
+      // v26 — en mode bilan, poser le flag pour ne plus re-prompter
+      if (isBilanMode) {
+        try { localStorage.setItem('eureka_bilan21_sent', '1'); } catch {}
+        setBilan21AlreadySent(true);
+      }
       setFbSent(true);
     } catch (e) {
       console.warn("Feedback EmailJS error:", e);
-      track("feedback_error");
+      track(isBilanMode ? "bilan21_error" : "feedback_error");
       // Même en cas d'erreur, on remercie l'utilisateur (le retour reste enregistré côté navigateur)
-      try { localStorage.setItem("eureka_last_feedback", JSON.stringify({ fbFeel, fbPay, fbComment, ts: Date.now() })); } catch {}
+      try { localStorage.setItem(isBilanMode ? "eureka_last_bilan21" : "eureka_last_feedback", JSON.stringify({ fbFeel, fbPay, fbComment, ts: Date.now() })); } catch {}
+      // v26 — flag bilan posé même en cas d'erreur (le retour est sauvegardé localement, on évite le re-prompt)
+      if (isBilanMode) {
+        try { localStorage.setItem('eureka_bilan21_sent', '1'); } catch {}
+        setBilan21AlreadySent(true);
+      }
       setFbSent(true);
     }
     setFbSending(false);
@@ -4943,22 +4973,24 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             <>
               <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
                 textTransform:"uppercase", marginBottom:"0.5rem", textAlign:"center" }}>
-                Anonyme · facultatif
+                {isBilanMode ? "Anonyme · Bilan 21 jours" : "Anonyme · facultatif"}
               </p>
               <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
                 color:C.cream, fontWeight:"400", marginBottom:"0.5rem", textAlign:"center" }}>
-                Si tu veux partager…
+                {isBilanMode ? "Bravo, tu as terminé" : "Si tu veux partager…"}
               </h3>
               <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7",
                 marginBottom:"1.5rem", textAlign:"center", fontStyle:"italic",
                 fontFamily:"'Cormorant Garamond', serif" }}>
-                Réponds aux questions qui t'inspirent, ignore les autres.
+                {isBilanMode
+                  ? "Tu peux nous laisser un retour sur ton parcours complet — anonyme et facultatif."
+                  : "Réponds aux questions qui t'inspirent, ignore les autres."}
               </p>
 
               {/* Question 1 — Ressenti */}
               <div style={{ marginBottom:"1.25rem" }}>
                 <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
-                  fontWeight:"500" }}>Comment te sens-tu ?</p>
+                  fontWeight:"500" }}>{isBilanMode ? "Comment te sens-tu, comparé au début ?" : "Comment te sens-tu ?"}</p>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))", gap:"0.5rem" }}>
                   {[
                     { v:"mieux",  emoji:"✦", label:"Mieux" },
@@ -4984,7 +5016,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               {/* Question 2 — Tarification */}
               <div style={{ marginBottom:"1.25rem" }}>
                 <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
-                  fontWeight:"500" }}>Tu paierais pour ce type de séance ?</p>
+                  fontWeight:"500" }}>{isBilanMode ? "Tu paierais pour continuer à utiliser EUREKA ?" : "Tu paierais pour ce type de séance ?"}</p>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(90px, 1fr))", gap:"0.5rem" }}>
                   {[
                     { v:"oui",       label:"Oui" },
@@ -5009,13 +5041,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               {/* Question 3 — Commentaire libre */}
               <div style={{ marginBottom:"1rem" }}>
                 <p style={{ fontSize:"13px", color:C.cream, marginBottom:"0.5rem",
-                  fontWeight:"500" }}>Un mot ?</p>
+                  fontWeight:"500" }}>{isBilanMode ? "Un mot sur ces 21 jours ?" : "Un mot ?"}</p>
                 <textarea
                   value={fbComment}
                   onChange={e => setFbComment(e.target.value)}
                   rows={3}
                   maxLength={500}
-                  placeholder="Ce qui a marché, ce qui a manqué…"
+                  placeholder={isBilanMode ? "Ce qui a vraiment changé, ce qui a manqué…" : "Ce qui a marché, ce qui a manqué…"}
                   style={{ width:"100%", padding:"0.875rem 1rem", background:C.bg,
                     border:`1.5px solid ${C.border}`, borderRadius:"12px",
                     fontSize:"13px", fontFamily:"'Raleway',sans-serif", color:C.cream,
@@ -5037,9 +5069,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               <Btn onClick={submitFeedback}
                 disabled={fbSending}
                 variant="primary" style={{ marginTop:"0.5rem" }}>
-                {fbSending ? "Envoi…" : "Envoyer mon retour →"}
+                {fbSending ? "Envoi…" : (isBilanMode ? "Envoyer mon bilan →" : "Envoyer mon retour →")}
               </Btn>
-              <button onClick={() => setFbSent(true)}
+              <button onClick={() => {
+                setFbSent(true);
+                // v26 — en mode bilan, "passer" ferme aussi le bilan définitivement
+                if (isBilanMode) {
+                  try { localStorage.setItem('eureka_bilan21_sent', '1'); } catch {}
+                  setBilan21AlreadySent(true);
+                }
+              }}
                 style={{ display:"block", width:"100%", padding:"0.625rem",
                   background:"transparent", border:"none", color:C.hint,
                   fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
