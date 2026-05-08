@@ -749,9 +749,40 @@ const C = {
 // ══════════════════════════════════════════════════════════════════
 // COMPOSANTS UI
 // ══════════════════════════════════════════════════════════════════
+// v26 — Bandeau bêta visible (consigne Mickaël 2026-05-08)
+// Affiché au-dessus du Logo, donc présent sur toutes les pages (landing, parcours, séance).
+// Sobre, doré, non sticky : visible à l'arrivée, défile avec la page.
+function BetaBanner() {
+  return (
+    <div style={{
+      maxWidth: "640px", margin: "0 auto 1.5rem",
+      padding: "0.625rem 1rem",
+      background: "rgba(184,149,90,.06)",
+      border: `1px solid rgba(184,149,90,.35)`,
+      borderRadius: "10px",
+      textAlign: "center",
+      fontFamily: "'Raleway', sans-serif"
+    }}>
+      <span style={{
+        display: "inline-block",
+        fontSize: "9px",
+        letterSpacing: "2px",
+        textTransform: "uppercase",
+        color: C.gold,
+        fontWeight: "600",
+        marginRight: "8px"
+      }}>● Bêta privée</span>
+      <span style={{ fontSize: "11px", color: C.muted, lineHeight: "1.5" }}>
+        Vous testez une version en cours d'amélioration · Vos retours nous aident à affiner le produit
+      </span>
+    </div>
+  );
+}
+
 function Logo({ small }) {
   return (
     <div style={{ textAlign:"center", marginBottom: small ? "1rem" : "2rem" }}>
+      {!small && <BetaBanner />}
       {!small && (
         <div style={{ width:"60px", height:"60px", borderRadius:"50%", border:`2px solid ${C.gold}`,
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem",
@@ -2658,19 +2689,17 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
   const saved = loadSaved();
   const [relaxDir, setRelaxDir] = useState(saved?.relaxDir || "");
   const [beliefSystem, setBeliefSystem] = useState(saved?.beliefSystem || "");
-  // Aucune voix par défaut : oblige l'utilisateur à choisir consciemment
-  const [selectedVoice, setSelectedVoice] = useState(saved?.selectedVoice || "");
   const [musicChoice, setMusicChoice] = useState(saved?.musicChoice || "");
+  // v26bis — selectedVoice retiré de ProfilResult (consigne Mickaël 2026-05-08).
+  // Le choix de voix se fait maintenant APRÈS la séance dans VoiceSelection.
   // Persiste à chaque changement de choix
   useEffect(() => {
     try {
       localStorage.setItem(PROFIL_KEY, JSON.stringify({
-        relaxDir, beliefSystem, selectedVoice, musicChoice
+        relaxDir, beliefSystem, musicChoice
       }));
     } catch {}
-  }, [relaxDir, beliefSystem, selectedVoice, musicChoice]);
-  const [playingPreview, setPlayingPreview] = useState(null);
-  const audioRef = useRef(null);
+  }, [relaxDir, beliefSystem, musicChoice]);
 
   const vakog = vakogResult.dominant;
   // Archétype dérivé des scores Big Five (Pèlerin / Bâtisseur / Compagnon / Voyageur)
@@ -2703,55 +2732,13 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
     { id:"perso", icon:"🎶", name:"Ma propre musique", desc:"Jouez votre musique en fond pendant la séance" },
   ];
 
-  const canContinue = relaxDir && beliefSystem && selectedVoice && musicChoice;
+  const canContinue = relaxDir && beliefSystem && musicChoice;
 
-  // Mapping voiceId → nom court pour les MP3 statiques sur Blob (preview_<nom>.mp3)
-  // Ces fichiers sont pré-générés une seule fois via generateurs_demo/*_v3_PREVIEW.html
-  // → coût zéro à chaque clic utilisateur, qualité identique (v3 si voix validée v3).
-  const VOICE_PREVIEW_NAMES = {
-    "4RZ84U1b4WCqpu57LvIq": "bella",
-    "YV28ox2c5Cuh5rim0LrW": "marcel",
-    "cQVn2FWawJsxa2z9X3l1": "valentin",
-    "19cV422MaCP4oU6N8AFm": "mickael"
-  };
-
-  const playPreview = async (voice) => {
-    // Stop si déjà en lecture
-    if (playingPreview === voice.id) {
-      audioRef.current?.pause();
-      setPlayingPreview(null);
-      return;
-    }
-    setPlayingPreview(voice.id + "_loading");
-    try {
-      // Charger un MP3 STATIQUE pré-généré sur Vercel Blob.
-      // Plus de génération dynamique = plus de coût ElevenLabs à chaque clic.
-      // BÊTA : { cache: 'no-store' } pour TOUJOURS récupérer la dernière version
-      // (au cas où on remplace le MP3 pendant le développement).
-      const voiceName = VOICE_PREVIEW_NAMES[voice.id] || "bella";
-      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3";
-      const r = await fetch(blobUrl, { cache: 'no-store' });
-      if (r.ok) {
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.src = url;
-          audioRef.current.play();
-          setPlayingPreview(voice.id);
-        }
-      } else {
-        setPlayingPreview(null);
-      }
-    } catch(e) {
-      setPlayingPreview(null);
-    }
-  };
+  // v26bis — VOICE_PREVIEW_NAMES + playPreview déplacés vers VoiceSelection (post-séance).
 
   return (
     <Card style={{ maxWidth:"680px" }}>
       <Logo small />
-      <audio ref={audioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
 
       {/* Résultats profil — Archétype Big Five + Canal sensoriel */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"1.5rem" }}>
@@ -2876,49 +2863,7 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
         </div>
       </div>
 
-      {/* Choix de la voix */}
-      <div style={{ marginBottom:"2rem" }}>
-        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
-          fontWeight:"400", marginBottom:"0.5rem" }}>La voix de votre thérapeute</h3>
-        {!selectedVoice && (
-          <p style={{ fontSize:"12px", color:C.gold, marginBottom:"0.75rem",
-            padding:"0.5rem 0.875rem", background:"rgba(184,149,90,.08)",
-            border:`1px solid ${C.gold}`, borderRadius:"8px",
-            fontFamily:"'Raleway',sans-serif" }}>
-            ← Cliquez sur une carte pour choisir votre voix (obligatoire)
-          </p>
-        )}
-        <div style={{ display:"grid", gap:"0.6rem" }}>
-          {VOICES.map(v => (
-            <div key={v.id}
-              style={{ padding:"0.875rem 1rem", background: selectedVoice===v.id ? `rgba(184,149,90,.1)` : C.panel,
-                border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"12px",
-                display:"flex", gap:"12px", alignItems:"center", cursor:"pointer",
-                transition:"all .2s" }} onClick={() => setSelectedVoice(v.id)}>
-              <div style={{ width:"36px", height:"36px", borderRadius:"50%",
-                background: v.gender==="M" ? `rgba(42,138,143,.3)` : `rgba(184,149,90,.3)`,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", flexShrink:0 }}>
-                {v.gender==="M" ? "👨" : "👩"}
-              </div>
-              <div style={{ flex:1 }}>
-                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500" }}>{v.name}</p>
-                <p style={{ fontSize:"11px", color:C.muted }}>{v.desc}</p>
-              </div>
-              <button onClick={e => { e.stopPropagation(); playPreview(v); }}
-                style={{ padding:"6px 14px", background:"transparent",
-                  border:`1px solid ${playingPreview===v.id+"_loading" ? C.gold : C.border}`,
-                  borderRadius:"8px", fontSize:"10px", color:C.muted, cursor:"pointer", flexShrink:0 }}>
-                {playingPreview===v.id+"_loading" ? "⏳" : playingPreview===v.id ? "⏹ Stop" : "▶ Écouter"}
-              </button>
-            </div>
-          ))}
-        </div>
-        {/* Note discrète sous les extraits */}
-        <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.75rem", lineHeight:"1.6",
-          fontStyle:"italic", paddingLeft:"4px" }}>
-          Les extraits de découverte sont proposés avec nos voix de référence Bella et Marcel. Votre voix choisie sera utilisée pour votre séance complète personnalisée.
-        </p>
-      </div>
+      {/* v26bis — Bloc « Choix de la voix » supprimé : déplacé vers le step VoiceSelection (post-séance). */}
 
       {/* Musique de fond */}
       <div style={{ marginBottom:"2rem" }}>
@@ -2958,11 +2903,80 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
       <Btn onClick={() => {
           // Nettoyage : choix validés, on libère le brouillon localStorage
           try { localStorage.removeItem(PROFIL_KEY); } catch {}
-          onNext({ relaxDir, beliefSystem, selectedVoice, musicChoice });
+          // v26bis — selectedVoice n'est plus passé d'ici ; il sera sélectionné après la séance
+          onNext({ relaxDir, beliefSystem, musicChoice });
         }}
         disabled={!canContinue} variant="gold">
-        Générer ma séance personnalisée ✦
+        Choisir ma voix ✦
       </Btn>
+    </Card>
+  );
+}
+
+// ─── GenreVoix — étape entre ProfilResult et SeancePlayer (v26bis, consigne Mickaël 2026-05-08) ──
+// Le client choisit Femme (Bella) ou Homme (Marcel) pour son EXTRAIT DE DÉCOUVERTE.
+// L'extrait archétype joue ensuite avec la voix choisie.
+// Le choix DÉFINITIF parmi les 4 voix se fait après l'écoute, dans VoiceSelection.
+// But UX : éviter qu'un client choisisse Valentin et entende Marcel sur l'extrait.
+function GenreVoix({ onNext }) {
+  const handleSelect = (gender) => {
+    onNext({ genderPref: gender });
+  };
+  return (
+    <Card style={{ maxWidth:"640px" }}>
+      <Logo />
+      <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"26px", color:C.cream,
+        fontWeight:"300", textAlign:"center", marginBottom:"0.75rem", letterSpacing:"1px" }}>
+        Quelle voix vous accompagne ?
+      </h2>
+      <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.7", textAlign:"center",
+        fontStyle:"italic", fontFamily:"'Cormorant Garamond', serif", marginBottom:"2rem" }}>
+        Pour votre extrait de découverte, préférez-vous une voix féminine ou masculine ?
+      </p>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem",
+        marginBottom:"1.5rem" }}>
+        {/* Carte Femme — Bella */}
+        <button className="opt-card" onClick={() => handleSelect("F")}
+          style={{ padding:"2rem 1rem", background:C.panel,
+            border:`2px solid ${C.gold}`, borderRadius:"16px", cursor:"pointer",
+            textAlign:"center", transition:"all .25s",
+            fontFamily:"'Raleway',sans-serif" }}>
+          <div style={{ width:"72px", height:"72px", borderRadius:"50%",
+            background:`rgba(184,149,90,.25)`, display:"flex", alignItems:"center",
+            justifyContent:"center", margin:"0 auto 1rem", fontSize:"36px" }}>👩</div>
+          <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
+            textTransform:"uppercase", marginBottom:"6px" }}>Voix féminine</p>
+          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
+            color:C.cream, fontWeight:"400", marginBottom:"4px" }}>Bella</p>
+          <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>
+            Douce, enveloppante
+          </p>
+        </button>
+
+        {/* Carte Homme — Marcel */}
+        <button className="opt-card" onClick={() => handleSelect("M")}
+          style={{ padding:"2rem 1rem", background:C.panel,
+            border:`2px solid ${C.teal}`, borderRadius:"16px", cursor:"pointer",
+            textAlign:"center", transition:"all .25s",
+            fontFamily:"'Raleway',sans-serif" }}>
+          <div style={{ width:"72px", height:"72px", borderRadius:"50%",
+            background:`rgba(42,138,143,.25)`, display:"flex", alignItems:"center",
+            justifyContent:"center", margin:"0 auto 1rem", fontSize:"36px" }}>👨</div>
+          <p style={{ fontSize:"10px", color:C.teal, letterSpacing:"2px",
+            textTransform:"uppercase", marginBottom:"6px" }}>Voix masculine</p>
+          <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
+            color:C.cream, fontWeight:"400", marginBottom:"4px" }}>Marcel</p>
+          <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>
+            Posée, ancrée
+          </p>
+        </button>
+      </div>
+
+      <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.6",
+        textAlign:"center", fontStyle:"italic" }}>
+        Vous pourrez choisir parmi nos 4 voix après l'écoute de votre extrait de découverte.
+      </p>
     </Card>
   );
 }
@@ -3195,7 +3209,49 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
 
 // ÉTAPE 5 : Génération & Player
 function SeancePlayer({ userData, resumeData, onRestart }) {
-  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice, seanceNum } = userData;
+  // v26bis — selectedVoice n'est plus pris depuis userData ; il est sélectionné dans VoiceSelection
+  // (grille des 4 voix affichée juste avant le bouton « Générer la séance complète »).
+  // Pour le cas RESUME (le client revient sur sa séance déjà générée), userData.selectedVoice
+  // est défini et est utilisé comme valeur initiale du state local.
+  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref } = userData;
+  const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice || "");
+  // States pour la preview audio dans la grille VoiceSelection (4 boutons ▶ Écouter)
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const previewAudioRef = useRef(null);
+  // Mapping voiceId → nom court pour les MP3 statiques sur Vercel Blob (preview_<nom>.mp3)
+  const VOICE_PREVIEW_NAMES = {
+    "4RZ84U1b4WCqpu57LvIq": "bella",
+    "YV28ox2c5Cuh5rim0LrW": "marcel",
+    "cQVn2FWawJsxa2z9X3l1": "valentin",
+    "19cV422MaCP4oU6N8AFm": "mickael"
+  };
+  const playVoicePreview = async (voice) => {
+    if (playingPreview === voice.id) {
+      previewAudioRef.current?.pause();
+      setPlayingPreview(null);
+      return;
+    }
+    setPlayingPreview(voice.id + "_loading");
+    try {
+      const voiceName = VOICE_PREVIEW_NAMES[voice.id] || "bella";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3";
+      const r = await fetch(blobUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        if (previewAudioRef.current) {
+          previewAudioRef.current.pause();
+          previewAudioRef.current.src = url;
+          previewAudioRef.current.play();
+          setPlayingPreview(voice.id);
+        }
+      } else {
+        setPlayingPreview(null);
+      }
+    } catch(e) {
+      setPlayingPreview(null);
+    }
+  };
   const vakog = vakogResult.dominant;
   // Archétype Big Five (Pèlerin / Bâtisseur / Compagnon / Voyageur)
   const archetypeKey = archetypeFromBigFive(bigFiveScores);
@@ -3835,13 +3891,19 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const bloc = archetype.bloc || "pelerin";
+      // v26bis — la voix de l'extrait découverte est déterminée par genderPref
+      // (choix Femme/Homme fait à l'étape GenreVoix), PAS par selectedVoice
+      // (qui n'est défini qu'après VoiceSelection en bas de la page séance).
+      // Fallback historique : si selectedVoice est déjà défini (cas resume séance), on l'utilise.
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
         "cQVn2FWawJsxa2z9X3l1": "marcel",
         "19cV422MaCP4oU6N8AFm": "marcel"
       };
-      const voiceName = VOICE_NAMES[selectedVoice] || "bella";
+      const voiceName = selectedVoice
+        ? (VOICE_NAMES[selectedVoice] || "bella")
+        : (genderPref === "M" ? "marcel" : "bella");
       // BÊTA : ?t=timestamp force le navigateur à re-télécharger l'échantillon Blob
       // (au cas où on remplace le MP3 pendant le développement). À retirer quand stable.
       const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3?t=" + Date.now();
@@ -4814,6 +4876,61 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               ✕ {fullGenMsg}
             </div>
           )}
+
+          {/* v26bis — VoiceSelection : grille des 4 voix avec ▶ Écouter (consigne Mickaël 2026-05-08) */}
+          {/* Apparaît si la séance complète n'est pas encore générée. Disparaît une fois sélectionnée + générée. */}
+          {fullGenPhase !== "done" && (
+            <div style={{ marginBottom:"1rem", padding:"1rem", background:C.panel,
+              borderRadius:"12px", border:`1.5px solid ${selectedVoice ? C.gold : C.border}` }}>
+              <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
+                textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:"600" }}>
+                Étape — Choix de la voix
+              </p>
+              <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px",
+                color:C.cream, fontWeight:"400", marginBottom:"0.5rem" }}>
+                Quelle voix pour votre séance complète ?
+              </p>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6",
+                marginBottom:"0.875rem", fontStyle:"italic" }}>
+                Vous venez d'écouter votre extrait découverte. Choisissez maintenant la voix qui vous accompagnera dans votre vraie séance personnalisée.
+              </p>
+              <audio ref={previewAudioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
+              <div style={{ display:"grid", gap:"0.5rem" }}>
+                {VOICES.map(v => (
+                  <div key={v.id}
+                    style={{ padding:"0.75rem 0.875rem", background: selectedVoice===v.id ? `rgba(184,149,90,.12)` : C.bg,
+                      border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"10px",
+                      display:"flex", gap:"10px", alignItems:"center", cursor:"pointer",
+                      transition:"all .2s" }} onClick={() => setSelectedVoice(v.id)}>
+                    <div style={{ width:"32px", height:"32px", borderRadius:"50%",
+                      background: v.gender==="M" ? `rgba(42,138,143,.3)` : `rgba(184,149,90,.3)`,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:"15px", flexShrink:0 }}>
+                      {v.gender==="M" ? "👨" : "👩"}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500" }}>{v.name}</p>
+                      <p style={{ fontSize:"10px", color:C.muted }}>{v.desc}</p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); playVoicePreview(v); }}
+                      style={{ padding:"5px 12px", background:"transparent",
+                        border:`1px solid ${playingPreview===v.id+"_loading" ? C.gold : C.border}`,
+                        borderRadius:"7px", fontSize:"10px", color:C.muted, cursor:"pointer",
+                        flexShrink:0, fontFamily:"'Raleway',sans-serif" }}>
+                      {playingPreview===v.id+"_loading" ? "⏳" : playingPreview===v.id ? "⏹ Stop" : "▶ Écouter"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {!selectedVoice && (
+                <p style={{ fontSize:"10px", color:C.gold, marginTop:"0.5rem",
+                  fontStyle:"italic", textAlign:"center" }}>
+                  ↑ Cliquez sur une voix pour activer la génération de votre séance ↓
+                </p>
+              )}
+            </div>
+          )}
+
           <div style={{ display:"grid", gap:"0.75rem" }}>
             <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
               border:"1px solid rgba(184,149,90,.3)" }}>
@@ -4824,7 +4941,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 Plan Starter ElevenLabs recommandé (6 $/mois — 30 000 crédits ≈ 1-2 séances complètes/mois)
               </p>
               <Btn onClick={() => generateFullAudio("complete")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
                 variant="gold" style={{ marginTop:0 }}>
                 {fullGenPhase === "generating" && fullGenMode === "complete" ? "Génération en cours..." : "Générer la séance complète →"}
               </Btn>
@@ -4838,7 +4955,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 Plan gratuit ElevenLabs suffit (10 000 crédits/mois ≈ 1 découverte par mois)
               </p>
               <Btn onClick={() => generateFullAudio("beta")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating"}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
                 variant="primary" style={{ marginTop:0 }}>
                 {fullGenPhase === "generating" && fullGenMode === "beta" ? "Génération en cours..." : "Générer la séance découverte →"}
               </Btn>
@@ -5244,8 +5361,9 @@ function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [resumeData, setResumeData] = useState(null); // { audioBlob, script, userData } chargé depuis IDB
 
-  const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Séance"];
-  const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, seance:5, pricing:5 };
+  // v26bis — ajout du step "genre-voix" entre Profil et Séance (consigne Mickaël 2026-05-08)
+  const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Voix","Séance"];
+  const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, "genre-voix":5, seance:6, pricing:6 };
 
   // ─── Capture intention tarifaire — apparaît UNE fois à la 5e séance ──
   // On stocke le compteur de séances générées dans localStorage pour décider
@@ -5336,11 +5454,18 @@ function App() {
 
   const handleProfilNext = (prefs) => {
     track("profil_completed", {
-      voice: prefs.selectedVoice ? prefs.selectedVoice.substring(0, 8) : "?",
       music: prefs.musicChoice || "?",
       belief: prefs.beliefSystem || "?"
     });
     updateUser({ ...prefs, seanceNum: 1 });
+    // v26bis — nouveau flux : Profil → GenreVoix (au lieu de Séance directement)
+    setStep("genre-voix");
+  };
+
+  // v26bis — handler pour l'écran GenreVoix (choix Femme/Homme pour l'extrait découverte)
+  const handleGenreVoixNext = (prefs) => {
+    track("genre_voix_completed", { gender: prefs.genderPref || "?" });
+    updateUser(prefs);
     setStep("seance");
   };
 
@@ -5415,6 +5540,9 @@ function App() {
         {step === "profil" && (
           <ProfilResult prenom={userData.prenom} bigFiveScores={userData.bigFiveScores}
             vakogResult={userData.vakogResult} problem={userData.problem} onNext={handleProfilNext} />
+        )}
+        {step === "genre-voix" && (
+          <GenreVoix onNext={handleGenreVoixNext} />
         )}
         {step === "seance" && (
           <SeancePlayer
