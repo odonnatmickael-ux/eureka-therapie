@@ -567,7 +567,7 @@ const isV3Voice = (voiceId) => V3_VOICES.includes(voiceId);
 const V3_TAG_REGEX = /\[(whispers?|soft|calm|warm|breathing|slow|gentle)\]/gi;
 
 function buildSystemPrompt(data) {
-  const { vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom, useV3Tags, bigFiveScores, archetypeKey } = data;
+  const { vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom, useV3Tags, bigFiveScores, archetypeKey, selectedVoice } = data;
   const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.compagnon;
 
   // ─── RYTHME RESPIRATOIRE : Standard Caycedo 4-2-8 pour tous ─────────
@@ -576,9 +576,11 @@ function buildSystemPrompt(data) {
   const breath = { inspire:4, hold:2, expire:8 };
   const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
-  // 4 ellipses ≈ 1.3s par chiffre (ElevenLabs Mickaël v3) — validé à l'écoute par Mickaël 2026-05-05.
-  // Avant : 6 ellipses ≈ 2s par chiffre = trop lent pour le rythme sophro 1s/chiffre attendu.
-  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + "....").join(" ");
+  // Ellipses dynamiques selon la voix (VOICE_DOTS_COUNT) — calibré pour cadence ~1s/temps après speed slider :
+  //   Bella/Marcel @ 0.85× : 2 dots = 0.82s/temps · Mickaël/Valentin @ 0.90× : 3 dots = 1.11s/temps.
+  const dotsCount = VOICE_DOTS_COUNT[selectedVoice] || 3;
+  const dotsStr = ".".repeat(dotsCount);
+  const buildCount = (n) => COUNT_WORDS.slice(0,n).map(w => w + dotsStr).join(" ");
   const expirePauseSec = Math.max(6, breath.expire - 2); // proportionnel à la durée d'expiration
   // Format uniforme pour tous les chiffres : "en N temps..."
   // Tests inconstance ×5 sur démo (2026-05-03) ont validé "huit temps" sans virgule
@@ -991,7 +993,7 @@ function TutorielModal({ onClose }) {
     { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five (BFI-10, validé scientifiquement) et au quiz VAKOG (sensorialité). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
     { icon:"🎯", title:"2. Votre situation", desc:"Décrivez ce que vous traversez et votre objectif. Plus vous êtes précis, plus la séance sera puissante et personnalisée." },
     { icon:"🎙️", title:"3. Votre environnement", desc:"Choisissez votre voix, votre ambiance sonore et votre direction de relaxation. Tout est adapté à votre profil." },
-    { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, allongez-vous et laissez la transformation opérer." },
+    { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, asseyez-vous confortablement et laissez la transformation opérer." },
   ];
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1000,
@@ -1181,12 +1183,33 @@ function MentionsModal({ onClose }) {
 // Mapping direct sliderValue → audio.playbackRate (le navigateur préserve le pitch).
 // Persistence localStorage pour que le client retrouve sa préférence.
 // Utilisé sur : (1) DemoAudio (preview voix landing) — (2) player principal page résultat.
-function SpeedSlider({ audioRef, storageKey = "eureka_speed_player" }) {
+// Vitesses par défaut par voix — ajustées pour le rythme sophro (Silva pure delivers v3 audio at speed ~1.0,
+// donc on ralentit côté player pour atteindre la vitesse cible). Le client peut toujours ajuster via le slider.
+const VOICE_PLAYBACK_DEFAULTS = {
+  "4RZ84U1b4WCqpu57LvIq": 0.85, // Bella
+  "YV28ox2c5Cuh5rim0LrW": 0.85, // Marcel
+  "19cV422MaCP4oU6N8AFm": 0.90, // Mickaël (réenregistré)
+  "cQVn2FWawJsxa2z9X3l1": 0.90, // Valentin (whisper)
+};
+
+// Nombre d'ellipses entre les chiffres du compte respiratoire selon la voix choisie.
+// Calibré pour une cadence finale ~1s/temps après application du speed slider :
+//   Bella/Marcel @ 0.85× : 2 dots = 0.82s/temps
+//   Mickaël/Valentin @ 0.90× : 3 dots = 1.11s/temps
+// Cadence sophro Caycedo ~1s/temps (Caycedo, Schultz). Confort respiratoire optimisé.
+const VOICE_DOTS_COUNT = {
+  "4RZ84U1b4WCqpu57LvIq": 2, // Bella
+  "YV28ox2c5Cuh5rim0LrW": 2, // Marcel
+  "19cV422MaCP4oU6N8AFm": 3, // Mickaël
+  "cQVn2FWawJsxa2z9X3l1": 3, // Valentin
+};
+
+function SpeedSlider({ audioRef, storageKey = "eureka_speed_player", defaultRate = 1.00 }) {
   const [speed, setSpeed] = useState(() => {
     try {
       const saved = parseFloat(localStorage.getItem(storageKey));
-      return (saved >= 0.70 && saved <= 1.25) ? saved : 1.00;
-    } catch { return 1.00; }
+      return (saved >= 0.70 && saved <= 1.25) ? saved : defaultRate;
+    } catch { return defaultRate; }
   });
   // Réapplique playbackRate à chaque fois que l'audio (re-)charge ou que speed change
   useEffect(() => {
@@ -1205,7 +1228,7 @@ function SpeedSlider({ audioRef, storageKey = "eureka_speed_player" }) {
     try { localStorage.setItem(storageKey, String(v)); } catch {}
     if (audioRef && audioRef.current) audioRef.current.playbackRate = v;
   };
-  const isCustom = Math.abs(speed - 1.00) > 0.005;
+  const isCustom = Math.abs(speed - defaultRate) > 0.005;
   return (
     <div style={{ marginTop:"0.75rem", display:"flex", alignItems:"center", gap:"0.75rem" }}
       title="Ajustez la vitesse de lecture sans changer la voix. ×1.00 = vitesse normale.">
@@ -1222,7 +1245,7 @@ function SpeedSlider({ audioRef, storageKey = "eureka_speed_player" }) {
         ×{speed.toFixed(2)}
       </span>
       {isCustom && (
-        <button onClick={() => onChange(1.00)} title="Réinitialiser à ×1.00"
+        <button onClick={() => onChange(defaultRate)} title="Réinitialiser à la vitesse recommandée"
           style={{ background:"transparent", border:`1px solid ${C.border}`,
             color:C.muted, cursor:"pointer", fontSize:"12px", padding:"2px 6px",
             borderRadius:"4px", lineHeight:"1" }}>
@@ -1355,7 +1378,7 @@ function DemoAudio() {
       )}
       {/* Slider de vitesse — visible quand l'audio est prêt (pas en idle ni loading) */}
       {(state === "playing" || state === "paused") && (
-        <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" />
+        <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={0.90} />
       )}
     </div>
   );
@@ -3101,7 +3124,7 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
             fontSize: "14px", color: C.muted, lineHeight: 1.7,
             maxWidth: "320px", textAlign: "center"
           }}>
-            Restez allongé(e), prenez votre temps.<br/>
+            Restez assis(e), prenez votre temps.<br/>
             La voix vous accompagne vers le retour…
           </p>
         </div>
@@ -3466,7 +3489,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         vakog, vagokDesc: VAKOG_DESC[vakog],
         relaxDir, beliefSystem, problem, objectif, prenom,
         useV3Tags: useV3Mode,
-        bigFiveScores, archetypeKey
+        bigFiveScores, archetypeKey, selectedVoice
       });
 
       const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
@@ -3538,7 +3561,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const part1Promise = gpt(sysPrompt,
         info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n\n" +
         "1. ACCUEIL : commencer par '" + prenom + "... je vous invite...' (avec ellipse APRÈS le prénom). 2-3 phrases courtes. [PAUSE_2s] entre elles. Exemple à imiter :\n" +
-        "   '" + prenom + "... je vous invite à vous installer confortablement... [PAUSE_2s] Laissez votre corps trouver sa propre position... [PAUSE_2s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_2s]'\n\n" +
+        "   '" + prenom + "... je vous invite à vous asseoir confortablement... [PAUSE_2s] Le dos droit... les pieds à plat sur le sol... [PAUSE_2s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_2s]'\n\n" +
         "2. 3 RESPIRATIONS EXACTES selon RÈGLE 3 du système (MOT POUR MOT pour les 3 cycles).\n\n" +
         "3. RELAXATION CORPORELLE — IMITE EXACTEMENT LE RYTHME du style 'ellipses intra-phrases' (cf RÈGLE 7 du système). Adapte aux groupes musculaires définis dans le système (TF ou FT). Exemple à imiter (groupe TÊTE) :\n" +
         "   ===== EXEMPLE STYLE À IMITER =====\n" +
@@ -4432,7 +4455,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
                 </p>
                 <p style={{ fontSize:"12px", color:C.muted }}>
                   {isPersonalized
-                    ? "Avec votre prénom et vos problèmes · Casque · Allongé(e) · Yeux fermés"
+                    ? "Avec votre prénom et vos problèmes · Casque · Assis(e), dos droit · Yeux fermés"
                     : "Avant-goût adapté à votre profil — sans votre prénom"}
                 </p>
               </div>
@@ -4443,7 +4466,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               onLoadedMetadata={handleAudioLoadedMetadata}
               onEnded={handleAudioEnded} />
             {/* Slider de vitesse de lecture (modif #7 — 2026-05-06) */}
-            <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" />
+            <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={seanceFullyGenerated ? (VOICE_PLAYBACK_DEFAULTS[selectedVoice] || 1.00) : 1.00} />
 
             {/* Si échantillon : flèche claire vers la section séance complète */}
             {!isPersonalized && (
@@ -4460,7 +4483,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
               marginTop:"1rem" }}>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6" }}>
-                🌙 Conseil : réduisez la luminosité de votre écran · Position allongée recommandée ·
+                🌙 Conseil : réduisez la luminosité de votre écran · Position assise dos droit recommandée ·
                 Ne conduisez pas pendant la séance
               </p>
             </div>
