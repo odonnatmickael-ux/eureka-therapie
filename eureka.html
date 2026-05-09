@@ -325,6 +325,55 @@ async function deleteSessionById(id) {
 
 // Synchronisation flag dans localStorage : permet de détecter rapidement si une séance existe
 // sans avoir à ouvrir IndexedDB (utile pour la Landing).
+
+// ─── RGPD — Effacement TOTAL de toutes les données utilisateur ──────
+// Utilisé par le bouton « Tout effacer mes données » dans la modal Mentions Légales (section RGPD).
+// Conformité RGPD article 17 (« droit à l'effacement »).
+// Supprime : (1) toutes les séances IndexedDB current + historique, (2) tout localStorage EUREKA,
+// (3) sessionStorage. Puis recharge la page pour repartir d'un état neutre.
+async function deleteAllUserData() {
+  try {
+    // 1. Supprimer la séance current dans IndexedDB
+    await deleteSession();
+    // 2. Supprimer toutes les séances de l'historique IndexedDB
+    const history = (function () {
+      try { const raw = localStorage.getItem('eureka_history'); return raw ? JSON.parse(raw) : []; }
+      catch { return []; }
+    })();
+    for (const entry of history) {
+      try { await deleteSessionById(entry.id); } catch {}
+    }
+    // 3. Vider tout localStorage EUREKA (toutes les clés eureka_*)
+    const eurekaKeys = [
+      'eureka_streak', 'eureka_bilan21_sent', 'eureka_history',
+      'eureka_session_meta', 'eureka_session_count', 'eureka_pricing_shown',
+      'eureka_eleven_key', 'eureka_speed_player',
+      'eureka_anamnese_state', 'eureka_profil_state',
+      'eureka_quiz_bigfive', 'eureka_quiz_vakog',
+      'eureka_last_feedback', 'eureka_last_bilan21', 'eureka_last_pricing',
+      'eureka_reminder_time'
+    ];
+    for (const k of eurekaKeys) {
+      try { localStorage.removeItem(k); } catch {}
+    }
+    // 4. Vider toutes les positions audio sauvegardées (clés type eureka_seance_*_position)
+    try {
+      const allKeys = Object.keys(localStorage);
+      for (const k of allKeys) {
+        if (k.startsWith('eureka_seance_') && k.endsWith('_position')) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch {}
+    // 5. Vider sessionStorage
+    try { sessionStorage.removeItem('eureka_last_step'); } catch {}
+    return true;
+  } catch (e) {
+    console.warn('deleteAllUserData failed:', e);
+    return false;
+  }
+}
+
 // ─── Compteur de séances générées (pour déclencher capture intention tarifaire) ──
 function getSessionCount() {
   try {
@@ -1143,6 +1192,51 @@ function MentionsModal({ onClose }) {
             <br/><br/>
             En cas de désaccord, vous pouvez saisir la <strong style={{ color:C.cream }}>CNIL</strong> (cnil.fr).
           </p>
+
+          {/* v26 — Bouton « Tout effacer mes données » (consigne Mickaël 2026-05-09)
+              Conformité RGPD article 17 (droit à l'effacement). Placé ici (Mentions légales)
+              et PAS dans Mes séances pour éviter un clic accidentel sur une suppression définitive. */}
+          <div style={{ marginTop:"1rem", padding:"1rem 1.25rem",
+            background:"rgba(192,57,43,.06)", borderRadius:"10px",
+            border:`1px solid ${C.red}` }}>
+            <p style={{ fontSize:"12px", color:C.cream, lineHeight:"1.7", marginBottom:"0.75rem" }}>
+              <strong style={{ color:"#f87171" }}>Effacement total immédiat</strong> — exercice direct
+              de votre droit à l'effacement (RGPD art. 17). Supprime <strong style={{ color:C.cream }}>toutes vos
+              séances</strong> (current + historique), votre <strong style={{ color:C.cream }}>profil</strong>,
+              votre <strong style={{ color:C.cream }}>streak</strong>, votre <strong style={{ color:C.cream }}>clé
+              ElevenLabs</strong> et tous vos paramètres. Action <strong style={{ color:"#f87171" }}>irréversible</strong>.
+            </p>
+            <button onClick={async () => {
+              const confirmed = window.confirm(
+                "⚠ EFFACEMENT TOTAL\n\n" +
+                "Cette action va supprimer DÉFINITIVEMENT :\n" +
+                "• Toutes vos séances (current + historique)\n" +
+                "• Votre profil et préférences\n" +
+                "• Votre streak 21 jours\n" +
+                "• Votre clé ElevenLabs mémorisée\n" +
+                "• Tous les paramètres EUREKA\n\n" +
+                "Cette action est IRRÉVERSIBLE.\n\n" +
+                "Confirmer l'effacement total ?"
+              );
+              if (!confirmed) return;
+              track("rgpd_delete_all_clicked");
+              const ok = await deleteAllUserData();
+              if (ok) {
+                alert("✓ Toutes vos données EUREKA ont été effacées.\nLa page va se recharger.");
+                window.location.reload();
+              } else {
+                alert("⚠ L'effacement a partiellement échoué. Pour un effacement complet et garanti,\nvous pouvez aussi vider les données du site dans les paramètres de votre navigateur\n(Chrome : Paramètres → Confidentialité → Effacer les données du site).");
+              }
+            }}
+              style={{ width:"100%", padding:"0.75rem 1rem",
+                background:`linear-gradient(135deg, ${C.red}, #8b1c12)`,
+                color:C.cream, border:"none", borderRadius:"8px",
+                fontFamily:"'Raleway',sans-serif", fontSize:"12px",
+                fontWeight:"600", letterSpacing:"1.5px", textTransform:"uppercase",
+                cursor:"pointer", transition:"all .25s" }}>
+              🗑 Tout effacer mes données
+            </button>
+          </div>
         </div>
 
         {/* 5. FAQ */}
