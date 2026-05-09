@@ -4385,7 +4385,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             setAudioUrl(URL.createObjectURL(finalMp3));
             await persistPersonalSession(finalMp3);
           } catch(e) {
-            // Si la musique échoue, on livre l'audio voix seule (déjà normalisée) en MP3
+            // Si la musique échoue (404 Vercel Blob, réseau, decode...), on livre la voix seule.
+            // BUG SILENCIEUX HISTORIQUE — corrigé 2026-05-09 : avant ce patch, l'erreur était
+            // avalée sans trace, ce qui a masqué le fait que music_*.mp3 n'étaient pas uploadés
+            // sur Vercel Blob → toutes les séances de prod sortaient en voix-seule sans alerte.
+            console.error("[EUREKA] Échec chargement musique de fond — fallback voix seule.", { url: musicUrl, error: e?.message || e });
+            track("music_fetch_failed", {
+              choice: userData?.musicChoice || musicChoice || "?",
+              error: (e?.message || String(e) || "?").substring(0, 80)
+            });
             setFullGenMsg("Encodage MP3 (voix seule)...");
             const mp3 = bufferToMp3(comb, sr, 128);
             setAudioUrl(URL.createObjectURL(mp3));
