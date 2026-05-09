@@ -782,7 +782,7 @@ function BetaBanner() {
 function Logo({ small }) {
   return (
     <div style={{ textAlign:"center", marginBottom: small ? "1rem" : "2rem" }}>
-      {!small && <BetaBanner />}
+      {/* v26 — BetaBanner retiré de Logo et déplacé au niveau App pour visibilité partout (landing comprise) */}
       {!small && (
         <div style={{ width:"60px", height:"60px", borderRadius:"50%", border:`2px solid ${C.gold}`,
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 1rem",
@@ -5522,6 +5522,10 @@ function App() {
 
       <div style={{ position:"relative", zIndex:1, width:"100%",
         display:"flex", flexDirection:"column", alignItems:"center" }}>
+
+        {/* v26 — Bandeau bêta visible sur TOUTES les pages (landing, parcours, séance, etc.).
+            Déplacé ici depuis le composant Logo qui n'était pas appelé sur la landing. */}
+        <BetaBanner />
 
         {/* Indicateur d'étape (caché sur landing et écran historique) */}
         {step !== "landing" && step !== "history" && (
