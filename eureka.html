@@ -3671,6 +3671,49 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     }
   }, []);
 
+  // WakeLock — empêche l'écran de se verrouiller pendant la lecture audio.
+  // Sans ça, sur Samsung A54 (et autres Android), l'OS suspend l'app au lock
+  // → l'audio s'arrête en plein milieu de la séance. Validé Mickaël 2026-05-09.
+  // - Demande le wakeLock seulement quand isPlaying = true
+  // - Le libère à la pause / fin / unmount
+  // - Re-acquisition automatique au retour de visibilité (l'OS révoque le lock
+  //   quand on switch d'app — sans cette ré-acquisition, le bug réapparaît)
+  // - Silencieux si l'API n'existe pas (iOS Safari < 16.4, vieux Android)
+  useEffect(() => {
+    if (!('wakeLock' in navigator)) {
+      console.info("[EUREKA] WakeLock API non supportée — l'écran pourra se verrouiller pendant la séance.");
+      return;
+    }
+    let wakeLock = null;
+    const acquire = async () => {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch (e) {
+        console.info("[EUREKA] WakeLock non acquis:", e?.message || e);
+      }
+    };
+    const release = () => {
+      if (wakeLock) {
+        try { wakeLock.release(); } catch (_) {}
+        wakeLock = null;
+      }
+    };
+    const onVisibility = () => {
+      // Si on revient sur l'onglet alors que l'audio joue, ré-acquérir le lock.
+      if (document.visibilityState === 'visible' && isPlaying) {
+        acquire();
+      }
+    };
+    if (isPlaying) {
+      acquire();
+      document.addEventListener('visibilitychange', onVisibility);
+    }
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      release();
+    };
+  }, [isPlaying]);
+
   const generateSession = async () => {
     try {
       setLoadMsg("Analyse de votre profil...");
@@ -3753,6 +3796,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         info + "\n\nGénère UNIQUEMENT ces parties - ZERO TITRE, commencer DIRECTEMENT par les phrases:\n\n" +
         "1. ACCUEIL : commencer par '" + prenom + "... je vous invite...' (avec ellipse APRÈS le prénom). 2-3 phrases courtes. [PAUSE_2s] entre elles. Exemple à imiter :\n" +
         "   '" + prenom + "... je vous invite à vous asseoir confortablement... [PAUSE_2s] Le dos droit... les pieds à plat sur le sol... [PAUSE_2s] Vous êtes en sécurité ici... ce moment vous appartient entièrement... [PAUSE_2s]'\n\n" +
+        "1b. POINTS DE CONTACT — sophronisation de base (après l'accueil, avant les respirations) :\n" +
+        "   Guider " + prenom + " dans une prise de conscience des points d'appui du corps. Style : phrases TRÈS courtes, [PAUSE_3s] après chaque sensation. Exemple à imiter :\n" +
+        "   '" + prenom + "... sentez le poids de votre corps... [PAUSE_3s] Remarquez où votre corps touche la surface... [PAUSE_3s] Vos cuisses... en contact avec le siège... [PAUSE_3s] Votre dos... appuyé... soutenu... [PAUSE_3s] Vos pieds... posés à plat... sur le sol... [PAUSE_3s] Ces points d'appui sont vos ancres... [PAUSE_3s] Vous êtes là... stable... en sécurité... [PAUSE_3s]'\n" +
+        "   RÈGLE : 4 à 6 points de contact maximum. Terminer par une phrase d'intention positive adaptée au problème de " + prenom + " (jamais nommer le problème — projeter l'état cible). Exemple : 'Ce soir... vous venez chercher la paix...' ou 'Vous venez retrouver votre force...' selon OBJECTIF.\n\n" +
         "2. 3 RESPIRATIONS EXACTES selon RÈGLE 3 du système (MOT POUR MOT pour les 3 cycles).\n\n" +
         "3. RELAXATION CORPORELLE — IMITE EXACTEMENT LE RYTHME du style 'ellipses intra-phrases' (cf RÈGLE 7 du système). Adapte aux groupes musculaires définis dans le système (TF ou FT). Exemple à imiter (groupe TÊTE) :\n" +
         "   ===== EXEMPLE STYLE À IMITER =====\n" +
