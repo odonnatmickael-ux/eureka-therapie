@@ -3344,6 +3344,7 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
 // Affiche les paroles + bouton "Telecharger les paroles" (.txt complet avec
 // style Udio + instructions mobile + astuce enregistreur d'ecran).
 function MantraCard({ mantra, prenom }) {
+  const [copied, setCopied] = React.useState(false);
   if (!mantra) return null;
 
   const paroles = mantra.affirmation + "\n" + mantra.affirmation + "\n\n" +
@@ -3361,14 +3362,6 @@ function MantraCard({ mantra, prenom }) {
       "BONUS — TON MANTRA PERSONNALISE\n" +
       prenom + " — cree le " + dateStr + "\n" +
       sep + "\n\n" +
-      "Ta seance complete vient de se terminer.\n" +
-      "Ce mantra n'en fait PAS partie : c'est un petit cadeau\n" +
-      "ajoute en plus, independant de la seance que tu as recue.\n" +
-      "Pas une obligation, pas un du.\n\n" +
-      "Si tu n'arrives pas a le creer sur Udio, ou si cette etape\n" +
-      "ne te parle pas, aucun probleme : tu as deja recu ta seance\n" +
-      "dans son integralite. Le mantra n'est qu'un bonus.\n\n" +
-      "Mais si tu veux l'essayer, voici tout ce qu'il te faut.\n\n" +
       sep + "\n" +
       "PAROLES A COLLER DANS UDIO :\n" +
       sep + "\n\n" +
@@ -3449,6 +3442,22 @@ function MantraCard({ mantra, prenom }) {
     window.open("https://udio.com/create", "_blank");
   };
 
+  const copyStyle = () => {
+    const txt = udio.style || "ambient sacre minimal";
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch {}
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   return (
     <div style={{
       background: C.panel, border: "1px solid " + C.gold,
@@ -3464,11 +3473,6 @@ function MantraCard({ mantra, prenom }) {
           color: C.goldLight, fontFamily: "'Cormorant Garamond', serif",
           fontSize: "20px", margin: "0.5rem 0", fontWeight: 400
         }}>Votre Mantra Personnalise</h3>
-        <p style={{ color: C.muted, fontSize: "12px", lineHeight: "1.5" }}>
-          Ta seance complete est terminee.<br/>
-          Voici un petit cadeau en plus, independant de la seance.<br/>
-          A essayer si tu en as envie — pas d'obligation.
-        </p>
       </div>
 
       <div style={{
@@ -3478,10 +3482,37 @@ function MantraCard({ mantra, prenom }) {
         textAlign: "center", fontSize: "15px", fontStyle: "italic"
       }}>{paroles}</div>
 
-      <p style={{ color: C.hint, fontSize: "11px", textAlign: "center",
-        marginBottom: "1rem", fontStyle: "italic" }}>
-        Style : {udio.style || "—"} · {udio.tempo_bpm || 60} bpm · {udio.duration_target || "2:30"}
-      </p>
+      {/* STYLE MUSICAL — bloc bien visible et copiable pour Udio */}
+      <div style={{ marginBottom: "1rem" }}>
+        <p style={{ color: C.goldLight, fontSize: "10px", letterSpacing: "1.5px",
+          textTransform: "uppercase", marginBottom: "0.4rem", textAlign: "center",
+          fontWeight: 600 }}>
+          Style musical à coller dans Udio
+        </p>
+        <div onClick={copyStyle} style={{
+          background: C.bg, borderRadius: "10px", padding: "0.85rem 1rem",
+          color: C.cream, fontSize: "14px", lineHeight: "1.4",
+          border: "1.5px solid " + C.gold, textAlign: "center",
+          userSelect: "all", cursor: "pointer", fontWeight: 500
+        }}>
+          {udio.style || "ambient sacre minimal"}
+        </div>
+        <button onClick={copyStyle} style={{
+          width: "100%", marginTop: "0.5rem",
+          background: copied ? C.gold : "transparent",
+          color: copied ? C.bg : C.goldLight,
+          border: "1px solid " + C.gold, borderRadius: "8px",
+          padding: "0.55rem", fontSize: "12px", cursor: "pointer",
+          fontFamily: "'Raleway', sans-serif", fontWeight: 600,
+          letterSpacing: "0.5px", transition: "all .2s"
+        }}>
+          {copied ? "✓ Copié dans le presse-papier" : "Copier le style"}
+        </button>
+        <p style={{ color: C.hint, fontSize: "11px", textAlign: "center",
+          margin: "0.5rem 0 0 0", fontStyle: "italic" }}>
+          Tempo : {udio.tempo_bpm || 60} bpm · Durée cible : {udio.duration_target || "2:30"}
+        </p>
+      </div>
 
       <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column" }}>
         <button onClick={downloadMantra} style={{
@@ -3503,8 +3534,7 @@ function MantraCard({ mantra, prenom }) {
         1. "Commencez a creer"<br/>
         2. "Decrivez votre chanson" -> colle le style<br/>
         3. "Ecrivez vos paroles" -> "Coutume" -> colle les paroles<br/>
-        4. Ne touche pas a "Ecris pour moi" ni au "Telecharger" du haut<br/>
-        5. "Creer" (en bas)<br/><br/>
+        4. "Creer" (en bas)<br/><br/>
         <strong style={{ color: C.cream }}>Pour ton rituel chaque matin :</strong><br/>
         Va dans "Library" -> lance ton chant. Telechargement payant<br/>
         sur Udio, mais ecoute en ligne gratuite et illimitee.<br/>
@@ -4267,12 +4297,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Echec silencieux : si l'API plante ou JSON invalide, MantraCard ne s'affiche pas.
       try {
         setLoadMsg("Creation de votre mantra personnalise...");
+        // v27 fix : nouveau format style anglais oriente VOIX CHANTEE + mantra (et non chant d'eglise / gospel)
         const _archStyle = {
-          pelerin:   { style: "sacred world music, ambiance meditative, sitar", vocal: "voix feminine douce, presque chuchotee", instruments: "sitar, ambient pad, percussions legeres" },
-          batisseur: { style: "orchestral sacre minimal, harmonies dorees",      vocal: "voix masculine posee",                  instruments: "piano discret, cordes graves, choeur lointain" },
-          compagnon: { style: "gospel doux, chaleureux",                          vocal: "voix proche et intime",                 instruments: "piano chaleureux, choeur leger" },
-          voyageur:  { style: "world music, nature sounds",                       vocal: "voix libre, naturelle",                 instruments: "percussions legeres, flute, ambient nature" }
-        }[archetypeKey] || { style: "ambient sacre minimal", vocal: "voix posee", instruments: "piano, ambient pad" };
+          pelerin:   { style: "deep meditative mantra, sacred ambient, sitar drone, soft male voice, slow 55bpm, golden atmosphere, no drums, no choir, healing mantra, french lyrics", vocal: "voix masculine douce, presque chuchotee, chantee", instruments: "sitar drone, ambient pad" },
+          batisseur: { style: "sacred ambient orchestral, minimal piano, male deep voice, slow 60bpm, golden harmonies, no drums, no choir, healing mantra, french lyrics",            vocal: "voix masculine grave et posee, chantee",            instruments: "piano discret, cordes graves" },
+          compagnon: { style: "warm intimate mantra, soft piano, gentle female voice, slow 60bpm, healing harmonies, no drums, no choir, healing mantra, french lyrics",                  vocal: "voix feminine douce et intime, chantee",            instruments: "piano chaleureux" },
+          voyageur:  { style: "organic world mantra, bamboo flute, free female voice, slow 65bpm, natural atmosphere, no drums, no choir, healing mantra, french lyrics",         vocal: "voix feminine libre et naturelle, chantee",         instruments: "flute bambou" }
+        }[archetypeKey] || { style: "sacred ambient mantra, soft voice, slow 60bpm, healing harmonies, no drums, no choir, healing mantra, french lyrics", vocal: "voix posee, chantee", instruments: "piano, ambient pad" };
 
         const _bfM = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
         const _nDir = _bfM.N >= 60 ? "mots SECURISANTS (paix, securite, protection, douceur)" :
