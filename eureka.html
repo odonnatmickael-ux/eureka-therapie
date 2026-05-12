@@ -2618,7 +2618,11 @@ function QuizBigFive({ prenom, onComplete }) {
   const [current, setCurrent] = useState(() => {
     try {
       const saved = localStorage.getItem('eureka_quiz_bigfive');
-      return saved ? (JSON.parse(saved).current || 0) : 0;
+      const c = saved ? (JSON.parse(saved).current || 0) : 0;
+      // Safety : si current pointe hors du tableau (quiz precedemment termine, current=10),
+      // on revient a 0 pour eviter BFI10[10].text qui crashe l'app (ecran noir).
+      // Les reponses restent chargees dans answers, donc l'utilisateur retrouve ses choix.
+      return c >= BFI10.length ? 0 : c;
     } catch { return 0; }
   });
   const [answers, setAnswers] = useState(() => {
@@ -2719,7 +2723,10 @@ function QuizVAKOG({ prenom, onComplete }) {
   const [current, setCurrent] = useState(() => {
     try {
       const saved = localStorage.getItem('eureka_quiz_vakog');
-      return saved ? (JSON.parse(saved).current || 0) : 0;
+      const c = saved ? (JSON.parse(saved).current || 0) : 0;
+      // Safety : si current pointe hors du tableau (quiz precedemment termine, current=8),
+      // on revient a 0 pour eviter QUIZ_VAKOG[8] qui crashe l'app (ecran noir).
+      return c >= QUIZ_VAKOG.length ? 0 : c;
     } catch { return 0; }
   });
   const [answers, setAnswers] = useState(() => {
