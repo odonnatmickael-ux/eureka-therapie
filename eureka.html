@@ -1973,7 +1973,10 @@ function Anamnese({ onNext }) {
   // Détection de crise déclenchée dès la sortie des écrans 2 (problème) et 3 (objectif),
   // pour ne pas faire perdre 3 écrans à un visiteur en détresse.
   const TOTAL_SCREENS = 6;
-  const [screen, setScreen] = useState(saved?.screen || 0);
+  // v27 fix : on demarre TOUJOURS a l'ecran 0 (prenom) meme si saved.screen existe.
+  // Cela permet a l'utilisateur de voir/modifier ses donnees pre-remplies plutot que
+  // d'arriver direct sur le dernier ecran de consentement.
+  const [screen, setScreen] = useState(0);
 
   // Persiste à chaque modification d'un champ (debounce naturel via React batching)
   useEffect(() => {
