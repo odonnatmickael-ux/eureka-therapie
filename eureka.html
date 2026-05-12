@@ -2641,7 +2641,8 @@ function QuizBigFive({ prenom, onComplete }) {
       setCurrent(newCur);
       persist(newCur, newAns);
     } else {
-      try { localStorage.removeItem('eureka_quiz_bigfive'); } catch {}
+      // v27 fix : on GARDE les reponses pour permettre l'auto-skip aux prochaines visites (utile en test + visiteurs reguliers)
+      try { localStorage.setItem('eureka_quiz_bigfive', JSON.stringify({ current: BFI10.length, answers: newAns, completed: true })); } catch {}
       const scores = scoreBigFive(newAns);
       onComplete(scores);
     }
@@ -2742,7 +2743,8 @@ function QuizVAKOG({ prenom, onComplete }) {
       setCurrent(newCur);
       persist(newCur, newAns);
     } else {
-      try { localStorage.removeItem('eureka_quiz_vakog'); } catch {}
+      // v27 fix : on GARDE les reponses pour permettre l'auto-skip aux prochaines visites
+      try { localStorage.setItem('eureka_quiz_vakog', JSON.stringify({ current: QUIZ_VAKOG.length, answers: newAns, completed: true })); } catch {}
       const result = scoreVAKOG(newAns);
       onComplete(result);
     }
@@ -5530,8 +5532,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           </p>
         </div>
 
-        {/* v27 — Bonus : Mantra personnalise (independant de la seance) */}
-        {mantraData && (fullGenPhase === "done" || isResume) && (
+        {/* v27 — Bonus : Mantra personnalise (independant de la seance et de l'audio) */}
+        {/* v27 fix : on retire la dependance a fullGenPhase pour que le mantra s'affiche meme si l'audio plante (codec ac-3/ec-3) */}
+        {mantraData && (
           <MantraCard mantra={mantraData} prenom={prenom} />
         )}
 
