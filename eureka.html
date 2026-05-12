@@ -618,15 +618,46 @@ const isV3Voice = (voiceId) => V3_VOICES.includes(voiceId);
 // Tags v3 supportés inline dans le texte
 const V3_TAG_REGEX = /\[(whispers?|soft|calm|warm|breathing|slow|gentle)\]/gi;
 
+// v27 — Selection automatique du cycle respiratoire selon Big Five
+// Retourne { cycle, briefing, inspire, hold, expire }
+// - 4-2-8 (standard) : profil moyen — protocole Caycedo
+// - 4-2-6 (doux)     : N >= 60 (anxieux) — expir long mais pas ecrasant
+// - 5-5  (coherence) : E >= 60 et N <= 40 — dynamique, sans retention
+function selectBreathCycle(bigFiveScores) {
+  const bf = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
+  if (bf.N >= 60) {
+    return {
+      cycle: "4-2-6",
+      inspire: 4, hold: 2, expire: 6,
+      briefing: "Avant qu'on commence, ecoute attentivement... tu vas respirer a ton rythme... en comptant dans ta tete. Inspire par le nez en comptant un, deux, trois, quatre. Retiens l'air doucement, un, deux. Expire par la bouche, lentement, un, deux, trois, quatre, cinq, six. Tu vas faire ca trois fois... je reste avec toi en silence pendant que tu respires. Quand tu as fini les trois cycles, je continue."
+    };
+  }
+  if (bf.E >= 60 && bf.N <= 40) {
+    return {
+      cycle: "5-5",
+      inspire: 5, hold: 0, expire: 5,
+      briefing: "Avant qu'on commence, ecoute... tu vas respirer calmement... en comptant dans ta tete. Inspire par le nez en comptant un, deux, trois, quatre, cinq. Puis expire par la bouche, un, deux, trois, quatre, cinq. Sans retention, juste un va-et-vient regulier. Tu fais ca trois fois... je reste en silence avec toi."
+    };
+  }
+  return {
+    cycle: "4-2-8",
+    inspire: 4, hold: 2, expire: 8,
+    briefing: "Avant qu'on commence, ecoute attentivement... tu vas respirer a ton rythme... en comptant dans ta tete. Inspire par le nez en comptant un, deux, trois, quatre. Retiens l'air doucement, un, deux. Expire par la bouche, lentement, un, deux, trois, quatre, cinq, six, sept, huit. Tu vas faire ca trois fois... je reste avec toi en silence pendant que tu respires. Quand tu as fini les trois cycles, je continue."
+  };
+}
+
 function buildSystemPrompt(data) {
   const { vakog, vagokDesc, relaxDir, beliefSystem, problem, objectif, prenom, useV3Tags, bigFiveScores, archetypeKey, selectedVoice } = data;
   const archetype = ARCHETYPES[archetypeKey] || ARCHETYPES.compagnon;
 
-  // ─── RYTHME RESPIRATOIRE : Standard Caycedo 4-2-8 pour tous ─────────
-  // Pas de variation Big Five — on garde la pureté du protocole sophrologique original.
+  // ─── v27 — RYTHME RESPIRATOIRE : variantes Big Five (4-2-8 / 4-2-6 / 5-5) ─────
+  // CHANGEMENT v27 : on contredit explicitement la philosophie "pas de variation"
+  // de v26. Le cycle s'adapte au profil ; la voix ne compte plus a voix haute,
+  // un briefing previent le client de compter dans sa tete (3 fois).
   const bf = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
-  const breath = { inspire:4, hold:2, expire:8 };
-  const NUM_FR = { 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
+  const breathSpec = selectBreathCycle(bigFiveScores);
+  const breath = { inspire: breathSpec.inspire, hold: breathSpec.hold, expire: breathSpec.expire };
+  const NUM_FR = { 0:"zero", 2:"deux", 4:"quatre", 5:"cinq", 6:"six", 8:"huit", 10:"dix" };
   const COUNT_WORDS = ["un","deux","trois","quatre","cinq","six","sept","huit","neuf","dix"];
   // Ellipses dynamiques selon la voix (VOICE_DOTS_COUNT) — calibré pour cadence ~1s/temps après speed slider :
   //   Bella/Marcel @ 0.85× : 2 dots = 0.82s/temps · Mickaël/Valentin @ 0.90× : 3 dots = 1.11s/temps.
@@ -722,10 +753,16 @@ function buildSystemPrompt(data) {
     "RÈGLES ABSOLUES:\n" +
     "1. ZERO TITRE - jamais: [texte], ###, **, Phase, Scène, Cycle, Groupe, Introduction. Commencer DIRECTEMENT par les phrases thérapeutiques.\n" +
     "2. JAMAIS résumer - tout écrire intégralement. Interdit: voir cycle 1, idem, même texte.\n" +
-    "3. RESPIRATION EXACTE (cycle physiologique continu — pas de coupure entre inspire/bloque/expire pour préserver le rythme naturel du client) : Inspirez maintenant lentement " + inTemps(breath.inspire) + " " + buildCount(breath.inspire) + " ...... Bloquez doucement " + buildCount(breath.hold) + " ...... Et expirez tout doucement " + inTemps(breath.expire) + " laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s].\n" +
-    "    ⚠ INTERDIT ABSOLU : changer un seul chiffre, un seul mot, un seul marqueur PAUSE, ajouter d'autres ellipses ailleurs, ou ajouter un décompte parasite. Reproduire le format MOT POUR MOT pour les 3 cycles. ⚠ Les ellipses '......' entre 'quatre' et 'Bloquez', et entre 'deux' et 'Et expirez', sont VOULUES (transitions prosodiques douces sans casser le cycle physiologique) — NE PAS les supprimer.\n" +
-    "    ⚠ CHIFFRES STRICTS : inspire = " + breath.inspire + " temps avec count (un...jusqu'à " + NUM_FR[breath.inspire] + "), bloque = " + breath.hold + " temps avec count (un, deux), expire = " + breath.expire + " temps SANS count. Format EXACT à reproduire MOT POUR MOT pour l'expire : 'Et expirez tout doucement en huit temps... laissez partir toutes les tensions. [PAUSE_" + expirePauseSec + "s]'. NE JAMAIS utiliser d'autres chiffres ni compter pendant l'expire. Le client expire en SILENCE pendant le PAUSE.\n" +
-    "    ⚠ 3ème respiration : garder [PAUSE_" + expirePauseSec + "s] comme les autres cycles (consigne Mickaël — pas d'allongement de transition).\n" +
+    "3. RESPIRATION v27 — CYCLE " + breathSpec.cycle + " (adapte au profil Big Five). Le client COMPTE DANS SA TETE, la voix NE COMPTE PLUS A VOIX HAUTE.\n" +
+    "    BRIEFING OBLIGATOIRE a inserer UNE SEULE FOIS, juste avant le premier cycle, mot pour mot :\n" +
+    "    \"" + breathSpec.briefing + "\" [PAUSE_3s]\n" +
+    "    Puis generer 3 cycles, chacun compose UNIQUEMENT de transitions courtes + silences. FORMAT EXACT pour CHAQUE cycle :\n" +
+    (breathSpec.cycle === "5-5"
+      ? "    Inspire... [PAUSE_" + breath.inspire + "s] Expire... [PAUSE_" + breath.expire + "s]\n"
+      : "    Inspire... [PAUSE_" + breath.inspire + "s] Retiens... [PAUSE_" + breath.hold + "s] Expire... [PAUSE_" + breath.expire + "s]\n") +
+    "    Entre les 3 cycles : aucune phrase de transition (pas de recommencons, pas de deuxieme cycle). Les 3 cycles s'enchainent directement.\n" +
+    "    INTERDIT ABSOLU : compter a voix haute (un, deux, trois...). Annoncer le numero du cycle. Ajouter du texte entre les cycles. Modifier les durees de PAUSE. Inverser l'ordre des phases.\n" +
+    "    Apres le 3e cycle, [PAUSE_3s] puis enchainer sur la suite de la seance.\n" +
     "4. DÉTENDRE pas énumérer - chaque partie = phrase invitation + [PAUSE_3s].\n" +
     "5. ⚠⚠⚠ NÉGATIONS — distinguer 2 types (règle SOPHROLOGIQUE NUANCÉE) :\n" +
     "   ❌ INTERDIT — NÉGATIONS RÉACTIVANTES (qui mentionnent un mot émotionnel négatif qu'on cherche à désamorcer) :\n" +
@@ -3301,6 +3338,183 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
   );
 }
 
+// v27 — MantraCard : bonus offert apres la seance.
+// Affiche les paroles + bouton "Telecharger les paroles" (.txt complet avec
+// style Udio + instructions mobile + astuce enregistreur d'ecran).
+function MantraCard({ mantra, prenom }) {
+  if (!mantra) return null;
+
+  const paroles = mantra.affirmation + "\n" + mantra.affirmation + "\n\n" +
+    mantra.vakog1 + "\n" + mantra.vakog2 + "\n" + mantra.vakog3 + "\n\n" +
+    mantra.affirmation + "\n" + mantra.affirmation + "\n\n" +
+    mantra.sceau;
+
+  const udio = mantra.udio || {};
+
+  const downloadMantra = () => {
+    const dateStr = new Date().toLocaleDateString('fr-FR');
+    const sep = "=======================================";
+    const contenu =
+      sep + "\n" +
+      "BONUS — TON MANTRA PERSONNALISE\n" +
+      prenom + " — cree le " + dateStr + "\n" +
+      sep + "\n\n" +
+      "Ta seance complete vient de se terminer.\n" +
+      "Ce mantra n'en fait PAS partie : c'est un petit cadeau\n" +
+      "ajoute en plus, independant de la seance que tu as recue.\n" +
+      "Pas une obligation, pas un du.\n\n" +
+      "Si tu n'arrives pas a le creer sur Udio, ou si cette etape\n" +
+      "ne te parle pas, aucun probleme : tu as deja recu ta seance\n" +
+      "dans son integralite. Le mantra n'est qu'un bonus.\n\n" +
+      "Mais si tu veux l'essayer, voici tout ce qu'il te faut.\n\n" +
+      sep + "\n" +
+      "PAROLES A COLLER DANS UDIO :\n" +
+      sep + "\n\n" +
+      paroles + "\n\n" +
+      sep + "\n" +
+      "STYLE MUSICAL A COLLER DANS UDIO :\n" +
+      sep + "\n" +
+      (udio.style || "ambient sacre minimal") + "\n\n" +
+      "PARAMETRES RECOMMANDES :\n" +
+      "- Tempo : " + (udio.tempo_bpm || 60) + " bpm\n" +
+      "- Duree cible : " + (udio.duration_target || "2:30") + "\n" +
+      "- Voix : " + (udio.vocal || "voix posee") + "\n" +
+      "- Instruments : " + (udio.instruments || "piano, ambient pad") + "\n" +
+      "- Ambiance : " + (udio.mood || "meditatif sacre") + "\n\n" +
+      sep + "\n" +
+      "COMMENT CREER TON CHANT SUR UDIO (MOBILE, FRANCAIS) :\n" +
+      sep + "\n" +
+      "1. Ouvre udio.com sur ton telephone\n" +
+      "2. Connecte-toi (Google, Apple, ou email)\n" +
+      "3. Appuie sur 'Commencez a creer'\n" +
+      "4. Dans 'Decrivez votre chanson' (en haut), COLLE le STYLE.\n" +
+      "   NE TOUCHE PAS au bouton 'Telecharger' sous ce champ\n" +
+      "   (c'est pour televerser, pas telecharger).\n" +
+      "5. Plus bas, appuie sur 'Ecrivez vos paroles'.\n" +
+      "6. Choisis le mode 'Coutume' (pas 'Auto' ni 'Instrumental').\n" +
+      "7. NE TOUCHE PAS au bouton 'Ecris pour moi'.\n" +
+      "8. Dans le grand champ texte, COLLE les PAROLES.\n" +
+      "9. Tout en bas, appuie sur 'Creer'.\n" +
+      "10. Patiente 1-2 minutes. La chanson apparait dans ta Bibliotheque.\n\n" +
+      sep + "\n" +
+      "COMMENT ECOUTER TON CHANT (RITUEL 21 JOURS) :\n" +
+      sep + "\n" +
+      "ATTENTION : le telechargement Udio est PAYANT.\n" +
+      "Mais l'ecoute en ligne est gratuite et illimitee.\n\n" +
+      "1. Ouvre udio.com sur ton telephone\n" +
+      "2. Appuie sur 'Library' -> 'My Library'\n" +
+      "3. Trouve ton chant et appuie pour lancer la lecture\n\n" +
+      "POUR Y RETOURNER FACILEMENT CHAQUE MATIN :\n" +
+      "- Ajoute la page Bibliotheque Udio en FAVORI\n" +
+      "- Ou cree un raccourci sur l'ecran d'accueil de ton telephone\n" +
+      "  (menu navigateur -> 'Ajouter a l'ecran d'accueil')\n\n" +
+      sep + "\n" +
+      "ASTUCE — RECUPERER UN FICHIER AUDIO GRATUITEMENT\n" +
+      "(via l'enregistreur d'ecran de ton telephone)\n" +
+      sep + "\n" +
+      "Sur Android (Samsung et autres) :\n" +
+      "1. Glisse vers le bas DEUX FOIS depuis le haut\n" +
+      "2. Cherche le bouton 'Enregistreur d'ecran'\n" +
+      "3. Appuie et choisis 'Sons multimedia' comme source\n" +
+      "4. Lance ton chant sur Udio\n" +
+      "5. Arrete l'enregistrement a la fin\n" +
+      "6. Le fichier mp4 est dans Galerie -> Videos\n\n" +
+      "Sur iPhone :\n" +
+      "1. Reglages -> Centre de controle -> ajoute 'Enregistrement d'ecran'\n" +
+      "2. Ouvre le Centre de controle (haut droit)\n" +
+      "3. Appuie sur le bouton rouge d'enregistrement\n" +
+      "4. Lance ton chant sur Udio\n" +
+      "5. Arrete via la barre rouge en haut\n" +
+      "6. La video est dans l'app Photos\n\n" +
+      "Tu peux lire le mp4 tel quel chaque matin (ecran noir, son joue),\n" +
+      "ou installer 'Video to MP3 Converter' pour extraire la piste audio.\n\n" +
+      "Note : tu enregistres ton propre mantra cree pour toi,\n" +
+      "pour ton usage personnel — c'est legitime.\n\n" +
+      sep + "\n";
+
+    const blob = new Blob([contenu], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mantra_" + prenom + "_" + Date.now() + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const openUdio = () => {
+    window.open("https://udio.com/create", "_blank");
+  };
+
+  return (
+    <div style={{
+      background: C.panel, border: "1px solid " + C.gold,
+      borderRadius: "16px", padding: "1.5rem", marginTop: "1.5rem"
+    }}>
+      <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+        <span style={{
+          display: "inline-block", background: C.gold, color: C.bg,
+          fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
+          padding: "3px 10px", borderRadius: "10px", marginBottom: "8px"
+        }}>BONUS OFFERT</span>
+        <h3 style={{
+          color: C.goldLight, fontFamily: "'Cormorant Garamond', serif",
+          fontSize: "20px", margin: "0.5rem 0", fontWeight: 400
+        }}>Votre Mantra Personnalise</h3>
+        <p style={{ color: C.muted, fontSize: "12px", lineHeight: "1.5" }}>
+          Ta seance complete est terminee.<br/>
+          Voici un petit cadeau en plus, independant de la seance.<br/>
+          A essayer si tu en as envie — pas d'obligation.
+        </p>
+      </div>
+
+      <div style={{
+        background: C.bg, borderRadius: "10px", padding: "1rem",
+        marginBottom: "1rem", fontFamily: "'Cormorant Garamond', serif",
+        color: C.cream, lineHeight: "2", whiteSpace: "pre-line",
+        textAlign: "center", fontSize: "15px", fontStyle: "italic"
+      }}>{paroles}</div>
+
+      <p style={{ color: C.hint, fontSize: "11px", textAlign: "center",
+        marginBottom: "1rem", fontStyle: "italic" }}>
+        Style : {udio.style || "—"} · {udio.tempo_bpm || 60} bpm · {udio.duration_target || "2:30"}
+      </p>
+
+      <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column" }}>
+        <button onClick={downloadMantra} style={{
+          background: C.gold, color: C.bg, border: "none", borderRadius: "10px",
+          padding: "0.85rem", fontWeight: 600, cursor: "pointer", fontSize: "13px"
+        }}>Telecharger les paroles</button>
+        <button onClick={openUdio} style={{
+          background: "transparent", color: C.goldLight,
+          border: "1px solid " + C.gold, borderRadius: "10px",
+          padding: "0.85rem", fontWeight: 600, cursor: "pointer", fontSize: "13px"
+        }}>Ouvrir Udio</button>
+      </div>
+
+      <div style={{
+        marginTop: "1rem", padding: "0.75rem", background: C.bg,
+        borderRadius: "8px", fontSize: "11px", color: C.muted, lineHeight: "1.6"
+      }}>
+        <strong style={{ color: C.cream }}>Sur Udio (mobile, francais) :</strong><br/>
+        1. "Commencez a creer"<br/>
+        2. "Decrivez votre chanson" -> colle le style<br/>
+        3. "Ecrivez vos paroles" -> "Coutume" -> colle les paroles<br/>
+        4. Ne touche pas a "Ecris pour moi" ni au "Telecharger" du haut<br/>
+        5. "Creer" (en bas)<br/><br/>
+        <strong style={{ color: C.cream }}>Pour ton rituel chaque matin :</strong><br/>
+        Va dans "Library" -> lance ton chant. Telechargement payant<br/>
+        sur Udio, mais ecoute en ligne gratuite et illimitee.<br/>
+        Astuce : favori ou raccourci ecran d'accueil.<br/><br/>
+        <strong style={{ color: C.cream }}>Tu veux un fichier audio ?</strong><br/>
+        Utilise l'enregistreur d'ecran du telephone, source<br/>
+        "Sons multimedia". Detail complet dans le .txt telecharge.
+      </div>
+    </div>
+  );
+}
+
 // ÉTAPE 5 : Génération & Player
 function SeancePlayer({ userData, resumeData, onRestart }) {
   // v26bis — selectedVoice n'est plus pris depuis userData ; il est sélectionné dans VoiceSelection
@@ -3376,6 +3590,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
   const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
+  // v27 — Mantra personnalise (bonus offert apres la seance, echec silencieux si l'API plante)
+  const [mantraData, setMantraData] = useState(null);
   const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
 
   // ─── STREAK : incrémenter sur l'écoute (>30s) de la séance personnelle ────
@@ -3641,16 +3857,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         // ─── Template ADMIN (notifications) ─── arrive chez Mickaël en gmail
         // Variables attendues par template_nc5fh13 : to_email, notification_type, date, script
         // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
+        // v27 — Tagging du type de seance : "beta"=decouverte, "complete"=complete
+        const _typeLabel = fullGenMode === "beta" ? "decouverte" : (fullGenMode === "complete" ? "complete" : "non precise");
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
-          notification_type: isBilanMode ? "BILAN 21 JOURS — visiteur anonyme" : ("Feedback séance n°" + seanceNum),
+          notification_type: isBilanMode
+            ? ("BILAN 21 JOURS — seance " + _typeLabel + " — visiteur anonyme")
+            : ("Feedback seance " + _typeLabel + " n°" + seanceNum),
           date: new Date().toLocaleDateString("fr-FR"),
           'g-recaptcha-response': captchaToken,
-          script: (isBilanMode
+          script: "Type de seance : " + _typeLabel + "\n\n" +
+                  (isBilanMode
                     ? "BILAN 21 JOURS — visiteur anonyme (parcours complet)"
-                    : ("FEEDBACK SÉANCE n°" + seanceNum + " — visiteur anonyme")) +
-                  "\n\nRessenti : " + (fbFeel || "(non précisé)") +
-                  "\nPaierait : " + (fbPay || "(non précisé)") +
+                    : ("FEEDBACK SEANCE n°" + seanceNum + " — visiteur anonyme")) +
+                  "\n\nRessenti : " + (fbFeel || "(non precise)") +
+                  "\nPaierait : " + (fbPay || "(non precise)") +
                   "\n\nCommentaire :\n" + (fbComment.trim() || "(aucun)")
         });
       }
@@ -4039,6 +4260,82 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         annonces7: annonces7,
         annonces3: annonces3
       });
+
+      // v27 — APPEL 4 : Mantra personnalise (bonus offert)
+      // Echec silencieux : si l'API plante ou JSON invalide, MantraCard ne s'affiche pas.
+      try {
+        setLoadMsg("Creation de votre mantra personnalise...");
+        const _archStyle = {
+          pelerin:   { style: "sacred world music, ambiance meditative, sitar", vocal: "voix feminine douce, presque chuchotee", instruments: "sitar, ambient pad, percussions legeres" },
+          batisseur: { style: "orchestral sacre minimal, harmonies dorees",      vocal: "voix masculine posee",                  instruments: "piano discret, cordes graves, choeur lointain" },
+          compagnon: { style: "gospel doux, chaleureux",                          vocal: "voix proche et intime",                 instruments: "piano chaleureux, choeur leger" },
+          voyageur:  { style: "world music, nature sounds",                       vocal: "voix libre, naturelle",                 instruments: "percussions legeres, flute, ambient nature" }
+        }[archetypeKey] || { style: "ambient sacre minimal", vocal: "voix posee", instruments: "piano, ambient pad" };
+
+        const _bfM = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
+        const _nDir = _bfM.N >= 60 ? "mots SECURISANTS (paix, securite, protection, douceur)" :
+                      _bfM.N <= 40 ? "mots AFFIRMATIFS DIRECTS (force, puissance, maitrise)" :
+                      "mots equilibres (calme, solidite, clarte)";
+        const _oDir = _bfM.O >= 60 ? "metaphores ABSTRAITES (lumiere, univers, infini)" :
+                      _bfM.O <= 40 ? "images CONCRETES (mains, pieds, sol, pierre, corps)" :
+                      "melange equilibre";
+        const _eDir = _bfM.E >= 60 ? "energie RAYONNANTE (je brille, je donne, je rayonne)" :
+                      _bfM.E <= 40 ? "energie INTERIEURE (au fond de moi, dans le silence)" :
+                      "equilibre interieur/exterieur";
+        const _vDir = vakog === 'V' ? "images VISUELLES : lumiere, couleurs, formes, eclat" :
+                      vakog === 'A' ? "images AUDITIVES : sons, silence, resonance, voix" :
+                      vakog === 'K' ? "sensations KINESTHESIQUES : chaleur, poids, ancrage" :
+                      "langage logique, structure, clarte";
+
+        const _scenesClean = cleaner(scenes);
+        const _scene3 = _scenesClean.slice(Math.floor(_scenesClean.length / 2));
+
+        const _mantraPrompt =
+          "Tu es un expert en mantras therapeutiques personnalises.\n" +
+          "A partir du texte de Scene 3 ci-dessous, genere un mantra chante pour " + prenom + ".\n\n" +
+          "PROFIL :\n" +
+          "- VAKOG dominant : " + vakog + " -> " + _vDir + "\n" +
+          "- N=" + _bfM.N + " -> " + _nDir + "\n" +
+          "- O=" + _bfM.O + " -> " + _oDir + "\n" +
+          "- E=" + _bfM.E + " -> " + _eDir + "\n\n" +
+          "PRESET MUSICAL (archetype " + archetypeKey + ") :\n" +
+          "- style : " + _archStyle.style + "\n" +
+          "- vocal : " + _archStyle.vocal + "\n" +
+          "- instruments : " + _archStyle.instruments + "\n\n" +
+          "REGLES STRICTES PAROLES :\n" +
+          "1. Affirmation centrale : 4-6 mots, present positif, 8 syllabes exactement\n" +
+          "2. 3 images VAKOG : chacune 8 syllabes exactement, canal " + vakog + "\n" +
+          "3. Sceau final : affirmation x3 avec espacement croissant\n" +
+          "4. ZERO negation, ZERO mot du probleme original\n" +
+          "5. Mots simples, francais courant, chantables naturellement\n" +
+          "6. Tout doit venir des images DE LA SCENE 3 — rien d'invente\n\n" +
+          "SCENE 3 :\n" + _scene3 + "\n\n" +
+          "REPONDS UNIQUEMENT avec ce format JSON exact, rien d'autre :\n" +
+          "{\n" +
+          '  "affirmation": "texte ici",\n' +
+          '  "vakog1": "texte ici",\n' +
+          '  "vakog2": "texte ici",\n' +
+          '  "vakog3": "texte ici",\n' +
+          '  "sceau": "ligne1\\nligne2\\nligne3",\n' +
+          '  "udio": {\n' +
+          '    "style": "' + _archStyle.style + '",\n' +
+          '    "tempo_bpm": 60,\n' +
+          '    "duration_target": "2:30",\n' +
+          '    "vocal": "' + _archStyle.vocal + '",\n' +
+          '    "instruments": "' + _archStyle.instruments + '",\n' +
+          '    "mood": "meditatif sacre"\n' +
+          '  }\n' +
+          "}";
+
+        const _mantraRaw = await gpt("Tu reponds UNIQUEMENT en JSON valide, rien d'autre.", _mantraPrompt, 700);
+        const _mantraJson = _mantraRaw.replace(/```json|```/g, "").trim();
+        const _mantraParsed = JSON.parse(_mantraJson);
+        setMantraData(_mantraParsed);
+        console.log("[EUREKA v27] Mantra genere pour " + prenom);
+      } catch (e) {
+        console.warn("[EUREKA v27] Mantra non genere (sans impact sur la seance) :", e && e.message ? e.message : e);
+        setMantraData(null);
+      }
 
       // AUDIO — chargement depuis Vercel Blob selon archétype Big Five
       // Les 4 archétypes Big Five mappent sur les 4 blocs audio existants
@@ -5232,6 +5529,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             Le bouton « 🔄 Nouvelle séance » plus bas crée un nouveau profil pour travailler sur un autre objectif (à utiliser après vos 21 jours).
           </p>
         </div>
+
+        {/* v27 — Bonus : Mantra personnalise (independant de la seance) */}
+        {mantraData && (fullGenPhase === "done" || isResume) && (
+          <MantraCard mantra={mantraData} prenom={prenom} />
+        )}
 
         {/* ╔═══════════════════════════════════════════╗
             ║  FEEDBACK — Retour anonyme post-séance    ║
