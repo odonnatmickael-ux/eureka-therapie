@@ -2031,8 +2031,9 @@ function Anamnese({ onNext }) {
       return;
     }
     if (crisisOverride) track("crisis_overridden");
-    // Nettoyage : l'anamnèse est validée, plus besoin de garder l'état brouillon
-    try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
+    // v27 fix : on NE supprime PLUS l'etat anamnese pour permettre la persistance entre sessions
+    // (prenom, problem, objectif, etc. seront pre-remplis a la prochaine visite — utile pour test)
+    // try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
     onNext({ prenom, email, problem, objectif, hasSupport, crisisOverride });
   };
 
@@ -6053,10 +6054,3 @@ function App() {
       </div>
     </div>
   );
-}
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-</script>
-</body>
-</html>
