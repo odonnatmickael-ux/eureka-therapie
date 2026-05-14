@@ -1795,33 +1795,43 @@ function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
       <h1 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"clamp(42px,8vw,60px)",
         color:C.cream, fontWeight:"300", letterSpacing:"6px", margin:"0 0 8px" }}>EUREKA</h1>
       <p style={{ fontSize:"12px", color:C.muted, letterSpacing:"3px", marginBottom:"1.25rem",
-        fontFamily:"'Raleway', sans-serif" }}>Sophrologie · Transformation</p>
+        fontFamily:"'Raleway', sans-serif" }}>Sophrologie personnalisée · Gratuite · Sans engagement</p>
 
       {/* Tagline forte */}
       <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"clamp(18px,4vw,22px)",
         color:C.goldLight, fontWeight:"400", fontStyle:"italic", lineHeight:"1.5",
         maxWidth:"500px", margin:"0 auto 2rem", padding:"0 1rem" }}>
-        « La sophrologie qui parle vraiment votre langage. »
+        Et si la réponse était déjà en vous ?
       </p>
 
-      <div style={{ background:C.card, borderRadius:"20px", padding:"2rem 2.5rem",
-        border:`1px solid ${C.border}`, marginBottom:"2rem", textAlign:"left" }}>
-        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px", color:C.goldLight,
-          fontWeight:"400", marginBottom:"1rem" }}>
-          Un protocole unique, fait pour vous
-        </h2>
-        <div style={{ display:"grid", gap:"1rem" }}>
+      <div style={{ marginBottom:"2rem", textAlign:"center", padding:"0 0.5rem" }}>
+        <p style={{ fontFamily:"'Cormorant Garamond', serif",
+          fontSize:"clamp(16px,3.5vw,20px)", color:C.cream,
+          fontWeight:"300", fontStyle:"italic", lineHeight:"1.9",
+          maxWidth:"480px", margin:"0 auto 2rem" }}>
+          Vous avancez. Vous faites des efforts.<br/>
+          Mais quelque chose résiste encore.<br/>
+          <span style={{ color:C.goldLight }}>
+            EUREKA écoute ce que vous portez —<br/>
+            et crée pour vous, maintenant,<br/>
+            une séance qui vous parle vraiment.
+          </span>
+        </p>
+
+        <div style={{ display:"grid", gap:"1rem", textAlign:"left",
+          background:C.card, borderRadius:"20px",
+          padding:"1.75rem 2rem", border:`1px solid ${C.border}` }}>
           {[
-            ["🧬", "Analyse de votre profil", "Big Five (BFI-10) + VAKOG — modèle de personnalité scientifiquement validé pour adapter chaque séance"],
-            ["🎙️", "Voix et musique sur mesure", "Choisissez l'environnement sonore qui vous convient"],
-            ["🌊", "Descente alpha profonde", "Protocole sophrologique avec pauses de consolidation"],
-            ["✨", "Transformation intérieure", "Sophro-acceptation progressive — la victoire est déjà là"],
+            ["🧬", "Une analyse douce de qui vous êtes.", "Quelques questions, et la séance s'ajuste à votre tempérament."],
+            ["🌿", "Aucune inscription. Aucun abonnement.", "Juste vous — et ce que vous traversez en ce moment."],
+            ["🎯", "Une séance créée uniquement pour vous.", "Votre problème, votre objectif, votre façon de ressentir."],
+            ["🔊", "Allongez-vous. Écoutez. Laissez faire.", "La transformation commence dès la première écoute."],
           ].map(([icon,title,desc]) => (
             <div key={title} style={{ display:"flex", gap:"1rem", alignItems:"flex-start" }}>
-              <span style={{ fontSize:"20px", flexShrink:0, marginTop:"2px" }}>{icon}</span>
+              <span style={{ fontSize:"22px", flexShrink:0, marginTop:"2px" }}>{icon}</span>
               <div>
-                <p style={{ fontFamily:"'Raleway', sans-serif", fontSize:"13px", color:C.cream,
-                  fontWeight:"500", marginBottom:"2px" }}>{title}</p>
+                <p style={{ fontFamily:"'Raleway', sans-serif", fontSize:"13px",
+                  color:C.cream, fontWeight:"600", marginBottom:"3px" }}>{title}</p>
                 <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.6" }}>{desc}</p>
               </div>
             </div>
@@ -3360,6 +3370,104 @@ function EmergencyExitButton({ audioRef, selectedVoice, onExit }) {
 // Affiche les paroles + bouton "Telecharger les paroles" (.txt complet avec
 // style Udio + instructions mobile + astuce enregistreur d'ecran).
 function MantraCard({ mantra, prenom }) {
+  // v30 — état pour la génération automatique via udioapi.pro (bouton « Tenter ma chance »)
+  const [udioState, setUdioState] = useState({ status: "idle", workId: null, audioUrl: null, msg: "" });
+  const udioPollingRef = useRef(false);
+
+  // Clé localStorage par prénom pour reprendre un polling si l'utilisateur revient sur la séance
+  const UDIO_STORAGE_KEY = "eureka_mantra_udio_" + (prenom || "anon");
+
+  // v30 — restauration au montage : si audioUrl déjà connu pour ce prénom, on l'affiche tout de suite ;
+  // si workId connu mais pas encore d'audioUrl, on relance le polling.
+  useEffect(() => {
+    if (!mantra) return;
+    try {
+      const raw = localStorage.getItem(UDIO_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved && saved.audioUrl) {
+        setUdioState({ status: "success", workId: saved.workId || null, audioUrl: saved.audioUrl, msg: "" });
+      } else if (saved && saved.workId && !udioPollingRef.current) {
+        setUdioState({ status: "generating", workId: saved.workId, audioUrl: null, msg: "Reprise de la génération en cours..." });
+        pollUdio(saved.workId);
+      }
+    } catch (e) { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mantra]);
+
+  // v30 — polling /api/udio?action=feed&workId=xxx jusqu'à audio_url ou timeout 12×10s
+  const pollUdio = async (workId) => {
+    if (udioPollingRef.current) return;
+    udioPollingRef.current = true;
+    const MAX_TRIES = 12;
+    const INTERVAL_MS = 10000;
+    for (let i = 0; i < MAX_TRIES; i++) {
+      try {
+        const r = await fetch("/api/udio?action=feed&workId=" + encodeURIComponent(workId));
+        const j = await r.json();
+        const items = (j && j.data && Array.isArray(j.data.response_data)) ? j.data.response_data : [];
+        // Échec content moderation / quota : on coupe immédiatement
+        const failItem = items.find(it => it && it.fail_message);
+        if (failItem) {
+          udioPollingRef.current = false;
+          setUdioState({ status: "error", workId, audioUrl: null, msg: "Quota épuisé pour aujourd'hui — reviens demain pour tenter à nouveau." });
+          try { localStorage.removeItem(UDIO_STORAGE_KEY); } catch (e) {}
+          return;
+        }
+        // Succès : on prend le premier audio_url non vide (premier segment ou le complet)
+        const okItem = items.find(it => it && it.audio_url && it.audio_url.length > 0);
+        if (okItem && okItem.audio_url) {
+          udioPollingRef.current = false;
+          setUdioState({ status: "success", workId, audioUrl: okItem.audio_url, msg: "" });
+          try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: okItem.audio_url })); } catch (e) {}
+          return;
+        }
+      } catch (e) { /* on continue le polling, ça peut être un blip réseau */ }
+      await new Promise(resolve => setTimeout(resolve, INTERVAL_MS));
+    }
+    // Timeout 2 min sans audio_url
+    udioPollingRef.current = false;
+    setUdioState({ status: "error", workId, audioUrl: null, msg: "Délai dépassé — réessaye un peu plus tard." });
+  };
+
+  // v30 — bouton « Tenter ma chance » : appelle /api/udio?action=generate puis poll
+  const tenterMaChance = async () => {
+    if (udioPollingRef.current) return;
+    setUdioState({ status: "generating", workId: null, audioUrl: null, msg: "Envoi de la génération à Udio..." });
+    try {
+      const udioBlock = mantra && mantra.udio ? mantra.udio : {};
+      const lyrics = (mantra.affirmation || "") + "\n" + (mantra.affirmation || "") + "\n\n" +
+        (mantra.vakog1 || "") + "\n" + (mantra.vakog2 || "") + "\n" + (mantra.vakog3 || "") + "\n\n" +
+        (mantra.affirmation || "") + "\n" + (mantra.affirmation || "") + "\n\n" +
+        (mantra.sceau || "");
+      const styleStr = (udioBlock.style || "ambient sacré minimal") + ", " + (udioBlock.tempo_bpm || 60) + " bpm";
+      const titleStr = "Mantra " + (prenom || "");
+      const r = await fetch("/api/udio?action=generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "chirp-v4-5",
+          prompt: lyrics,
+          style: styleStr,
+          title: titleStr,
+          make_instrumental: false
+        })
+      });
+      const j = await r.json();
+      const workId = (j && j.workId) || (j && j.data && j.data.task_id) || null;
+      if (!r.ok || !workId) {
+        const errMsg = (j && j.message) || (j && j.error) || ("HTTP " + r.status);
+        setUdioState({ status: "error", workId: null, audioUrl: null, msg: "Quota épuisé pour aujourd'hui — reviens demain pour tenter à nouveau. (" + errMsg + ")" });
+        return;
+      }
+      try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: null })); } catch (e) {}
+      setUdioState({ status: "generating", workId, audioUrl: null, msg: "Génération en cours... (~1 à 2 min)" });
+      pollUdio(workId);
+    } catch (e) {
+      setUdioState({ status: "error", workId: null, audioUrl: null, msg: "Erreur réseau — réessaye dans un instant." });
+    }
+  };
+
   if (!mantra) return null;
 
   const paroles = mantra.affirmation + "\n" + mantra.affirmation + "\n\n" +
@@ -3497,6 +3605,74 @@ function MantraCard({ mantra, prenom }) {
           margin: "0.4rem 0 0 0", fontStyle: "italic" }}>
           Clique sur le bloc pour tout sélectionner d'un coup
         </p>
+      </div>
+
+      {/* v30 — Bloc « Tenter ma chance » : génération automatique via udioapi.pro.
+          En cas de succès, lecteur audio + bouton téléchargement MP3.
+          En cas d'échec / quota épuisé, message court — le flow manuel ci-dessous reste dispo. */}
+      <div style={{
+        background: "rgba(184,149,90,.06)", borderRadius: "10px",
+        padding: "0.85rem 1rem", marginBottom: "0.75rem",
+        border: "1px solid rgba(184,149,90,.3)"
+      }}>
+        <p style={{ color: C.goldLight, fontSize: "11px", letterSpacing: "1.5px",
+          textTransform: "uppercase", marginBottom: "0.5rem", fontWeight: 600, textAlign: "center" }}>
+          ⚡ Génération automatique
+        </p>
+
+        {udioState.status === "idle" && (
+          <>
+            <p style={{ fontSize: "11px", color: C.muted, textAlign: "center", marginBottom: "0.5rem", lineHeight: 1.5 }}>
+              Tente ta chance — si les crédits sont disponibles, ton mantra audio est créé pour toi (~1-2 min).
+            </p>
+            <button onClick={tenterMaChance} style={{
+              width: "100%", background: C.gold, color: C.bg, border: "none",
+              borderRadius: "10px", padding: "0.85rem", fontWeight: 600,
+              cursor: "pointer", fontSize: "13px"
+            }}>⚡ Tenter ma chance</button>
+          </>
+        )}
+
+        {udioState.status === "generating" && (
+          <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
+            <div style={{ color: C.goldLight, fontSize: "13px", fontWeight: 500, marginBottom: "0.3rem" }}>
+              Génération en cours...
+            </div>
+            <div style={{ color: C.muted, fontSize: "11px", lineHeight: 1.5 }}>
+              {udioState.msg || "Patience, ça peut prendre 1 à 2 minutes."}
+            </div>
+          </div>
+        )}
+
+        {udioState.status === "success" && udioState.audioUrl && (
+          <div>
+            <p style={{ color: C.cream, fontSize: "12px", textAlign: "center", marginBottom: "0.6rem", fontWeight: 500 }}>
+              ✦ Ton mantra audio est prêt
+            </p>
+            <audio src={udioState.audioUrl} controls preload="none"
+              style={{ width: "100%", marginBottom: "0.6rem" }} />
+            <a href={udioState.audioUrl} download={"mantra_" + (prenom || "eureka") + ".mp3"}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: "block", textAlign: "center",
+                background: "transparent", color: C.goldLight,
+                border: "1px solid " + C.gold, borderRadius: "10px",
+                padding: "0.6rem", fontWeight: 600, fontSize: "12px",
+                textDecoration: "none"
+              }}>⬇ Télécharger le MP3</a>
+          </div>
+        )}
+
+        {udioState.status === "error" && (
+          <div style={{ textAlign: "center", padding: "0.4rem 0" }}>
+            <p style={{ color: C.cream, fontSize: "12px", lineHeight: 1.6, marginBottom: "0.4rem" }}>
+              {udioState.msg}
+            </p>
+            <p style={{ color: C.muted, fontSize: "11px", fontStyle: "italic" }}>
+              Tu peux toujours créer ton chant manuellement sur Udio (ci-dessous).
+            </p>
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column" }}>
@@ -4138,9 +4314,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "EXEMPLE DE MICRO-BLOC BIEN FORMÉ :\n" +
         prenom + "... imagine un écran devant toi...... cet écran projette une image... floue... grise... sans contours nets.\n[PAUSE_2s]\n\n" +
         "Scène 1 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Faire voir/ressentir le problème '" + problem + "' exagéré selon canal " + vakog + ". Puis effacement complet. Son emprise s'est évaporée. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'effacement.\n\n" +
+        "APRÈS Scène 1, insère TEXTUELLEMENT cette ligne de séparation sur sa propre ligne (sans rien d'autre autour) :\n===METAPHORES_GO_HERE===\n\n" +
+        "Transition métaphorique vers Scène 2 (MAXIMUM 2 à 3 phrases) : Pendant que l'écran se déplace doucement 15 degrés vers la gauche, évoque sans nommer le chemin parcouru — ce qui vient de se dissoudre, ce qui commence à apparaître. Ton hypothétique et poétique. Aucun mot psychologique ou médical. [PAUSE_2s]\n\n" +
         "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
         "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): " + prenom + " EST DÉJÀ la nouvelle personne. Vie transformée en détail. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
-        "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]", 3000);
+        "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]\n\n" +
+        "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes — MAXIMUM 130 mots, 15 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement du problème.]\nGénère 2 à 3 métaphores pures qui évoquent subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible différente — émotionnelle, relationnelle, corporelle, existentielle, professionnelle ou autre — selon la nature du problème. Chaque métaphore peut résonner indépendamment. Elles s'enchaînent naturellement sans rupture.\nRègles strictes :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation TOUJOURS hypothétique en 'peut-être que...' — JAMAIS affirmatif.\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " qui détermine la modalité (Visuel=image/forme/lumière ; Auditif=son/écho/silence ; Kinesthésique=poids/pression/vibration ; Rationnel=structure/équation) ; (b) l'archétype " + archetype.name + " qui détermine l'univers symbolique (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Chaque métaphore appartient naturellement à l'univers de l'archétype tout en utilisant la modalité du canal VAKOG.\n- Exemples : 'peut-être qu'une pierre a été posée trop tôt sur une fondation pas tout à fait sèche...' (Bâtisseur × Visuel) ; 'peut-être qu'un silence s'est installé là où une voix manquait...' (Compagnon × Auditif).\n- Ne jamais sortir le client de sa relaxation — tout doit couler.\n- Terminer EXACTEMENT par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n===METAPHORES_END===", 3000);
 
       // ─── APPEL 4 (CONDITIONNEL) : VERSION DOUCE DES 3 SCÈNES — uniquement si profil sensible ───
       // Phase A : protection scène 1 pour éviter de déclencher une crise chez les profils fragiles.
@@ -4268,9 +4447,39 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Stockage des sections pour permettre la reconstruction selon le mode (bêta 3 cycles / complète 7 cycles)
       // Phase A : on stocke aussi scenesDouce + isProfileSensible pour que generateFullAudio
       // puisse reproduire la logique cycles 1-2 douce / 3-7 standard.
+      // === v29 : extraction du Bloc métaphores et split de scenes pour insertion cycle 1 ===
+      const scenesCleaned = cleaner(scenes);
+      let _metaphores = "";
+      let _scenesPart1 = "";
+      let _scenesPart2 = "";
+      try {
+        const _metaMatch = scenesCleaned.match(/===\s*METAPHORES_START\s*===([\s\S]*?)===\s*METAPHORES_END\s*===/i);
+        let _forSplit = scenesCleaned;
+        if (_metaMatch) {
+          _metaphores = _metaMatch[1].trim();
+          _forSplit = scenesCleaned.replace(/===\s*METAPHORES_START\s*===[\s\S]*?===\s*METAPHORES_END\s*===/i, "").trim();
+        }
+        if (/===\s*METAPHORES_GO_HERE\s*===/i.test(_forSplit)) {
+          const _parts = _forSplit.split(/===\s*METAPHORES_GO_HERE\s*===/i);
+          _scenesPart1 = _parts[0].trim();
+          _scenesPart2 = _parts.slice(1).join("").trim();
+        } else {
+          _scenesPart1 = _forSplit;
+          _scenesPart2 = "";
+        }
+        console.log("[EUREKA v29] parsing OK — metaphores:", _metaphores ? _metaphores.length + " chars" : "vide", "| part1:", _scenesPart1.length, "| part2:", _scenesPart2.length);
+      } catch (e) {
+        console.warn("[EUREKA v29] parsing métaphores échoué, fallback:", e && e.message);
+        _scenesPart1 = scenesCleaned;
+        _scenesPart2 = "";
+        _metaphores = "";
+      }
       setScriptParts({
         intro: cleaner(part1),
-        scenes: cleaner(scenes),
+        scenes: scenesCleaned,
+        scenesPart1: _scenesPart1,
+        scenesPart2: _scenesPart2,
+        metaphores: _metaphores,
         scenesDouce: scenesDouce ? cleaner(scenesDouce) : null,
         isProfileSensible: isProfileSensible,
         cloture: cleaner(part3),
@@ -4433,7 +4642,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           if (i === 2 && sensible && douce) {
             cycles += "\n\n" + PONT_SENSIBLE;
           }
-          cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
+          cycles += "\n\n" + annonces[i];
+          // v29 : profil sensible cycles 0-1 = scenesDouce (un seul bloc, comportement inchangé)
+          if (sensible && i < 2 && douce) {
+            cycles += "\n\n" + douce;
+          } else if (scriptParts.scenesPart1 && scriptParts.scenesPart2) {
+            // Cycles standard : scenesPart1 + (métaphores si cycle 0 et profil non-sensible) + scenesPart2
+            cycles += "\n\n" + scriptParts.scenesPart1;
+            if (i === 0 && !sensible && scriptParts.metaphores) {
+              cycles += "\n\n" + scriptParts.metaphores;
+            }
+            cycles += "\n\n" + scriptParts.scenesPart2;
+          } else {
+            // Fallback : marqueurs absents, scenes en un bloc (comportement v28)
+            cycles += "\n\n" + scriptParts.scenes;
+          }
         }
         activeScript = scriptParts.intro + cycles + "\n\n" + scriptParts.cloture;
         // On synchronise l'affichage pour que ce que l'utilisateur lit corresponde à ce qu'il entend
