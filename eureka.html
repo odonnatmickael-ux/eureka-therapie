@@ -2787,10 +2787,14 @@ function QuizVAKOG({ prenom, onComplete }) {
           fontWeight:"400", lineHeight:"1.45", marginBottom:"1.5rem" }}>{q.q}</h2>
 
         <div style={{ display:"grid", gap:"0.6rem" }}>
-          {q.opts.map((opt, i) => (
+          {q.opts.map((opt, i) => {
+            // v27 fix : highlight visuel de la reponse precedemment selectionnee (comme BigFive)
+            const selected = answers[current] === opt.v;
+            return (
             <button key={i} className="opt-card" onClick={() => handleAnswer(opt.v)}
-              style={{ padding:"0.875rem 1.125rem", background:C.panel,
-                border:`1.5px solid ${C.border}`, borderRadius:"12px",
+              style={{ padding:"0.875rem 1.125rem",
+                background: selected ? `rgba(184,149,90,.15)` : C.panel,
+                border:`1.5px solid ${selected ? C.gold : C.border}`, borderRadius:"12px",
                 fontSize:"13px", fontFamily:"'Raleway', sans-serif", color:C.text,
                 cursor:"pointer", textAlign:"left", lineHeight:"1.5",
                 transition:"all .2s", display:"flex", gap:"10px", alignItems:"center" }}>
@@ -2800,7 +2804,8 @@ function QuizVAKOG({ prenom, onComplete }) {
                 color:C.bg, fontWeight:"700" }}>{opt.v}</span>
               {opt.t}
             </button>
-          ))}
+            );
+          })}
         </div>
 
         {current > 0 && (
@@ -3482,15 +3487,15 @@ function MantraCard({ mantra, prenom }) {
         </p>
         <div style={{
           background: C.bg, borderRadius: "10px", padding: "0.85rem 1rem",
-          color: C.cream, fontSize: "14px", lineHeight: "1.4",
+          color: C.cream, fontSize: "14px", lineHeight: "1.5",
           border: "1.5px solid " + C.gold, textAlign: "center",
           userSelect: "all", cursor: "text", fontWeight: 500
         }}>
-          {udio.style || "ambient sacre minimal"}
+          {(udio.style || "ambient sacre minimal") + ", " + (udio.tempo_bpm || 60) + " bpm, durée " + (udio.duration_target || "2:30")}
         </div>
-        <p style={{ color: C.hint, fontSize: "11px", textAlign: "center",
-          margin: "0.5rem 0 0 0", fontStyle: "italic" }}>
-          Tempo : {udio.tempo_bpm || 60} bpm · Durée cible : {udio.duration_target || "2:30"}
+        <p style={{ color: C.hint, fontSize: "10px", textAlign: "center",
+          margin: "0.4rem 0 0 0", fontStyle: "italic" }}>
+          Clique sur le bloc pour tout sélectionner d'un coup
         </p>
       </div>
 
