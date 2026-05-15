@@ -3385,11 +3385,11 @@ function MantraCard({ mantra, prenom }) {
       const raw = localStorage.getItem(UDIO_STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      // v32 fix : si les paroles ont changé depuis la sauvegarde, l'audio est obsolète
+      // v32 fix : si la sauvegarde n'a pas de lyrics OU si les lyrics ont changé, l'audio est obsolète
       const _currentLyrics = mantra && mantra.affirmation ? mantra.affirmation : "";
-      if (saved && saved.lyrics && saved.lyrics !== _currentLyrics) {
+      if (saved && _currentLyrics && (!saved.lyrics || saved.lyrics !== _currentLyrics)) {
         try { localStorage.removeItem(UDIO_STORAGE_KEY); } catch (e2) {}
-        console.log("[EUREKA] Audio Udio obsolète détecté (paroles différentes), reset");
+        console.log("[EUREKA] Audio Udio obsolète détecté (paroles différentes ou ancien format), reset");
         return;
       }
       if (saved && saved.audioUrl) {
@@ -4463,6 +4463,22 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       let _metaphores = "", _scenesPart1 = "", _scenesPart2 = "";
       let _metaphoresDouce = "", _scenesDoucePart1 = "", _scenesDoucePart2 = "";
 
+      // v32 fix : safety net — strippe TOUT marqueur résiduel (markers + sections orphelines)
+      // Cas typique : Claude a généré plusieurs blocs START/END par erreur, ou des marqueurs
+      // mal formatés. Le strip retire les patterns connus pour éviter qu'ils n'apparaissent
+      // dans l'audio final (la TTS les prononcerait littéralement).
+      const _stripAllMarkers = (s) => {
+        if (!s) return "";
+        return s
+          // 1. Strip toute section START..END complète (résiduelle après l'extraction principale)
+          .replace(/===\s*METAPHORES_START\s*===[\s\S]*?===\s*METAPHORES_END\s*===/gi, "")
+          // 2. Strip marqueurs isolés (START seul, END seul, GO_HERE)
+          .replace(/===\s*METAPHORES_(START|END|GO_HERE)\s*===/gi, "")
+          // 3. Normalise les sauts de ligne multiples créés par le strip
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      };
+
       const _parseScenes = (raw) => {
         let m = "", p1 = "", p2 = "";
         if (!raw) return { m, p1, p2 };
@@ -4481,8 +4497,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             p1 = forSplit;
             p2 = "";
           }
+          // v32 fix : safety net après split — garantit aucun marqueur résiduel
+          p1 = _stripAllMarkers(p1);
+          p2 = _stripAllMarkers(p2);
+          m = _stripAllMarkers(m);
         } catch (e) {
-          p1 = raw; p2 = ""; m = "";
+          p1 = _stripAllMarkers(raw); p2 = ""; m = "";
         }
         return { m, p1, p2 };
       };
@@ -4497,13 +4517,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         console.log("[EUREKA v32] parsing scenesDouce — metaphoresDouce:", _metaphoresDouce ? _metaphoresDouce.length + " chars" : "vide", "| doucePart1:", _scenesDoucePart1.length, "| doucePart2:", _scenesDoucePart2.length);
       }
 
+      // v32 fix : strip aussi les versions "scenes" et "scenesDouce" entières (utilisées en fallback ultime)
+      const _scenesForStorage = _stripAllMarkers(scenesCleaned);
+      const _scenesDouceForStorage = scenesDouceCleaned ? _stripAllMarkers(scenesDouceCleaned) : null;
       setScriptParts({
         intro: cleaner(part1),
-        scenes: scenesCleaned,
+        scenes: _scenesForStorage,
         scenesPart1: _scenesPart1,
         scenesPart2: _scenesPart2,
         metaphores: _metaphores,
-        scenesDouce: scenesDouceCleaned,
+        scenesDouce: _scenesDouceForStorage,
         scenesDoucePart1: _scenesDoucePart1,
         scenesDoucePart2: _scenesDoucePart2,
         metaphoresDouce: _metaphoresDouce,
