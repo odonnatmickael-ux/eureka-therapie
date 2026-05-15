@@ -3385,6 +3385,13 @@ function MantraCard({ mantra, prenom }) {
       const raw = localStorage.getItem(UDIO_STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
+      // v32 fix : si les paroles ont changé depuis la sauvegarde, l'audio est obsolète
+      const _currentLyrics = mantra && mantra.affirmation ? mantra.affirmation : "";
+      if (saved && saved.lyrics && saved.lyrics !== _currentLyrics) {
+        try { localStorage.removeItem(UDIO_STORAGE_KEY); } catch (e2) {}
+        console.log("[EUREKA] Audio Udio obsolète détecté (paroles différentes), reset");
+        return;
+      }
       if (saved && saved.audioUrl) {
         setUdioState({ status: "success", workId: saved.workId || null, audioUrl: saved.audioUrl, msg: "" });
       } else if (saved && saved.workId && !udioPollingRef.current) {
@@ -3419,7 +3426,7 @@ function MantraCard({ mantra, prenom }) {
         if (okItem && okItem.audio_url) {
           udioPollingRef.current = false;
           setUdioState({ status: "success", workId, audioUrl: okItem.audio_url, msg: "" });
-          try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: okItem.audio_url })); } catch (e) {}
+          try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: okItem.audio_url, lyrics: (mantra && mantra.affirmation ? mantra.affirmation : "") })); } catch (e) {}
           return;
         }
       } catch (e) { /* on continue le polling, ça peut être un blip réseau */ }
@@ -3460,7 +3467,7 @@ function MantraCard({ mantra, prenom }) {
         setUdioState({ status: "error", workId: null, audioUrl: null, msg: "Quota épuisé pour aujourd'hui — reviens demain pour tenter à nouveau. (" + errMsg + ")" });
         return;
       }
-      try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: null })); } catch (e) {}
+      try { localStorage.setItem(UDIO_STORAGE_KEY, JSON.stringify({ workId, audioUrl: null, lyrics: (mantra && mantra.affirmation ? mantra.affirmation : "") })); } catch (e) {}
       setUdioState({ status: "generating", workId, audioUrl: null, msg: "Génération en cours... (~1 à 2 min)" });
       pollUdio(workId);
     } catch (e) {
