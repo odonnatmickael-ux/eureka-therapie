@@ -4637,7 +4637,18 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // pas la génération d'un échantillon ou d'un script. L'incrément se fait dans onPlay (>30s d'écoute).
 
       setPhase("ready");
-    } catch (e) { console.error(e); track("script_failed", { error: (e.message || "?").substring(0, 80) }); setError("Erreur: " + e.message); setPhase("ready"); }
+    } catch (e) {
+      console.error(e);
+      track("script_failed", { error: (e.message || "?").substring(0, 80) });
+      // v32 fix : message friendly pour les erreurs transitoires (Overloaded, rate limit, etc.)
+      const _msg = e.message || "?";
+      const _isTransient = /overloaded|rate.?limit|temporarily|service.?unavailable|too.?many/i.test(_msg);
+      const _friendly = _isTransient
+        ? "Les serveurs Claude sont temporairement surchargés. Réessaie dans 1 à 2 minutes — c'est généralement court."
+        : "Erreur : " + _msg;
+      setError(_friendly);
+      setPhase("ready");
+    }
   };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -5256,7 +5267,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         {error && (
           <div style={{ padding:"0.75rem 1rem", borderRadius:"10px", marginBottom:"1rem", fontSize:"12px",
             background:"rgba(192,57,43,.1)", border:`1px solid ${C.red}`, color:"#f87171" }}>
-            ⚠ {error}
+            <div style={{ marginBottom:"0.5rem", lineHeight:1.5 }}>⚠ {error}</div>
+            <button onClick={() => { setError(""); generateSession(); }} style={{
+              background: "transparent", color: "#f87171",
+              border: "1px solid #f87171", borderRadius: "8px",
+              padding: "6px 14px", fontSize: "11px", fontWeight: 600,
+              cursor: "pointer", marginTop: "2px"
+            }}>↻ Réessayer la génération</button>
           </div>
         )}
 
