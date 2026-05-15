@@ -4423,26 +4423,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const annonces = annonces7;
       // Phase A — Variante 2 : pour profil sensible, cycles 1-2 = version douce, cycles 3-7 = standard.
       // Pour profil stable, tous les cycles = standard (comportement historique).
-      const sceneToUse = (i) => (isProfileSensible && i < 2 && scenesDouce) ? scenesDouce : scenes;
       // Phase A — texte-pont entre cycle 2 (douce) et cycle 3 (standard) : prépare psychologiquement
       // au passage "silhouette/forme abstraite" → "Mickael nommé/crise d'angoisse" (exposition graduelle).
       const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêt à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
-      let cycles = "";
-      for (let i = 0; i < 7; i++) {
-        // Insertion du pont AVANT le cycle 3 (i===2) uniquement en mode sensible
-        if (i === 2 && isProfileSensible && scenesDouce) {
-          cycles += "\n\n" + PONT_SENSIBLE;
-        }
-        cycles += "\n\n" + annonces[i] + "\n\n" + sceneToUse(i);
-      }
 
       // Filet de sécurité : si Claude n'a pas inclus la phrase de fin (sortie tronquée
       // ou ignorée), on l'ajoute manuellement pour que la séance ne se termine pas en l'air.
       const endsCleanly = /[.!?]\s*$/.test(part3Raw.trim()) && part3Raw.includes(prenom);
       const part3 = endsCleanly ? part3Raw : (part3Raw.trim().replace(/[,;:\s]+$/, "") + "...\n\nDoucement... ouvrez les yeux... étirez-vous tranquillement...\n\n" + FIN_PHRASE);
 
-      // Assembler et nettoyer les titres residuels
-      const raw = part1 + cycles + "\n\n" + part3;
       const cleaner = (txt) => txt
         .replace(/\[VOIX[^\]]*\]/gi, "")
         .replace(/^#+\s.*$/gm, "")
@@ -4451,34 +4440,17 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         .replace(/CYCLE\s*\d[^\n]*/gi, "")
         .replace(/Phase\s*\d[^\n]*/gi, "")
         .trim();
-      const clean = cleaner(raw);
 
-      setScript(clean);
-      // Stockage des sections pour permettre la reconstruction selon le mode (bêta 3 cycles / complète 7 cycles)
-      // Phase A : on stocke aussi scenesDouce + isProfileSensible pour que generateFullAudio
-      // puisse reproduire la logique cycles 1-2 douce / 3-7 standard.
-      // === v29/v32 : extraction du Bloc métaphores pour scenes standard ET scenesDouce ===
-      const scenesCleaned = cleaner(scenes);
-      const scenesDouceCleaned = scenesDouce ? cleaner(scenesDouce) : null;
-      let _metaphores = "", _scenesPart1 = "", _scenesPart2 = "";
-      let _metaphoresDouce = "", _scenesDoucePart1 = "", _scenesDoucePart2 = "";
-
-      // v32 fix : safety net — strippe TOUT marqueur résiduel (markers + sections orphelines)
-      // Cas typique : Claude a généré plusieurs blocs START/END par erreur, ou des marqueurs
-      // mal formatés. Le strip retire les patterns connus pour éviter qu'ils n'apparaissent
-      // dans l'audio final (la TTS les prononcerait littéralement).
+      // v32 fix : on parse AVANT d'assembler les cycles pour que le 1er affichage soit déjà propre
+      // (métaphores une seule fois au cycle 0, aucun marqueur résiduel).
       const _stripAllMarkers = (s) => {
         if (!s) return "";
         return s
-          // 1. Strip toute section START..END complète (résiduelle après l'extraction principale)
           .replace(/===\s*METAPHORES_START\s*===[\s\S]*?===\s*METAPHORES_END\s*===/gi, "")
-          // 2. Strip marqueurs isolés (START seul, END seul, GO_HERE)
           .replace(/===\s*METAPHORES_(START|END|GO_HERE)\s*===/gi, "")
-          // 3. Normalise les sauts de ligne multiples créés par le strip
           .replace(/\n{3,}/g, "\n\n")
           .trim();
       };
-
       const _parseScenes = (raw) => {
         let m = "", p1 = "", p2 = "";
         if (!raw) return { m, p1, p2 };
@@ -4497,7 +4469,6 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             p1 = forSplit;
             p2 = "";
           }
-          // v32 fix : safety net après split — garantit aucun marqueur résiduel
           p1 = _stripAllMarkers(p1);
           p2 = _stripAllMarkers(p2);
           m = _stripAllMarkers(m);
@@ -4507,17 +4478,61 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         return { m, p1, p2 };
       };
 
+      const scenesCleaned = cleaner(scenes);
+      const scenesDouceCleaned = scenesDouce ? cleaner(scenesDouce) : null;
       const _std = _parseScenes(scenesCleaned);
-      _metaphores = _std.m; _scenesPart1 = _std.p1; _scenesPart2 = _std.p2;
-      console.log("[EUREKA v32] parsing scenes standard — metaphores:", _metaphores ? _metaphores.length + " chars" : "vide", "| part1:", _scenesPart1.length, "| part2:", _scenesPart2.length);
-
+      const _scenesPart1 = _std.p1;
+      const _scenesPart2 = _std.p2;
+      const _metaphores = _std.m;
+      let _scenesDoucePart1 = "", _scenesDoucePart2 = "", _metaphoresDouce = "";
       if (scenesDouceCleaned) {
         const _d = _parseScenes(scenesDouceCleaned);
-        _metaphoresDouce = _d.m; _scenesDoucePart1 = _d.p1; _scenesDoucePart2 = _d.p2;
-        console.log("[EUREKA v32] parsing scenesDouce — metaphoresDouce:", _metaphoresDouce ? _metaphoresDouce.length + " chars" : "vide", "| doucePart1:", _scenesDoucePart1.length, "| doucePart2:", _scenesDoucePart2.length);
+        _scenesDoucePart1 = _d.p1;
+        _scenesDoucePart2 = _d.p2;
+        _metaphoresDouce = _d.m;
+      }
+      console.log("[EUREKA v32] parsing initial — metaphores std:", _metaphores ? _metaphores.length + " chars" : "vide", "| metaphoresDouce:", _metaphoresDouce ? _metaphoresDouce.length + " chars" : "vide");
+
+      // Assemblage des cycles avec parts parsées (métaphores une seule fois au cycle 0)
+      let cycles = "";
+      for (let i = 0; i < 7; i++) {
+        if (i === 2 && isProfileSensible && scenesDouceCleaned) {
+          cycles += "\n\n" + PONT_SENSIBLE;
+        }
+        cycles += "\n\n" + annonces[i];
+        if (isProfileSensible && i < 2 && scenesDouceCleaned) {
+          if (_scenesDoucePart1 && _scenesDoucePart2) {
+            cycles += "\n\n" + _scenesDoucePart1;
+            if (i === 0 && _metaphoresDouce) {
+              cycles += "\n\n" + _metaphoresDouce;
+            }
+            cycles += "\n\n" + _scenesDoucePart2;
+          } else {
+            cycles += "\n\n" + _stripAllMarkers(scenesDouceCleaned);
+          }
+        } else if (_scenesPart1 && _scenesPart2) {
+          cycles += "\n\n" + _scenesPart1;
+          if (i === 0 && _metaphores) {
+            cycles += "\n\n" + _metaphores;
+          }
+          cycles += "\n\n" + _scenesPart2;
+        } else {
+          cycles += "\n\n" + _stripAllMarkers(scenesCleaned);
+        }
       }
 
-      // v32 fix : strip aussi les versions "scenes" et "scenesDouce" entières (utilisées en fallback ultime)
+      // Assembler et nettoyer les titres residuels
+      const raw = part1 + cycles + "\n\n" + part3;
+      const clean = cleaner(raw);
+      // Defense en profondeur : strip une dernière fois au cas où
+      const cleanNoMarkers = clean
+        .replace(/===\s*METAPHORES_(START|END|GO_HERE)\s*===/gi, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+      setScript(cleanNoMarkers);
+      // Stockage des sections pour permettre la reconstruction selon le mode (bêta 3 cycles / complète 7 cycles)
+      // Tout a déjà été parsé plus haut. On utilise les valeurs déjà calculées.
       const _scenesForStorage = _stripAllMarkers(scenesCleaned);
       const _scenesDouceForStorage = scenesDouceCleaned ? _stripAllMarkers(scenesDouceCleaned) : null;
       setScriptParts({
