@@ -3930,10 +3930,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const isV3 = useV3Mode;
       const modelId = isV3 ? "eleven_v3" : "eleven_multilingual_v2";
       const testText = "Bonjour " + (prenom || "ami") + "... installez-vous confortablement... laissez votre corps trouver sa position naturelle... vous êtes en sécurité ici... respirez doucement... et écoutez le son de cette voix.";
-      const r = await safeFetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
+      const r = await safeFetch("/api/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "xi-api-key": key },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          key: key,
+          voiceId: selectedVoice,
           text: testText,
           model_id: modelId,
           voice_settings: {
@@ -4838,10 +4840,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         let r;
         try {
           // safeFetch : timeout 60s + retry 1x (ElevenLabs peut être lent en v3)
-          r = await safeFetch("https://api.elevenlabs.io/v1/text-to-speech/" + selectedVoice, {
+          r = await safeFetch("/api/tts", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "xi-api-key": key },
-            body: JSON.stringify(body)
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: key, voiceId: selectedVoice, ...body })
           }, { timeoutMs: 60000, maxRetries: 1 });
         } catch (netErr) {
           throw new Error("Erreur réseau ElevenLabs (" + netErr.message + "). Modèle utilisé : " + effectiveModelId + ". Si v3 actif, vérifier que ta voix supporte v3 et que ton plan a accès au modèle v3.");
