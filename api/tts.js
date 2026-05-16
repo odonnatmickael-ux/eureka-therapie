@@ -1,55 +1,118 @@
+// /api/tts.js — version BÊTA TOKENS (v33)
+// ─────────────────────────────────────────────────────────────────────
+// Proxy ElevenLabs avec support des tokens Eureka pour bêta test.
+//
+// Comportement :
+// - Si le champ "key" reçu commence par "EUREKA-BETA-" → on valide le token
+//   dans Vercel KV (décrément atomique, refus si < 0), puis on appelle
+//   ElevenLabs avec la clé serveur ELEVEN_API_KEY.
+// - Sinon → on traite "key" comme une vraie clé ElevenLabs et on forward direct.
+//
+// Variables d'environnement requises sur Vercel :
+// - ELEVEN_API_KEY (ta vraie clé ElevenLabs, du compte payant que tu utilises pour le bêta)
+// - KV_REST_API_URL (auto-créée quand tu actives Vercel KV)
+// - KV_REST_API_TOKEN (auto-créée quand tu actives Vercel KV)
+//
+// Pour revenir au comportement actuel (sans tokens), remettre l'ancien tts.js.
+
+const KV_URL = process.env.KV_REST_API_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+const SERVER_ELEVEN_KEY = process.env.ELEVEN_API_KEY;
+
+async function kvDecr(key) {
+  const r = await fetch(`${KV_URL}/decr/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${KV_TOKEN}` },
+  });
+  if (!r.ok) throw new Error(`KV decr HTTP ${r.status}`);
+  const data = await r.json();
+  return parseInt(data.result, 10);
+}
+
+async function kvIncr(key) {
+  const r = await fetch(`${KV_URL}/incr/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${KV_TOKEN}` },
+  });
+  if (!r.ok) throw new Error(`KV incr HTTP ${r.status}`);
+  const data = await r.json();
+  return parseInt(data.result, 10);
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
-  // modelId et voiceSettings sont optionnels :
-  // - si non fournis → comportement historique (v2 + speed par défaut de la voix)
-  // - si fournis → on les utilise tels quels (utile pour faire matcher la démo Landing
-  //   avec les vrais réglages de la séance, ex: Mickaël en eleven_v3)
-  const { text, voiceId, modelId, voiceSettings } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
 
-  const SPEEDS = {
-    "4RZ84U1b4WCqpu57LvIq": 0.78,  // Bella
-    "9BWtsMINqrJLrRacOk9x": 0.78,  // Aria
-    "pNInz6obpgDQGcFmaJgB": 0.78,  // Adam
-    "nPczCjzI2devNBz1zQrb": 0.78,  // Brian
-    "YV28ox2c5Cuh5rim0LrW": 0.78,  // Marcel
-    "cQVn2FWawJsxa2z9X3l1": 0.90,  // Valentin
-    "5l4ttmr4SKNgi0HnOelT": 0.78,  // Paul K
-    "HeQxwrjIb6zvCa1bt1EE": 0.78,  // Ludovic
-    "19cV422MaCP4oU6N8AFm": 0.90,  // Mickaël (nouvelle voix ElevenLabs)
-  };
+  const body = req.body || {};
+  const { key, voiceId, ...elevenBody } = body;
 
-  const voice = voiceId || "4RZ84U1b4WCqpu57LvIq";
-  const speed = SPEEDS[voice] || 0.78;
+  if (!key || !voiceId) {
+    return res.status(400).json({ error: "Champ 'key' ou 'voiceId' manquant" });
+  }
 
-  // Modèle effectif : celui demandé par le client, sinon eleven_multilingual_v2 par défaut
-  const effectiveModel = modelId || "eleven_multilingual_v2";
-  // Réglages effectifs : ceux demandés par le client, sinon juste { speed } par défaut
-  const effectiveSettings = voiceSettings || { speed: speed };
+  let effectiveKey = key;
 
+  // ─── Token Eureka : validation côté serveur via Vercel KV ───
+  if (key.startsWith("EUREKA-BETA-")) {
+    if (!KV_URL || !KV_TOKEN) {
+      return res.status(500).json({
+        error: "Vercel KV non configuré côté serveur (KV_REST_API_URL / KV_REST_API_TOKEN manquants)",
+      });
+    }
+    if (!SERVER_ELEVEN_KEY) {
+      return res.status(500).json({
+        error: "ELEVEN_API_KEY non configurée côté serveur",
+      });
+    }
+    try {
+      const newValue = await kvDecr(key);
+      if (Number.isNaN(newValue) || newValue < 0) {
+        // Restaurer pour ne pas laisser le compteur partir en négatif
+        try { await kvIncr(key); } catch (e) { /* ignore */ }
+        return res.status(429).json({
+          error: "Token Eureka épuisé ou inconnu — contacte Mickaël pour un nouveau.",
+        });
+      }
+      effectiveKey = SERVER_ELEVEN_KEY;
+      console.log(`[/api/tts] Token ${key} validé, restant=${newValue}`);
+    } catch (e) {
+      console.error("[/api/tts] Erreur KV :", e && e.message);
+      return res.status(500).json({
+        error: "Erreur de validation du token (KV indisponible)",
+      });
+    }
+  }
+
+  // ─── Forward à ElevenLabs avec la clé effective ───
   try {
-    const r = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/" + voice,
+    const upstream = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`,
       {
         method: "POST",
         headers: {
+          "xi-api-key": effectiveKey,
           "Content-Type": "application/json",
-          "xi-api-key": process.env.ELEVEN_API_KEY
+          Accept: "audio/mpeg",
         },
-        body: JSON.stringify({
-          text: text,
-          model_id: effectiveModel,
-          voice_settings: effectiveSettings
-        })
+        body: JSON.stringify(elevenBody),
       }
     );
-    if (!r.ok) {
-      const err = await r.text();
-      return res.status(500).json({ error: err });
+
+    if (!upstream.ok) {
+      const errorText = await upstream.text();
+      res.status(upstream.status);
+      res.setHeader("Content-Type", upstream.headers.get("content-type") || "text/plain");
+      return res.send(errorText);
     }
-    const buffer = await r.arrayBuffer();
+
+    const audioBuffer = await upstream.arrayBuffer();
     res.setHeader("Content-Type", "audio/mpeg");
-    return res.status(200).send(Buffer.from(buffer));
+    return res.status(200).send(Buffer.from(audioBuffer));
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error("[/api/tts] Erreur réseau ElevenLabs :", e && e.message);
+    return res.status(500).json({
+      error: (e && e.message) || "Erreur réseau ElevenLabs",
+    });
   }
 }
