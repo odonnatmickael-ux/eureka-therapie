@@ -49,7 +49,7 @@
 <script>
 const CONFIG = {
   // ── Claude API (génération du script de séance) ──────────────────────────
-  CLAUDE_API_KEY: "", // ← clé OpenAI
+  CLAUDE_API_KEY: "", // ← clé Anthropic (Claude)
 
   // ── ElevenLabs (synthèse vocale) ─────────────────────────────────────────
   ELEVEN_API_KEY:  "",
@@ -5863,8 +5863,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         </div>
 
         {/* v27 — Bonus : Mantra personnalise (independant de la seance et de l'audio) */}
-        {/* v27 fix : on retire la dependance a fullGenPhase pour que le mantra s'affiche meme si l'audio plante (codec ac-3/ec-3) */}
-        {mantraData && (
+        {/* v32 (17 mai 2026) : MantraCard gatée sur fullGenMode (= le client a cliqué Générer).
+            Récompense de l'engagement — le client doit avoir LANCÉ sa séance (Découverte ou
+            Complète) pour débloquer le mantra et tout ce qui touche à Udio (paroles + style +
+            bouton Tenter ma chance + Ouvrir Udio + instructions).
+            On gate sur fullGenMode (et PAS sur fullGenPhase === "done") pour respecter le v27 fix :
+            le client ne doit pas être puni si la génération audio crashe APRÈS son clic
+            (Overloaded, codec ac-3/ec-3, réseau). Son engagement a déjà eu lieu.
+            Aligne le funnel : pas de freebie mantra sans engagement préalable. */}
+        {mantraData && fullGenMode !== null && (
           <MantraCard mantra={mantraData} prenom={prenom} />
         )}
 
