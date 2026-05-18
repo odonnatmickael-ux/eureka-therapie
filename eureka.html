@@ -7046,4 +7046,46 @@ function App() {
             Sessions 3-5 : profil-couple et seance-couple restent placeholders. */}
         {step === "anamnese-1" && <Anamnese personId={1} onNext={handleCoupleAnamneseP1} />}
         {step === "bigfive-1" && (
-          <QuizBigFive personId={1
+          <QuizBigFive personId={1} prenom={userData.person1?.prenom} onComplete={handleCoupleBigFiveP1} />
+        )}
+        {step === "vakog-1" && (
+          <QuizVAKOG personId={1} prenom={userData.person1?.prenom} onComplete={handleCoupleVAKOGP1} />
+        )}
+        {step === "anamnese-2" && <Anamnese personId={2} onNext={handleCoupleAnamneseP2} />}
+        {step === "bigfive-2" && (
+          <QuizBigFive personId={2} prenom={userData.person2?.prenom} onComplete={handleCoupleBigFiveP2} />
+        )}
+        {step === "vakog-2" && (
+          <QuizVAKOG personId={2} prenom={userData.person2?.prenom} onComplete={handleCoupleVAKOGP2} />
+        )}
+        {step === "profil-couple" && (
+          <ProfilCouple person1={userData.person1} person2={userData.person2}
+            onNext={handleProfilCoupleNext} />
+        )}
+        {step === "seance-couple" && (
+          <SeancePlayer userData={userData} resumeData={null} onRestart={handleRestart} />
+        )}
+
+        <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
+          flexWrap:"wrap", justifyContent:"center" }}>
+          <p style={{ fontSize:"10px", color:C.hint, textAlign:"center",
+            fontFamily:"'Raleway', sans-serif", letterSpacing:"1px" }}>
+            EUREKA Thérapie · Sophrologie · Protocole personnalisé
+          </p>
+          <button onClick={() => setShowMentions(true)}
+            style={{ background:"transparent", border:"none", color:C.hint, fontSize:"10px",
+              cursor:"pointer", fontFamily:"'Raleway',sans-serif", textDecoration:"underline",
+              letterSpacing:"1px", padding:0 }}>
+            Mentions légales
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
