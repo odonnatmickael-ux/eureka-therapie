@@ -742,6 +742,11 @@ function buildSystemPrompt(data) {
 
   return "Tu es un sophrologue expert. Tu génères un script audio de séance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
+    "POSTURE DÉONTOLOGIQUE — RÈGLE PRÉ-RÉDACTIONNELLE (NON NÉGOCIABLE) :\n" +
+    "Avant de générer quoi que ce soit, vérifie que l'OBJECTIF du client (ci-dessous) vise son MIEUX-ÊTRE personnel.\n" +
+    "Si l'objectif vise à NUIRE à autrui (manipulation, vengeance, domination, humiliation, faire souffrir, prendre l'ascendant), OU à s'AUTO-INFLIGER du mal (auto-punition, auto-dévalorisation, isolement forcé, anhédonie volontaire), tu NE génères PAS une séance affirmant cet objectif.\n" +
+    "À la place, tu génères une séance de RETOUR À SOI : ancrage corporel, calme intérieur, discernement, séparation émotionnelle saine. Sans nommer la cible ni le motif du client. Tu travailles UNIQUEMENT son corps et sa paix.\n" +
+    "Cette règle prime sur toutes les directives qui suivent. Un sophrologue en cabinet ferait de même.\n\n" +
     "CLIENT: " + prenom + " | ARCHÉTYPE: " + archetype.name + " | VAKOG: " + vakog + " (" + vakogStyle + ")\n" +
     "PROBLÈMES: " + problem + "\n" +
     "OBJECTIFS: " + objectif + "\n" +
@@ -1955,6 +1960,64 @@ function detectSensibility(text) {
   return SENSIBILITY_PATTERNS.some(rx => rx.test(text));
 }
 
+// ─── DÉTECTEUR D'OBJECTIF NUISIBLE — INTENT GUARD (SAFE) ───────────
+// Mesure de sûreté déontologique : EUREKA ne génère pas de séance affirmant
+// un objectif qui vise à nuire à autrui (manipulation, vengeance, domination)
+// ou à s'infliger du mal (auto-punition, isolement forcé, anhédonie volontaire).
+// Distinct de detectCrisis (qui couvre l'idéation suicidaire et redirige vers 3114).
+//
+// Conçu pour MINIMISER les faux positifs sur les reformulations bienveillantes :
+//   « je veux ne plus me détester » → bénin, NE match PAS
+//   « apprendre à cesser de me punir » → bénin, NE match PAS
+//   « surmonter une humiliation passée » → bénin (humiliation = nom, pas verbe)
+// Mécanisme : on neutralise d'abord les segments « ne plus/pas X », « cesser de X »,
+// « arrêter de X », puis on cherche les patterns malveillants dans le texte normalisé.
+function detectMaliciousIntent(text) {
+  if (!text) return false;
+  const orig = text.toLowerCase();
+
+  // Phase 1 — patterns d'auto-destruction qui CONTIENNENT « ne plus » (l'objectif
+  // lui-même est préoccupant, pas une reformulation). Hors champ de detectCrisis.
+  const negativeIntent = [
+    /\bne\s+plus\s+rien\s+(ressentir|sentir|[ée]prouver)\b/i,
+    /\bne\s+plus\s+(voir|parler\s+[àa])\s+(personne|qui\s+que\s+ce\s+soit)\b/i,
+  ];
+  if (negativeIntent.some(rx => rx.test(orig))) return true;
+
+  // Phase 2 — neutralisation des négations bénignes
+  const t = orig
+    .replace(/\bne\s+plus\s+(?:[a-zà-ÿ']+\s+){0,3}/gi, ' XXNEG ')
+    .replace(/\bne\s+pas\s+(?:[a-zà-ÿ']+\s+){0,3}/gi, ' XXNEG ')
+    .replace(/\bcesser\s+de\s+(?:[a-zà-ÿ']+\s+){0,2}/gi, ' XXNEG ')
+    .replace(/\barr[êe]ter\s+de\s+(?:[a-zà-ÿ']+\s+){0,2}/gi, ' XXNEG ');
+
+  // Phase 3 — patterns d'intention malveillante (envers autrui ou auto-destruction
+  // sub-clinique) dans le texte normalisé
+  const malicious = [
+    // Envers autrui
+    /\bme\s+venger\b/i,
+    /\bfaire\s+souffrir\b/i,
+    /\bpousser\s+[àa]\s+bout\b/i,
+    /\bprendre\s+l['']ascendant\s+sur\b/i,
+    /\bdominer\s+(mon|ma|sa|son|mes|ses|cette?|quelqu|les?\s+gens)/i,
+    /\bmanipuler\s+(mon|ma|sa|son|mes|ses|cette?|quelqu|les?\s+gens)/i,
+    /\bhumilier\b/i,
+    /\b[ée]craser\s+(mon|ma|sa|son|mes|ses|cette?|quelqu)/i,
+    /\b(leur|lui|le|la|les)\s+faire\s+payer\b/i,
+    /\bfaire\s+payer\s+[àa]\s+(mon|ma|sa|son|mes|ses|cette?|cet)/i,
+    /\bnuire\s+[àa]\s/i,
+    /\bd[eé]truire\s+(mon|ma|sa|son|mes|ses|cette?|quelqu|sa\s+vie|leur\s+vie|leur\s+couple|le\s+couple|la\s+vie\s+de|ta\s+vie)/i,
+    // Auto-destruction sub-clinique (après neutralisation des « ne plus / ne pas »)
+    /\bme\s+punir\b/i,
+    /\bme\s+d[ée]tester\b/i,
+    /\bme\s+ha[ïi]r\b/i,
+    /\bme\s+rabaisser\b/i,
+    /\bm['']isoler\b/i,
+  ];
+
+  return malicious.some(rx => rx.test(t));
+}
+
 function Anamnese({ onNext }) {
   // ─── Sauvegarde anti-frustration : on restaure depuis localStorage si présent
   // Les textareas sont longues à remplir, perdre tout au refresh = abandon garanti.
@@ -1977,6 +2040,11 @@ function Anamnese({ onNext }) {
   // ─── État détecteur de crise ───────────────────────────────────────
   const [crisisDetected, setCrisisDetected] = useState(false);  // vrai = écran de redirection affiché
   const [crisisOverride, setCrisisOverride] = useState(false);  // vrai = utilisateur confirme et continue malgré tout
+
+  // ─── État détecteur d'objectif nuisible (intent guard SAFE) ────────
+  // Pas d'override : la regex est conçue pour ne pas faux-positifer.
+  // Si match → écran de reformulation, l'utilisateur doit modifier son objectif.
+  const [maliciousDetected, setMaliciousDetected] = useState(false);
 
   // ─── Onboarding doux (option C) — 6 mini-écrans plutôt qu'un mur de formulaire
   // Chaque écran présente UN champ unique, validation par étape, navigation Retour/Suivant.
@@ -2029,6 +2097,18 @@ function Anamnese({ onNext }) {
       setCrisisDetected(true);
       return;
     }
+    // SAFE — Intent guard : détection d'objectif nuisible (envers autrui ou auto-destruction)
+    // Priorité APRÈS detectCrisis (qui prime sur la redirection 3114) mais AVANT l'avance d'écran.
+    if (screen === 2 && detectMaliciousIntent(problem)) {
+      track("malicious_intent_detected", { field: "problem" });
+      setMaliciousDetected(true);
+      return;
+    }
+    if (screen === 3 && detectMaliciousIntent(objectif)) {
+      track("malicious_intent_detected", { field: "objectif" });
+      setMaliciousDetected(true);
+      return;
+    }
     // Avance d'un écran (sauf le dernier où on submit)
     if (screen < TOTAL_SCREENS - 1) {
       setScreen(screen + 1);
@@ -2041,6 +2121,14 @@ function Anamnese({ onNext }) {
         has_support: hasSupport === true ? "yes" : "no"
       });
       setCrisisDetected(true);
+      return;
+    }
+    // SAFE — defense in depth pour l'intent guard
+    if (detectMaliciousIntent(problem) || detectMaliciousIntent(objectif)) {
+      track("malicious_intent_detected", {
+        field: detectMaliciousIntent(problem) ? "problem" : "objectif"
+      });
+      setMaliciousDetected(true);
       return;
     }
     if (crisisOverride) track("crisis_overridden");
@@ -2226,6 +2314,75 @@ function Anamnese({ onNext }) {
               </Btn>
             )}
           </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // ─── SAFE — Écran de reformulation (intent guard) ───────────────────
+  // Ton sophrologue chaleureux, cadre déontologique. Pas d'override : la regex
+  // est conçue pour ne pas faux-positifer, donc si on est ici, on demande à
+  // l'utilisateur de reformuler son objectif autour du mieux-être.
+  if (maliciousDetected) {
+    return (
+      <Card>
+        <Logo small />
+        <div style={{ borderTop:`2px solid ${C.gold}`, paddingTop:"1.5rem" }}>
+          <div style={{ width:"60px", height:"60px", borderRadius:"50%",
+            background:"rgba(184,149,90,.2)", display:"flex", alignItems:"center",
+            justifyContent:"center", margin:"0 auto 1.25rem", fontSize:"32px" }}>🌿</div>
+
+          <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"26px",
+            color:C.cream, fontWeight:"400", marginBottom:"0.5rem", textAlign:"center" }}>
+            Reformulons votre objectif ensemble
+          </h2>
+          <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.7",
+            marginBottom:"1.5rem", textAlign:"center", fontStyle:"italic" }}>
+            Un mot sur la posture de cette plateforme.
+          </p>
+
+          <div style={{ background:C.panel, borderRadius:"12px", padding:"1.25rem 1.4rem",
+            border:`1px solid ${C.border}`, marginBottom:"1.25rem" }}>
+            <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75" }}>
+              EUREKA Thérapie accompagne <strong style={{color:C.goldLight}}>votre mieux-être personnel</strong>.
+              Une séance amplifie l'objectif que vous lui confiez — c'est sa raison d'être.
+              Si cet objectif vise à infliger quelque chose à autrui, ou à vous infliger
+              quelque chose à vous-même, l'amplifier vous éloignerait du mieux-être plutôt
+              que de vous en rapprocher.
+            </p>
+            <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75", marginTop:"0.875rem" }}>
+              Reformulons votre objectif autour de ce que <strong style={{color:C.goldLight}}>VOUS
+              voulez vivre</strong>, plutôt que ce que vous voulez infliger ou subir.
+              Par exemple : « retrouver la paix intérieure », « reprendre confiance après
+              une période difficile », « me libérer d'une emprise »…
+            </p>
+          </div>
+
+          <div style={{ background:"rgba(184,149,90,.05)", borderRadius:"10px",
+            padding:"0.875rem 1rem", border:`1px solid ${C.border}`, marginBottom:"1.25rem" }}>
+            <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.7", fontStyle:"italic" }}>
+              Cette posture est celle du cabinet : un sophrologue n'accompagne pas
+              un client vers la nuisance ou l'auto-punition. EUREKA fait de même.
+            </p>
+          </div>
+
+          <Btn onClick={() => {
+            track("malicious_intent_modified");
+            setMaliciousDetected(false);
+            // On vide le champ concerné pour forcer une reformulation,
+            // mais on ne touche pas au reste (prénom, email…). On renvoie
+            // l'utilisateur sur l'écran de l'objectif (screen 3).
+            setObjectif("");
+            // Si le déclencheur était sur problem, on remet aussi à zéro et on renvoie à screen 2.
+            if (detectMaliciousIntent(problem)) {
+              setProblem("");
+              setScreen(2);
+            } else {
+              setScreen(3);
+            }
+          }} variant="gold">
+            Reformuler mon objectif
+          </Btn>
         </div>
       </Card>
     );
