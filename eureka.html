@@ -740,7 +740,7 @@ function buildSystemPrompt(data) {
     "Place la balise EN DÉBUT de phrase, suivie d'un espace.\n\n"
   ) : "";
 
-  return "Tu es un sophrologue expert. Tu génères un script audio de séance.\n" +
+  const baseSysPrompt = "Tu es un sophrologue expert. Tu génères un script audio de séance.\n" +
     "Le client entend CHAQUE MOT. AUCUN TITRE dans le texte.\n\n" +
     "POSTURE DÉONTOLOGIQUE — RÈGLE PRÉ-RÉDACTIONNELLE (NON NÉGOCIABLE) :\n" +
     "Avant de générer quoi que ce soit, vérifie que l'OBJECTIF du client (ci-dessous) vise son MIEUX-ÊTRE personnel.\n" +
@@ -823,6 +823,29 @@ function buildSystemPrompt(data) {
     "SPIRITUALITÉ:\n" +
     "Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
     spirituel;
+
+  // ─── v_couple — Bloc couple ajouté en fin de prompt système si data.couple est posé ───
+  // Cette section prime sur tout ce qui précède (alternance VAKOG, cycle 4-2-6 imposé,
+  // alternance des prénoms, convergence, scène 3 commune, posture déontologique couple).
+  if (data.couple && data.person1 && data.person2) {
+    const p1 = data.person1, p2 = data.person2;
+    const arch1 = ARCHETYPES[archetypeFromBigFive(p1.bigFiveScores)] || ARCHETYPES.compagnon;
+    const arch2 = ARCHETYPES[archetypeFromBigFive(p2.bigFiveScores)] || ARCHETYPES.compagnon;
+    const v1 = (p1.vakogResult && p1.vakogResult.dominant) || "K";
+    const v2 = (p2.vakogResult && p2.vakogResult.dominant) || "K";
+    return baseSysPrompt + "\n\n=== INSTRUCTIONS COUPLE (PRIORITÉ ABSOLUE) ===\n" +
+      "Cette séance est partagée par DEUX personnes présentes ensemble — ignore le client unique mentionné plus haut.\n\n" +
+      "PERSONNE 1 : " + p1.prenom + " | archétype " + arch1.name + " | canal VAKOG dominant " + v1 + " | problème : " + p1.problem + " | objectif : " + p1.objectif + "\n" +
+      "PERSONNE 2 : " + p2.prenom + " | archétype " + arch2.name + " | canal VAKOG dominant " + v2 + " | problème : " + p2.problem + " | objectif : " + p2.objectif + "\n\n" +
+      "RÈGLES COUPLE (non négociables, priment sur tout ce qui précède) :\n" +
+      "1. ALTERNANCE DES PRÉNOMS — utilise " + p1.prenom + " et " + p2.prenom + " alternativement tout au long de la séance. Préfère « vous deux », « ensemble », « chacun à votre rythme » pour les guidances communes. JAMAIS un seul prénom répété en boucle. Si une instruction antérieure dit « commencer par <unique_prenom>… », adapte-la pour intégrer les deux : '" + p1.prenom + " et " + p2.prenom + "… je vous invite tous les deux à vous asseoir confortablement…'\n" +
+      "2. CONVERGENCE — trouve le fil commun entre les deux objectifs ('" + p1.objectif + "' et '" + p2.objectif + "') et construis la séance autour de cette convergence positive. NE PAS opposer les deux personnes. NE PAS nommer de tension. TOUJOURS lien, chemin partagé, transformation jointe. Si les deux objectifs paraissent en tension, contourne en restant sur le terrain positif partagé.\n" +
+      "3. VAKOG ALTERNANCE PAR SCÈNE — Scène 1 = canal " + v1 + " (canal de " + p1.prenom + "). Scène 2 = canal " + v2 + " (canal de " + p2.prenom + "). Scène 3 = style neutre multimodal (lumière qui rayonne ET qu'on entend ET qu'on sent — tous canaux à la fois). Cette règle prime sur le canal unique mentionné dans le prompt système.\n" +
+      "4. RYTHME RESPIRATOIRE FIXE — cycle 4-2-6 pour TOUTE la séance (4 temps inspire, 2 temps retiens, 6 temps expire). IGNORE les variantes 4-2-8 / 5-5 mentionnées dans la règle 3. Briefing à insérer : « Vous allez compter chacun à votre rythme : 4 temps en inspirant, 2 temps en retenant, 6 temps en expirant. Vous ne synchronisez pas — chacun son tempo intérieur. »\n" +
+      "5. SCÈNE 3 PARTAGÉE — moment-clé. PHASE A (60-70%) : observation à deux de la version transformée du couple. PHASE B (30-40%) : bascule et identification en 1ère personne POUR LES DEUX simultanément. Phrase de bascule type : « et maintenant… l'écran vous enveloppe vous deux… " + p1.prenom + ", tu n'es plus spectateur·rice… " + p2.prenom + ", tu n'es plus spectateur·rice non plus… VOUS DEUX êtes ces êtres accomplis… VOUS RESSENTEZ cette paix partagée… VOUS VIVEZ cette vie nouvelle ensemble… »\n" +
+      "6. POSTURE DÉONTOLOGIQUE — séance de sophrologie PARTAGÉE pour traverser ENSEMBLE un objectif commun (deuil, parentalité, transition, lien, épreuve à deux). PAS de thérapie de couple. PAS de médiation de conflit interpersonnel. Si tu détectes une intention de nuire (à autrui ou à soi) dans l'un des deux objectifs, applique la règle d'Intent Guard du prompt système (séance de retour à soi commun, sans amplifier l'objectif nuisible).\n";
+  }
+  return baseSysPrompt;
 }
 // ══════════════════════════════════════════════════════════════════
 // COULEURS & STYLES
@@ -1669,13 +1692,15 @@ function MesSeances({ onBack, onResume }) {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
                 gap:"1rem", marginBottom:"0.75rem", flexWrap:"wrap" }}>
                 <div style={{ flex:1, minWidth:"200px" }}>
-                  <p style={{ fontSize:"11px", color:C.gold, letterSpacing:"1.5px",
+                  <p style={{ fontSize:"11px", color: entry.couple ? C.teal : C.gold, letterSpacing:"1.5px",
                     textTransform:"uppercase", fontWeight:"600", marginBottom:"0.25rem" }}>
-                    Séance n°{history.length - idx}
+                    {entry.couple ? "🌿 Séance à deux n°" : "Séance n°"}{history.length - idx}
                   </p>
                   <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"20px", color:C.cream,
                     lineHeight:"1.3", marginBottom:"0.25rem" }}>
-                    {entry.archetypeName || "Profil"}
+                    {entry.couple
+                      ? ((entry.person1Prenom || "?") + " & " + (entry.person2Prenom || "?"))
+                      : (entry.archetypeName || "Profil")}
                   </p>
                   <p style={{ fontSize:"11px", color:C.muted }}>
                     {fmt(entry.savedAt)}
@@ -1786,7 +1811,7 @@ function Temoignages() {
 }
 
 // ÉTAPE 0 : Landing
-function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
+function Landing({ onStart, onStartCouple, onResume, onMentions, onTutorial, onHistory }) {
   // Détection d'une séance personnelle déjà sauvegardée (lue depuis IndexedDB via flag localStorage)
   const savedMeta = getSessionFlag();
   const streak = loadStreak();
@@ -1894,6 +1919,27 @@ function Landing({ onStart, onResume, onMentions, onTutorial, onHistory }) {
         {savedMeta
           ? "Une nouvelle séance remplacera l'actuelle et remettra le compteur à zéro."
           : "Quelques questions pour personnaliser votre séance"}
+      </p>
+
+      {/* ─── Couple v1 — Bouton secondaire « séance à deux » ───
+          Affiché en dessous du CTA principal. Style ghost outlined pour bien
+          marquer la hiérarchie (le solo reste l'expérience par défaut).
+          Disclaimer court : périmètre clair (objectif commun, PAS médiation). */}
+      <button onClick={onStartCouple}
+        style={{ display:"block", width:"100%", padding:"1rem",
+          background:"transparent",
+          color:C.goldLight, border:`1.5px solid ${C.gold}`, borderRadius:"14px",
+          fontSize:"11px", fontFamily:"'Raleway', sans-serif", fontWeight:"600",
+          letterSpacing:"3px", textTransform:"uppercase", cursor:"pointer",
+          marginTop:"1.25rem" }}>
+        Commencer une séance à deux →
+      </button>
+      <p style={{ fontSize:"11px", color:C.hint, marginTop:"0.5rem",
+        lineHeight:"1.6", padding:"0 0.5rem", maxWidth:"500px", margin:"0.5rem auto 0" }}>
+        Pour traverser <strong style={{color:C.muted}}>à deux</strong> un objectif
+        ou un problème commun (deuil, parentalité, transition, lien).
+        <br/>
+        <em style={{color:C.hint}}>Pas adapté aux tensions ou conflits entre vous.</em>
       </p>
       <button onClick={() => onTutorial()} style={{ background:"transparent", border:"none",
         color:C.muted, fontSize:"11px", cursor:"pointer", marginTop:"0.5rem",
@@ -2018,10 +2064,12 @@ function detectMaliciousIntent(text) {
   return malicious.some(rx => rx.test(t));
 }
 
-function Anamnese({ onNext }) {
+function Anamnese({ onNext, personId }) {
   // ─── Sauvegarde anti-frustration : on restaure depuis localStorage si présent
   // Les textareas sont longues à remplir, perdre tout au refresh = abandon garanti.
-  const ANAMNESE_KEY = 'eureka_anamnese_state';
+  // v_couple : la clé est paramétrée selon personId (1 ou 2) pour permettre à P1 et P2
+  // de remplir leur anamnèse sans collision. Mode solo (personId undefined) = clé classique.
+  const ANAMNESE_KEY = personId ? `eureka_anamnese_p${personId}_state` : 'eureka_anamnese_state';
   const loadSaved = () => {
     try {
       const raw = localStorage.getItem(ANAMNESE_KEY);
@@ -2400,7 +2448,7 @@ function Anamnese({ onNext }) {
           marginBottom:"0.875rem", flexWrap:"wrap", gap:"0.5rem" }}>
           <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
             borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
-            textTransform:"uppercase" }}>Étape 1 — Présentation</div>
+            textTransform:"uppercase" }}>Étape 1 — Présentation{personId ? ` · Personne ${personId}` : ""}</div>
           <span style={{ fontSize:"12px", color:C.muted }}>{screen + 1} / {TOTAL_SCREENS}</span>
         </div>
         <div style={{ height:"3px", background:C.border, borderRadius:"2px",
@@ -2785,10 +2833,12 @@ function PricingIntent({ prenom, archetype, onContinue }) {
 }
 
 // ÉTAPE 2 : Quiz Big Five
-function QuizBigFive({ prenom, onComplete }) {
+function QuizBigFive({ prenom, onComplete, personId }) {
+  // v_couple : clé paramétrée selon personId (mode solo si undefined)
+  const BIGFIVE_KEY = personId ? `eureka_quiz_bigfive_p${personId}` : 'eureka_quiz_bigfive';
   const [current, setCurrent] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_bigfive');
+      const saved = localStorage.getItem(BIGFIVE_KEY);
       const c = saved ? (JSON.parse(saved).current || 0) : 0;
       // Safety : si current pointe hors du tableau (quiz precedemment termine, current=10),
       // on revient a 0 pour eviter BFI10[10].text qui crashe l'app (ecran noir).
@@ -2798,14 +2848,14 @@ function QuizBigFive({ prenom, onComplete }) {
   });
   const [answers, setAnswers] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_bigfive');
+      const saved = localStorage.getItem(BIGFIVE_KEY);
       return saved ? (JSON.parse(saved).answers || {}) : {};
     } catch { return {}; }
   });
   const pct = Math.round((current / BFI10.length) * 100);
 
   const persist = (cur, ans) => {
-    try { localStorage.setItem('eureka_quiz_bigfive', JSON.stringify({ current: cur, answers: ans })); } catch {}
+    try { localStorage.setItem(BIGFIVE_KEY, JSON.stringify({ current: cur, answers: ans })); } catch {}
   };
 
   const handleAnswer = (likertValue) => {
@@ -2817,7 +2867,7 @@ function QuizBigFive({ prenom, onComplete }) {
       persist(newCur, newAns);
     } else {
       // v27 fix : on GARDE les reponses pour permettre l'auto-skip aux prochaines visites (utile en test + visiteurs reguliers)
-      try { localStorage.setItem('eureka_quiz_bigfive', JSON.stringify({ current: BFI10.length, answers: newAns, completed: true })); } catch {}
+      try { localStorage.setItem(BIGFIVE_KEY, JSON.stringify({ current: BFI10.length, answers: newAns, completed: true })); } catch {}
       const scores = scoreBigFive(newAns);
       onComplete(scores);
     }
@@ -2833,7 +2883,7 @@ function QuizBigFive({ prenom, onComplete }) {
           marginBottom:"1rem" }}>
           <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
             borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
-            textTransform:"uppercase" }}>Étape 2 — Profil Big Five</div>
+            textTransform:"uppercase" }}>Étape 2 — Profil Big Five{personId ? ` · Personne ${personId}` : ""}</div>
           <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {BFI10.length}</span>
         </div>
 
@@ -2889,11 +2939,13 @@ function QuizBigFive({ prenom, onComplete }) {
 }
 
 // ÉTAPE 3 : Quiz VAKOG
-function QuizVAKOG({ prenom, onComplete }) {
+function QuizVAKOG({ prenom, onComplete, personId }) {
+  // v_couple : clé paramétrée selon personId (mode solo si undefined)
+  const VAKOG_KEY = personId ? `eureka_quiz_vakog_p${personId}` : 'eureka_quiz_vakog';
   // ─── Sauvegarde quiz : restaure depuis localStorage si présent ───
   const [current, setCurrent] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_vakog');
+      const saved = localStorage.getItem(VAKOG_KEY);
       const c = saved ? (JSON.parse(saved).current || 0) : 0;
       // Safety : si current pointe hors du tableau (quiz precedemment termine, current=8),
       // on revient a 0 pour eviter QUIZ_VAKOG[8] qui crashe l'app (ecran noir).
@@ -2902,14 +2954,14 @@ function QuizVAKOG({ prenom, onComplete }) {
   });
   const [answers, setAnswers] = useState(() => {
     try {
-      const saved = localStorage.getItem('eureka_quiz_vakog');
+      const saved = localStorage.getItem(VAKOG_KEY);
       return saved ? (JSON.parse(saved).answers || []) : [];
     } catch { return []; }
   });
   const pct = Math.round((current / QUIZ_VAKOG.length) * 100);
 
   const persist = (cur, ans) => {
-    try { localStorage.setItem('eureka_quiz_vakog', JSON.stringify({ current: cur, answers: ans })); } catch {}
+    try { localStorage.setItem(VAKOG_KEY, JSON.stringify({ current: cur, answers: ans })); } catch {}
   };
 
   const handleAnswer = (modality) => {
@@ -2922,7 +2974,7 @@ function QuizVAKOG({ prenom, onComplete }) {
       persist(newCur, newAns);
     } else {
       // v27 fix : on GARDE les reponses pour permettre l'auto-skip aux prochaines visites
-      try { localStorage.setItem('eureka_quiz_vakog', JSON.stringify({ current: QUIZ_VAKOG.length, answers: newAns, completed: true })); } catch {}
+      try { localStorage.setItem(VAKOG_KEY, JSON.stringify({ current: QUIZ_VAKOG.length, answers: newAns, completed: true })); } catch {}
       const result = scoreVAKOG(newAns);
       onComplete(result);
     }
@@ -2939,7 +2991,7 @@ function QuizVAKOG({ prenom, onComplete }) {
           marginBottom:"1rem" }}>
           <div style={{ display:"inline-block", padding:"3px 12px", background:C.tealDark,
             borderRadius:"20px", fontSize:"10px", color:C.goldLight, letterSpacing:"2px",
-            textTransform:"uppercase" }}>Étape 3 — Modalités sensorielles</div>
+            textTransform:"uppercase" }}>Étape 3 — Modalités sensorielles{personId ? ` · Personne ${personId}` : ""}</div>
           <span style={{ fontSize:"12px", color:C.muted }}>{current+1} / {QUIZ_VAKOG.length}</span>
         </div>
 
@@ -3293,6 +3345,206 @@ function GenreVoix({ onNext }) {
         textAlign:"center", fontStyle:"italic" }}>
         Vous pourrez choisir parmi nos 4 voix après l'écoute de votre extrait de découverte.
       </p>
+    </Card>
+  );
+}
+
+// ─── ProfilCouple — Écran 7 du parcours couple (v_couple Session 3) ─────
+// Combine ce que font ProfilResult + GenreVoix pour le mode solo, mais
+// adapté à 2 profils avec :
+//   • affichage côte à côte des 2 archétypes / canaux VAKOG
+//   • direction de relaxation partagée (pas de recommandation, neutre)
+//   • univers intérieur partagé (croyant / spirituel / rationnel)
+//   • ambiance sonore partagée (5 options identiques au solo)
+//   • voix UNIQUE partagée (Bella / Marcel / Mickaël / Valentin)
+// Les choix sont persistés dans `eureka_profil_couple_state` (clé distincte
+// de `eureka_profil_state` du solo pour ne pas collisionner).
+function ProfilCouple({ person1, person2, onNext }) {
+  const PROFIL_COUPLE_KEY = 'eureka_profil_couple_state';
+  const loadSaved = () => {
+    try {
+      const raw = localStorage.getItem(PROFIL_COUPLE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const saved = loadSaved();
+  const [relaxDir, setRelaxDir] = useState(saved?.relaxDir || "");
+  const [beliefSystem, setBeliefSystem] = useState(saved?.beliefSystem || "");
+  const [musicChoice, setMusicChoice] = useState(saved?.musicChoice || "");
+  const [selectedVoice, setSelectedVoice] = useState(saved?.selectedVoice || "");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROFIL_COUPLE_KEY, JSON.stringify({
+        relaxDir, beliefSystem, musicChoice, selectedVoice
+      }));
+    } catch {}
+  }, [relaxDir, beliefSystem, musicChoice, selectedVoice]);
+
+  // Dérivation des profils (archétype + VAKOG dominant pour chacun)
+  const arch1Key = archetypeFromBigFive(person1?.bigFiveScores);
+  const arch2Key = archetypeFromBigFive(person2?.bigFiveScores);
+  const arch1 = ARCHETYPES[arch1Key];
+  const arch2 = ARCHETYPES[arch2Key];
+  const vakog1 = person1?.vakogResult?.dominant;
+  const vakog2 = person2?.vakogResult?.dominant;
+
+  const MUSIQUES = [
+    { id:"tambour", icon:"🥁", name:"Tambour chamanique", desc:"200 BPM, Ondes Thêta, voyage intérieur" },
+    { id:"coeur", icon:"💓", name:"Battement de cœur", desc:"50 BPM, rythme sophrologique profond, sécurité" },
+    { id:"binaural", icon:"🎧", name:"Battements binauraux", desc:"8 Hz Alpha, état sophrologique profond — casque obligatoire" },
+    { id:"relaxation", icon:"🎵", name:"Musique de relaxation", desc:"Selon vos goûts — recherche libre sur YouTube" },
+    { id:"perso", icon:"🎶", name:"Ma propre musique", desc:"Jouez votre musique en fond pendant la séance" },
+  ];
+
+  const canContinue = relaxDir && beliefSystem && musicChoice && selectedVoice;
+
+  return (
+    <Card style={{ maxWidth:"720px" }}>
+      <Logo small />
+
+      <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px",
+        color:C.cream, fontWeight:"400", textAlign:"center", marginBottom:"0.5rem" }}>
+        Profil partagé
+      </h2>
+      <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.7", textAlign:"center",
+        fontStyle:"italic", marginBottom:"1.75rem", maxWidth:"540px", margin:"0 auto 1.75rem" }}>
+        Quelques derniers choix communs avant votre séance partagée.
+      </p>
+
+      {/* ─── Récap des 2 profils côte à côte ─── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"1.75rem" }}>
+        {[
+          { person: person1, arch: arch1, vakog: vakog1, label: "Personne 1" },
+          { person: person2, arch: arch2, vakog: vakog2, label: "Personne 2" },
+        ].map((p, i) => (
+          <div key={i} style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+            border:`1.5px solid ${i === 0 ? C.gold : C.teal}`, textAlign:"center" }}>
+            <p style={{ fontSize:"9px", color:C.muted, letterSpacing:"2px", textTransform:"uppercase",
+              marginBottom:"6px" }}>{p.label}</p>
+            <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"20px",
+              color:C.goldLight, marginBottom:"8px", fontWeight:"400" }}>{p.person?.prenom || "—"}</p>
+            <p style={{ fontSize:"32px", lineHeight:1, marginBottom:"4px" }}>{p.arch?.icon}</p>
+            <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px",
+              color: i === 0 ? C.gold : C.teal, fontWeight:"400", lineHeight:1.1 }}>{p.arch?.name}</p>
+            <p style={{ fontSize:"11px", color:C.muted, marginTop:"6px", lineHeight:"1.4" }}>
+              Canal : <strong style={{color:C.cream}}>{VAKOG_NAMES[p.vakog] || "—"}</strong>
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* ─── Direction de relaxation (partagée) ─── */}
+      <div style={{ marginBottom:"1.75rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>Direction de la relaxation</h3>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem", lineHeight:"1.6" }}>
+          Choisissez ensemble — la même direction sera utilisée pour vous deux.
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
+          {[
+            { id:"TF", icon:"⬇️", name:"Tête → Pieds", desc:"Classique Caycedo, dénoue le mental en premier" },
+            { id:"FT", icon:"⬆️", name:"Pieds → Tête", desc:"Ancrage terrestre, monte vers l'apaisement mental" },
+          ].map(opt => (
+            <button key={opt.id} className="opt-card" onClick={() => setRelaxDir(opt.id)}
+              style={{ padding:"1rem", background: relaxDir===opt.id ? `rgba(184,149,90,.15)` : C.panel,
+                border:`1.5px solid ${relaxDir===opt.id ? C.gold : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+              <p style={{ fontSize:"18px", marginBottom:"4px" }}>{opt.icon}</p>
+              <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{opt.name}</p>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{opt.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Univers intérieur (partagé) ─── */}
+      <div style={{ marginBottom:"1.75rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"1rem" }}>Votre univers intérieur partagé</h3>
+        <div style={{ display:"grid", gap:"0.6rem" }}>
+          {[
+            { id:"croyant", icon:"✨", name:"Croyants", desc:"Mantras de connexion divine, fils/fille de Lumière" },
+            { id:"spirituel", icon:"🌌", name:"Spirituels", desc:"Énergie universelle, loi d'attraction, conscience" },
+            { id:"rationnel", icon:"🧠", name:"Athées / Rationnels", desc:"Neurosciences, ressources intérieures, evidence-based" },
+          ].map(opt => (
+            <button key={opt.id} className="opt-card" onClick={() => setBeliefSystem(opt.id)}
+              style={{ padding:"0.875rem 1rem", background: beliefSystem===opt.id ? `rgba(42,138,143,.15)` : C.panel,
+                border:`1.5px solid ${beliefSystem===opt.id ? C.teal : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", display:"flex", gap:"12px", alignItems:"center",
+                transition:"all .2s" }}>
+              <span style={{ fontSize:"20px" }}>{opt.icon}</span>
+              <div>
+                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{opt.name}</p>
+                <p style={{ fontSize:"11px", color:C.muted }}>{opt.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Ambiance sonore (partagée) ─── */}
+      <div style={{ marginBottom:"1.75rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>Ambiance sonore</h3>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
+          Vous pouvez diffuser votre propre musique en parallèle si vous préférez.
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
+          {MUSIQUES.map(m => (
+            <button key={m.id} className="opt-card" onClick={() => setMusicChoice(m.id)}
+              style={{ padding:"0.875rem", background: musicChoice===m.id ? `rgba(42,138,143,.15)` : C.panel,
+                border:`1.5px solid ${musicChoice===m.id ? C.teal : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+              <p style={{ fontSize:"20px", marginBottom:"4px" }}>{m.icon}</p>
+              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{m.name}</p>
+              <p style={{ fontSize:"10px", color:C.muted, lineHeight:"1.4" }}>{m.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Voix unique partagée (4 cartes) ─── */}
+      <div style={{ marginBottom:"2rem" }}>
+        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
+          fontWeight:"400", marginBottom:"0.5rem" }}>La voix qui vous accompagne</h3>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
+          Une seule voix narratrice qui s'adresse à vous deux pendant toute la séance.
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
+          {VOICES.map(v => (
+            <button key={v.id} className="opt-card" onClick={() => setSelectedVoice(v.id)}
+              style={{ padding:"1rem", background: selectedVoice===v.id ? `rgba(184,149,90,.15)` : C.panel,
+                border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"12px",
+                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
+                <span style={{ width:"32px", height:"32px", borderRadius:"50%",
+                  background: selectedVoice===v.id ? C.gold : C.tealDark,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:"14px", color: selectedVoice===v.id ? "#1a0e00" : C.cream,
+                  fontWeight:"700", flexShrink:0 }}>{v.name[0]}</span>
+                <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px",
+                  color:C.cream, fontWeight:"400" }}>{v.name}</p>
+              </div>
+              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{v.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Btn onClick={() => {
+          try { localStorage.removeItem(PROFIL_COUPLE_KEY); } catch {}
+          onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice });
+        }}
+        disabled={!canContinue} variant="gold">
+        Lancer la séance partagée ✦
+      </Btn>
+      {!canContinue && (
+        <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", marginTop:"0.75rem",
+          fontStyle:"italic" }}>
+          Tous les choix doivent être faits pour continuer.
+        </p>
+      )}
     </Card>
   );
 }
@@ -3878,7 +4130,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // (grille des 4 voix affichée juste avant le bouton « Générer la séance complète »).
   // Pour le cas RESUME (le client revient sur sa séance déjà générée), userData.selectedVoice
   // est défini et est utilisé comme valeur initiale du state local.
-  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref } = userData;
+  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref, couple, person1, person2 } = userData;
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice || "");
   // States pour la preview audio dans la grille VoiceSelection (4 boutons ▶ Écouter)
   const [playingPreview, setPlayingPreview] = useState(null);
@@ -4318,7 +4570,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         vakog, vagokDesc: VAKOG_DESC[vakog],
         relaxDir, beliefSystem, problem, objectif, prenom,
         useV3Tags: useV3Mode,
-        bigFiveScores, archetypeKey, selectedVoice
+        bigFiveScores, archetypeKey, selectedVoice,
+        // v_couple — Si flag couple posé, buildSystemPrompt ajoute le bloc dédié
+        couple, person1, person2
       });
 
       const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
@@ -4714,12 +4968,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Echec silencieux : si l'API plante ou JSON invalide, MantraCard ne s'affiche pas.
       try {
         setLoadMsg("Creation de votre mantra personnalise...");
+        // v_couple — Pour les séances couple, on force le preset 'duo' (ignore archetypeKey).
         const _archStyle = {
           pelerin:   { style: "sacred world music, ambiance meditative, sitar", vocal: "voix feminine douce, presque chuchotee", instruments: "sitar, ambient pad, percussions legeres" },
           batisseur: { style: "orchestral sacre minimal, harmonies dorees",      vocal: "voix masculine posee",                  instruments: "piano discret, cordes graves, choeur lointain" },
           compagnon: { style: "gospel doux, chaleureux",                          vocal: "voix proche et intime",                 instruments: "piano chaleureux, choeur leger" },
-          voyageur:  { style: "world music, nature sounds",                       vocal: "voix libre, naturelle",                 instruments: "percussions legeres, flute, ambient nature" }
-        }[archetypeKey] || { style: "ambient sacre minimal", vocal: "voix posee", instruments: "piano, ambient pad" };
+          voyageur:  { style: "world music, nature sounds",                       vocal: "voix libre, naturelle",                 instruments: "percussions legeres, flute, ambient nature" },
+          duo:       { style: "ambient sacre, harmonies de lien, atmosphere meditative partagee", vocal: "voix posee, chaleureuse, presente", instruments: "piano chaleureux, cordes douces, choeur lointain, ambient pad" }
+        }[couple ? 'duo' : archetypeKey] || { style: "ambient sacre minimal", vocal: "voix posee", instruments: "piano, ambient pad" };
 
         const _bfM = bigFiveScores || { O:50, C:50, E:50, A:50, N:50 };
         const _nDir = _bfM.N >= 60 ? "mots SECURISANTS (paix, securite, protection, douceur)" :
@@ -4822,12 +5078,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       try {
         const captchaToken = await getTurnstileToken();
         emailjs.init(CONFIG.EJS_PUBLIC_KEY);
-        await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
-          to_email: email,
-          seance_num: seanceNum,
-          'g-recaptcha-response': captchaToken
-        });
-        setEmailStatus("ok");
+        // v_couple — Envoi double : si mode couple, on envoie aussi à person2.email
+        // (en plus de l'email principal de userData, qui correspond à P1).
+        const _emailTargets = [email];
+        if (couple && person2 && person2.email && person2.email !== email) {
+          _emailTargets.push(person2.email);
+        }
+        const _sendResults = await Promise.all(_emailTargets.map(addr =>
+          emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_TEMPLATE_ID, {
+            to_email: addr,
+            seance_num: seanceNum,
+            'g-recaptcha-response': captchaToken
+          }).then(() => true).catch(() => false)
+        ));
+        // ok si au moins un envoi a réussi
+        setEmailStatus(_sendResults.some(r => r) ? "ok" : "fail");
       } catch { setEmailStatus("fail"); }
 
       // NB : pas d'incrément de streak ici. Le streak compte les ÉCOUTES de la séance personnelle,
@@ -5280,7 +5545,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         useV3Mode,
         problem: userData.problem || "",
         objectif: userData.objectif || "",
-        durationApprox: audioBlob.size / 22050 / 2 // estimation pour WAV 22050Hz mono 16-bit
+        durationApprox: audioBlob.size / 22050 / 2, // estimation pour WAV 22050Hz mono 16-bit
+        // v_couple — Flag couple + prénoms individuels pour l'affichage différencié
+        // dans MesSeances. Si !couple, ces 3 champs restent undefined (compat solo).
+        couple: !!couple,
+        person1Prenom: (couple && person1) ? person1.prenom : undefined,
+        person2Prenom: (couple && person2) ? person2.prenom : undefined,
       };
       const fullData = { audioBlob, script, userData, ...meta };
       // 1. Sauvegarde "current" (séance active, pour bouton "Reprendre")
@@ -6317,6 +6587,34 @@ function bufferToMp3(buffer, sampleRate, bitrate = 128) {
   }
 }
 
+// ─── Couple v1 — Placeholder pour les étapes pas encore implémentées ───
+// Cet écran sera remplacé session par session par les vrais composants
+// (Anamnèse paramétrée P1/P2, BigFive paramétré, etc.).
+function CoupleStepPlaceholder({ label, onBack, onNext, isLast }) {
+  return (
+    <Card>
+      <Logo small />
+      <div style={{ padding:"2rem 1rem", textAlign:"center" }}>
+        <div style={{ fontSize:"40px", marginBottom:"1rem" }}>🚧</div>
+        <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px",
+          color:C.cream, fontWeight:"400", marginBottom:"0.5rem" }}>{label}</h2>
+        <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.6",
+          marginBottom:"1.75rem", maxWidth:"380px", margin:"0 auto 1.75rem" }}>
+          Cet écran sera implémenté dans une prochaine session de développement.
+          Pour l'instant, vous pouvez naviguer entre les placeholders pour vérifier
+          le routing.
+        </p>
+        <Btn onClick={onNext} variant="gold">
+          {isLast ? "Terminer (retour à l'accueil)" : "Étape suivante →"}
+        </Btn>
+        <Btn onClick={onBack} variant="ghost" style={{ marginTop:"0.5rem" }}>
+          ← Retour à l'accueil
+        </Btn>
+      </div>
+    </Card>
+  );
+}
+
 function App() {
   const [step, setStep] = useState("landing");
   const [userData, setUserData] = useState({});
@@ -6327,6 +6625,10 @@ function App() {
   // v26bis — ajout du step "genre-voix" entre Profil et Séance (consigne Mickaël 2026-05-08)
   const STEP_LABELS = ["Accueil","Présentation","Big Five","Sensoriel","Choix","Voix","Séance"];
   const STEP_INDEX = { landing:0, anamnese:1, bigfive:2, vakog:3, profil:4, "genre-voix":5, seance:6, pricing:6 };
+  // v_couple — Liste des step IDs propres au parcours couple ; sert à masquer
+  // le StepIndicator (chaque composant Anamnèse/BigFive/VAKOG a son propre indicateur
+  // interne, et le funnel couple à 8 étapes ne match pas STEP_LABELS).
+  const COUPLE_STEPS = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","seance-couple"];
 
   // ─── Capture intention tarifaire — apparaît UNE fois à la 5e séance ──
   // On stocke le compteur de séances générées dans localStorage pour décider
@@ -6356,6 +6658,21 @@ function App() {
             setStep("seance");
           }
         }
+        // v_couple — Reprise du funnel couple (anamnese-1 → seance-couple)
+        // après refresh navigateur. Le userData est restauré depuis sessionStorage,
+        // les composants Anamnese/Quiz retrouvent leur état via leur propre localStorage.
+        const _coupleSteps = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","seance-couple"];
+        if (lastStep && _coupleSteps.includes(lastStep)) {
+          const _rawCouple = sessionStorage.getItem('eureka_couple_userdata');
+          if (_rawCouple) {
+            const _restored = JSON.parse(_rawCouple);
+            if (!cancelled) {
+              track("couple_funnel_auto_resumed", { step: lastStep });
+              setUserData(_restored);
+              setStep(lastStep);
+            }
+          }
+        }
       } catch {}
     };
     restore();
@@ -6381,6 +6698,105 @@ function App() {
     }
     track("anamnese_started");
     setStep("anamnese");
+  };
+
+  // ─── Couple v1 — démarrage du parcours à deux ────────────────────
+  // Cleanup au démarrage : on efface toutes les clés liées à un parcours couple
+  // précédent (anamnèses, quizzes, profil, userData) pour démarrer fresh.
+  // L'auto-restore (cf useEffect ci-dessous) gère le cas refresh mid-funnel ;
+  // ici on est sur un démarrage volontaire depuis la Landing.
+  const handleStartCouple = () => {
+    try {
+      ['eureka_anamnese_p1_state', 'eureka_anamnese_p2_state',
+       'eureka_quiz_bigfive_p1',   'eureka_quiz_bigfive_p2',
+       'eureka_quiz_vakog_p1',     'eureka_quiz_vakog_p2',
+       'eureka_profil_couple_state'].forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+      sessionStorage.removeItem('eureka_couple_userdata');
+    } catch {}
+    setUserData({});
+    track("couple_started");
+    setStep("anamnese-1");
+  };
+
+  // ─── v_couple — Persistance userData en mode couple (sessionStorage) ───
+  // Permet la reprise complète après refresh dans le funnel à 8 étapes.
+  // Choix sessionStorage (cohérent avec le step) : expire à la fermeture d'onglet.
+  useEffect(() => {
+    if (userData.couple || userData.person1 || userData.person2) {
+      try { sessionStorage.setItem('eureka_couple_userdata', JSON.stringify(userData)); } catch {}
+    }
+  }, [userData]);
+
+  // ─── Couple v1 — helpers d'accumulation des données (structure imbriquée) ───
+  // En mode couple, userData a deux sous-objets person1 et person2 (au lieu
+  // de la structure plate du mode solo, qu'on ne touche pas).
+  const updatePerson1 = (data) => setUserData(d => ({ ...d, person1: { ...(d.person1 || {}), ...data } }));
+  const updatePerson2 = (data) => setUserData(d => ({ ...d, person2: { ...(d.person2 || {}), ...data } }));
+
+  // ─── Couple v1 — handlers des 6 premières étapes (P1 + P2) ─────────
+  const handleCoupleAnamneseP1 = (data) => {
+    track("couple_anamnese_p1_completed");
+    updatePerson1(data);
+    setStep("bigfive-1");
+  };
+  const handleCoupleBigFiveP1 = (scores) => {
+    track("couple_bigfive_p1_completed", { archetype: archetypeFromBigFive(scores) });
+    updatePerson1({ bigFiveScores: scores });
+    setStep("vakog-1");
+  };
+  const handleCoupleVAKOGP1 = (result) => {
+    track("couple_vakog_p1_completed", { canal: result?.dominant || "?" });
+    updatePerson1({ vakogResult: result });
+    setStep("anamnese-2");
+  };
+  const handleCoupleAnamneseP2 = (data) => {
+    track("couple_anamnese_p2_completed");
+    updatePerson2(data);
+    setStep("bigfive-2");
+  };
+  const handleCoupleBigFiveP2 = (scores) => {
+    track("couple_bigfive_p2_completed", { archetype: archetypeFromBigFive(scores) });
+    updatePerson2({ bigFiveScores: scores });
+    setStep("vakog-2");
+  };
+  const handleCoupleVAKOGP2 = (result) => {
+    track("couple_vakog_p2_completed", { canal: result?.dominant || "?" });
+    updatePerson2({ vakogResult: result });
+    setStep("profil-couple");
+  };
+
+  // ─── Couple v1 — handler du Profil commun (étape 7) ───
+  // Stocke les choix partagés (relaxDir, beliefSystem, musicChoice, selectedVoice)
+  // + flag couple: true + synthèse des champs au top level de userData pour
+  // compatibilité avec SeancePlayer (qui destructure prenom/email/problem/objectif/
+  // bigFiveScores/vakogResult). Les vraies données par personne (person1, person2)
+  // sont préservées et utilisées par buildSystemPrompt couple.
+  const handleProfilCoupleNext = (prefs) => {
+    track("couple_profil_completed", {
+      music: prefs.musicChoice || "?",
+      belief: prefs.beliefSystem || "?",
+      voice: prefs.selectedVoice || "?"
+    });
+    setUserData(d => {
+      const p1 = d.person1 || {};
+      const p2 = d.person2 || {};
+      return {
+        ...d,
+        ...prefs,
+        couple: true,
+        seanceNum: 1,
+        // Champs synthétisés (SeancePlayer reste mono-mode)
+        prenom: (p1.prenom || "") + " et " + (p2.prenom || ""),
+        email: p1.email || p2.email || "",  // Session 5 enverra aussi à p2.email
+        problem: "[" + (p1.prenom || "P1") + "] " + (p1.problem || "") + "\n[" + (p2.prenom || "P2") + "] " + (p2.problem || ""),
+        objectif: "[" + (p1.prenom || "P1") + "] " + (p1.objectif || "") + "\n[" + (p2.prenom || "P2") + "] " + (p2.objectif || ""),
+        bigFiveScores: p1.bigFiveScores,    // P1 prioritaire (sera override par couple block du prompt)
+        vakogResult: p1.vakogResult,        // P1 prioritaire (sera override par couple block du prompt)
+      };
+    });
+    setStep("seance-couple");
   };
 
   // Reprend la séance personnelle sauvegardée
@@ -6490,8 +6906,8 @@ function App() {
             Déplacé ici depuis le composant Logo qui n'était pas appelé sur la landing. */}
         <BetaBanner />
 
-        {/* Indicateur d'étape (caché sur landing et écran historique) */}
-        {step !== "landing" && step !== "history" && (
+        {/* Indicateur d'étape (caché sur landing, historique et parcours couple) */}
+        {step !== "landing" && step !== "history" && !COUPLE_STEPS.includes(step) && (
           <StepIndicator
             current={STEP_INDEX[step] || 0}
             total={STEP_LABELS.length}
@@ -6499,7 +6915,7 @@ function App() {
           />
         )}
 
-        {step === "landing" && <Landing onStart={handleLandingNext} onResume={handleLandingResume} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} onHistory={handleOpenHistory} />}
+        {step === "landing" && <Landing onStart={handleLandingNext} onStartCouple={handleStartCouple} onResume={handleLandingResume} onMentions={() => setShowMentions(true)} onTutorial={() => setShowTutorial(true)} onHistory={handleOpenHistory} />}
         {step === "history" && <MesSeances onBack={() => setStep("landing")} onResume={handleHistoryResume} />}
         {step === "anamnese" && <Anamnese onNext={handleAnamneseNext} />}
         {step === "bigfive" && <QuizBigFive prenom={userData.prenom} onComplete={handleBigFiveNext} />}
@@ -6522,6 +6938,32 @@ function App() {
             prenom={userData.prenom}
             archetype={userData.bigFiveScores ? (ARCHETYPES[archetypeFromBigFive(userData.bigFiveScores)]?.name || "?") : "?"}
             onContinue={handlePricingContinue} />
+        )}
+
+        {/* ─── Couple v1 — Funnel 8 étapes ───
+            Sessions 2 : les 6 premières étapes utilisent les vrais composants
+            (Anamnèse / QuizBigFive / QuizVAKOG paramétrés par personId).
+            Sessions 3-5 : profil-couple et seance-couple restent placeholders. */}
+        {step === "anamnese-1" && <Anamnese personId={1} onNext={handleCoupleAnamneseP1} />}
+        {step === "bigfive-1" && (
+          <QuizBigFive personId={1} prenom={userData.person1?.prenom} onComplete={handleCoupleBigFiveP1} />
+        )}
+        {step === "vakog-1" && (
+          <QuizVAKOG personId={1} prenom={userData.person1?.prenom} onComplete={handleCoupleVAKOGP1} />
+        )}
+        {step === "anamnese-2" && <Anamnese personId={2} onNext={handleCoupleAnamneseP2} />}
+        {step === "bigfive-2" && (
+          <QuizBigFive personId={2} prenom={userData.person2?.prenom} onComplete={handleCoupleBigFiveP2} />
+        )}
+        {step === "vakog-2" && (
+          <QuizVAKOG personId={2} prenom={userData.person2?.prenom} onComplete={handleCoupleVAKOGP2} />
+        )}
+        {step === "profil-couple" && (
+          <ProfilCouple person1={userData.person1} person2={userData.person2}
+            onNext={handleProfilCoupleNext} />
+        )}
+        {step === "seance-couple" && (
+          <SeancePlayer userData={userData} resumeData={null} onRestart={handleRestart} />
         )}
 
         <div style={{ display:"flex", gap:"1.5rem", alignItems:"center", marginTop:"2rem",
