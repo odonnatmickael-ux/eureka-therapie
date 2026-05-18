@@ -816,6 +816,7 @@ function buildSystemPrompt(data) {
     "    - détendez (PAS 'detendez' sans accent)\n" +
     "    - laissez (PAS 'laisez', 'laisser' à la place de l'impératif)\n" +
     "    - sentez (PAS 'sentés', 'centez')\n" +
+    "    - cet amour (PAS 'cette amour'). Le mot « amour » est masculin singulier : on dit cet amour, mon amour, ton amour, son amour. JAMAIS cette amour, ma amour, ta amour. Cette règle vaut aussi pour les variantes : cet amour pur, mon grand amour, ton amour fou, etc.\n" +
     "    Tous les accents français doivent être présents : é è ê à â î ô û ç.\n" +
     "    Audio = chaque mot SERA prononcé. Une faute = une voix qui dit n'importe quoi.\n\n" +
     "GROUPES MUSCULAIRES:\n" + groupes + "\n\n" +
@@ -839,6 +840,22 @@ function buildSystemPrompt(data) {
       "PERSONNE 2 : " + p2.prenom + " | archétype " + arch2.name + " | canal VAKOG dominant " + v2 + " | problème : " + p2.problem + " | objectif : " + p2.objectif + "\n\n" +
       "RÈGLES COUPLE (non négociables, priment sur tout ce qui précède) :\n" +
       "1. ALTERNANCE DES PRÉNOMS — utilise " + p1.prenom + " et " + p2.prenom + " alternativement tout au long de la séance. Préfère « vous deux », « ensemble », « chacun à votre rythme » pour les guidances communes. JAMAIS un seul prénom répété en boucle. Si une instruction antérieure dit « commencer par <unique_prenom>… », adapte-la pour intégrer les deux : '" + p1.prenom + " et " + p2.prenom + "… je vous invite tous les deux à vous asseoir confortablement…'\n" +
+      "1ter. ACCORD PLURIEL OBLIGATOIRE — Tous les adjectifs, participes passés, attributs et noms s'accordent au PLURIEL quand ils s'appliquent au couple. Exemples obligatoires :\n" +
+      "    « vous êtes prêt » → « vous êtes prêts »\n" +
+      "    « cet être accompli » → « ces êtres accomplis »\n" +
+      "    « cet être traversé » → « ces êtres traversés et transformés »\n" +
+      "    « vous êtes libre » → « vous êtes libres »\n" +
+      "    « vous êtes vivant » → « vous êtes vivants »\n" +
+      "    « vous êtes debout » (invariable, OK)\n" +
+      "    « vous êtes présent » → « vous êtes présents »\n" +
+      "  Genre : utiliser le masculin pluriel inclusif (« accomplis », « traversés ») sauf en nomination explicite avec genre (« " + p1.prenom + ", tu es accompli ... " + p2.prenom + ", tu es accomplie » si féminin évident).\n" +
+      "1bis. RÈGLE GRAMMATICALE STRICTE TU → VOUS — TRÈS IMPORTANT, applique-la SYSTÉMATIQUEMENT à chaque phrase. Toutes les instructions et exemples du prompt système utilisent « tu / toi / te / t' » au singulier (conçues pour un client unique). En mode couple tu DOIS les convertir SYSTÉMATIQUEMENT en « vous / vous deux » au pluriel. Exemples obligatoires de réécriture :\n" +
+      "    « Tu observes cette image » → « Vous observez cette image tous les deux »\n" +
+      "    « Tu es libre, tu es l'observateur paisible » → « Vous êtes libres, vous êtes les observateurs paisibles »\n" +
+      "    « Rien ne peut t'atteindre ici » → « Rien ne peut vous atteindre ici »\n" +
+      "    « Tu vois Mickaël qui… » → « Vous voyez " + p1.prenom + " qui… » OU « " + p1.prenom + ", tu te vois… et " + p2.prenom + ", tu te vois aussi… » (nomination explicite des deux)\n" +
+      "    « TU ES cet être accompli » → « VOUS ÊTES ces êtres accomplis » OU « " + p1.prenom + ", TU ES cet être accompli… et " + p2.prenom + ", TOI AUSSI tu es cet être accompli »\n" +
+      "  EXCEPTION TOLÉRÉE : nomination explicite en paire pour un effet rythmique de bascule. Si tu utilises « " + p1.prenom + ", tu… » tu DOIS dans la même séquence dire « " + p2.prenom + ", tu… ». JAMAIS un seul « tu » sans nomination du second. JAMAIS oublier le second prénom. AUCUN « tu » orphelin nulle part dans le script final.\n" +
       "2. CONVERGENCE — trouve le fil commun entre les deux objectifs ('" + p1.objectif + "' et '" + p2.objectif + "') et construis la séance autour de cette convergence positive. NE PAS opposer les deux personnes. NE PAS nommer de tension. TOUJOURS lien, chemin partagé, transformation jointe. Si les deux objectifs paraissent en tension, contourne en restant sur le terrain positif partagé.\n" +
       "3. VAKOG ALTERNANCE PAR SCÈNE — Scène 1 = canal " + v1 + " (canal de " + p1.prenom + "). Scène 2 = canal " + v2 + " (canal de " + p2.prenom + "). Scène 3 = style neutre multimodal (lumière qui rayonne ET qu'on entend ET qu'on sent — tous canaux à la fois). Cette règle prime sur le canal unique mentionné dans le prompt système.\n" +
       "4. RYTHME RESPIRATOIRE FIXE — cycle 4-2-6 pour TOUTE la séance (4 temps inspire, 2 temps retiens, 6 temps expire). IGNORE les variantes 4-2-8 / 5-5 mentionnées dans la règle 3. Briefing à insérer : « Vous allez compter chacun à votre rythme : 4 temps en inspirant, 2 temps en retenant, 6 temps en expirant. Vous ne synchronisez pas — chacun son tempo intérieur. »\n" +
@@ -2474,7 +2491,16 @@ function Anamnese({ onNext, personId }) {
                 fontSize:"16px", fontFamily:"'Raleway', sans-serif", color:C.text,
                 outline:"none", transition:"border-color .2s" }}
               onFocus={e => e.target.style.borderColor=C.gold}
-              onBlur={e => e.target.style.borderColor=C.border} />
+              onBlur={e => {
+                e.target.style.borderColor=C.border;
+                // v_couple Session 8 — Capitalisation automatique du prénom
+                // « mickael » → « Mickael ». N'essaie pas de deviner les accents
+                // (l'utilisateur reste libre de retaper son prénom avec ses accents
+                // s'il veut « Mickaël »).
+                if (prenom && prenom.length > 0 && prenom !== prenom.charAt(0).toUpperCase() + prenom.slice(1)) {
+                  setPrenom(prenom.charAt(0).toUpperCase() + prenom.slice(1));
+                }
+              }} />
           </div>
         )}
 
@@ -3435,26 +3461,53 @@ function ProfilCouple({ person1, person2, onNext }) {
       </div>
 
       {/* ─── Direction de relaxation (partagée) ─── */}
+      {/* Recommandation : TF si AU MOINS UN des deux est introverti (E<50) ou intuitif (O>55).
+          Logique inclusive — la voie "douce" prime quand le couple est hétérogène. */}
+      {(() => null)()}
       <div style={{ marginBottom:"1.75rem" }}>
         <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
           fontWeight:"400", marginBottom:"0.5rem" }}>Direction de la relaxation</h3>
-        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem", lineHeight:"1.6" }}>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"0.5rem", lineHeight:"1.6" }}>
           Choisissez ensemble — la même direction sera utilisée pour vous deux.
         </p>
+        {(() => {
+          const bf1 = person1?.bigFiveScores || {};
+          const bf2 = person2?.bigFiveScores || {};
+          const oneIntrovert = (bf1.E ?? 50) < 50 || (bf2.E ?? 50) < 50;
+          const oneIntuitive = (bf1.O ?? 50) > 55 || (bf2.O ?? 50) > 55;
+          const recDir = (oneIntrovert || oneIntuitive) ? "TF" : "FT";
+          return (
+            <p style={{ fontSize:"12px", color:C.goldLight, marginBottom:"1rem", fontStyle:"italic" }}>
+              ⭐ D'après vos profils, nous recommandons :{" "}
+              <strong style={{ color:C.gold }}>
+                {recDir === "TF" ? "Tête → Pieds" : "Pieds → Tête"}
+              </strong>
+            </p>
+          );
+        })()}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
-          {[
-            { id:"TF", icon:"⬇️", name:"Tête → Pieds", desc:"Classique Caycedo, dénoue le mental en premier" },
-            { id:"FT", icon:"⬆️", name:"Pieds → Tête", desc:"Ancrage terrestre, monte vers l'apaisement mental" },
-          ].map(opt => (
-            <button key={opt.id} className="opt-card" onClick={() => setRelaxDir(opt.id)}
-              style={{ padding:"1rem", background: relaxDir===opt.id ? `rgba(184,149,90,.15)` : C.panel,
-                border:`1.5px solid ${relaxDir===opt.id ? C.gold : C.border}`, borderRadius:"12px",
-                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
-              <p style={{ fontSize:"18px", marginBottom:"4px" }}>{opt.icon}</p>
-              <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{opt.name}</p>
-              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{opt.desc}</p>
-            </button>
-          ))}
+          {(() => {
+            const bf1 = person1?.bigFiveScores || {};
+            const bf2 = person2?.bigFiveScores || {};
+            const oneIntrovert = (bf1.E ?? 50) < 50 || (bf2.E ?? 50) < 50;
+            const oneIntuitive = (bf1.O ?? 50) > 55 || (bf2.O ?? 50) > 55;
+            const recDir = (oneIntrovert || oneIntuitive) ? "TF" : "FT";
+            return [
+              { id:"TF", icon:"⬇️", name:"Tête → Pieds", desc:"Classique Caycedo, dénoue le mental en premier" },
+              { id:"FT", icon:"⬆️", name:"Pieds → Tête", desc:"Ancrage terrestre, monte vers l'apaisement mental" },
+            ].map(opt => (
+              <button key={opt.id} className="opt-card" onClick={() => setRelaxDir(opt.id)}
+                style={{ padding:"1rem", background: relaxDir===opt.id ? `rgba(184,149,90,.15)` : C.panel,
+                  border:`1.5px solid ${relaxDir===opt.id ? C.gold : C.border}`, borderRadius:"12px",
+                  cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+                <p style={{ fontSize:"18px", marginBottom:"4px" }}>{opt.icon}</p>
+                <p style={{ fontSize:"13px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>
+                  {opt.name} {opt.id === recDir ? "⭐" : ""}
+                </p>
+                <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{opt.desc}</p>
+              </button>
+            ));
+          })()}
         </div>
       </div>
 
@@ -3484,23 +3537,50 @@ function ProfilCouple({ person1, person2, onNext }) {
       </div>
 
       {/* ─── Ambiance sonore (partagée) ─── */}
+      {/* Recommandation : on combine les 2 problèmes et on applique la même
+          logique que le solo. La priorité va au mot-clé qui apparaît en premier. */}
       <div style={{ marginBottom:"1.75rem" }}>
         <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
           fontWeight:"400", marginBottom:"0.5rem" }}>Ambiance sonore</h3>
-        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
+        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"0.5rem" }}>
           Vous pouvez diffuser votre propre musique en parallèle si vous préférez.
         </p>
+        {(() => {
+          const combinedProblem = ((person1?.problem || "") + " " + (person2?.problem || "")).toLowerCase();
+          let recMusic = "binaural"; // défaut
+          if (/stress|anxi|panique|peur|inqui|nervos|agit|tendu|tension/.test(combinedProblem)) recMusic = "binaural";
+          else if (/deuil|perte|solitude|abandon|seul|rupture|manque|vide|chagrin/.test(combinedProblem)) recMusic = "coeur";
+          else if (/ancr|dispers|perdu|focus|concentr|flott|instable/.test(combinedProblem)) recMusic = "tambour";
+          else if (/fatigue|épuis|déprim|dépression|tristesse|mélanc|énergie|burn/.test(combinedProblem)) recMusic = "relaxation";
+          const recName = MUSIQUES.find(m => m.id === recMusic)?.name || "Battements binauraux";
+          return (
+            <p style={{ fontSize:"12px", color:C.goldLight, marginBottom:"1rem", fontStyle:"italic" }}>
+              ⭐ D'après vos deux situations, nous recommandons :{" "}
+              <strong style={{ color:C.gold }}>{recName}</strong>
+            </p>
+          );
+        })()}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
-          {MUSIQUES.map(m => (
-            <button key={m.id} className="opt-card" onClick={() => setMusicChoice(m.id)}
-              style={{ padding:"0.875rem", background: musicChoice===m.id ? `rgba(42,138,143,.15)` : C.panel,
-                border:`1.5px solid ${musicChoice===m.id ? C.teal : C.border}`, borderRadius:"12px",
-                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
-              <p style={{ fontSize:"20px", marginBottom:"4px" }}>{m.icon}</p>
-              <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>{m.name}</p>
-              <p style={{ fontSize:"10px", color:C.muted, lineHeight:"1.4" }}>{m.desc}</p>
-            </button>
-          ))}
+          {(() => {
+            const combinedProblem = ((person1?.problem || "") + " " + (person2?.problem || "")).toLowerCase();
+            let recMusic = "binaural";
+            if (/stress|anxi|panique|peur|inqui|nervos|agit|tendu|tension/.test(combinedProblem)) recMusic = "binaural";
+            else if (/deuil|perte|solitude|abandon|seul|rupture|manque|vide|chagrin/.test(combinedProblem)) recMusic = "coeur";
+            else if (/ancr|dispers|perdu|focus|concentr|flott|instable/.test(combinedProblem)) recMusic = "tambour";
+            else if (/fatigue|épuis|déprim|dépression|tristesse|mélanc|énergie|burn/.test(combinedProblem)) recMusic = "relaxation";
+            return MUSIQUES.map(m => (
+              <button key={m.id} className="opt-card" onClick={() => setMusicChoice(m.id)}
+                style={{ padding:"0.875rem", background: musicChoice===m.id ? `rgba(42,138,143,.15)` : C.panel,
+                  border:`1.5px solid ${musicChoice===m.id ? C.teal : C.border}`, borderRadius:"12px",
+                  cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
+                <p style={{ fontSize:"20px", marginBottom:"4px" }}>{m.icon}</p>
+                <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500", marginBottom:"2px" }}>
+                  {m.name} {m.id === recMusic ? "⭐" : ""}
+                </p>
+                <p style={{ fontSize:"10px", color:C.muted, lineHeight:"1.4" }}>{m.desc}</p>
+              </button>
+            ));
+          })()}
         </div>
       </div>
 
@@ -4739,7 +4819,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
         "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR de cette image accomplie. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage (marqué par [PAUSE_5s]), l'écran s'enveloppe autour du client. Phrase de bascule OBLIGATOIRE de type : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène, jusqu'à 'La transformation est RÉELLE'.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]\n\n" +
-        "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement du problème.]\nGénère EXACTEMENT 4 métaphores pures qui évoquent subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine. Chaque métaphore peut résonner indépendamment. Elles s'enchaînent naturellement sans rupture.\nRègles strictes :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation TOUJOURS hypothétique en 'peut-être que...' — JAMAIS affirmatif.\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " qui détermine la modalité (Visuel=image/forme/lumière ; Auditif=son/écho/silence ; Kinesthésique=poids/pression/vibration ; Rationnel=structure/équation) ; (b) l'archétype " + archetype.name + " qui détermine l'univers symbolique (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Chaque métaphore appartient naturellement à l'univers de l'archétype tout en utilisant la modalité du canal VAKOG.\n- Exemples : 'peut-être qu'une pierre a été posée trop tôt sur une fondation pas tout à fait sèche...' (Bâtisseur × Visuel) ; 'peut-être qu'un silence s'est installé là où une voix manquait...' (Compagnon × Auditif).\n- Ne jamais sortir le client de sa relaxation — tout doit couler.\n- Terminer EXACTEMENT par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n===METAPHORES_END===", 3000);
+        "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement du problème.]\nGénère EXACTEMENT 4 métaphores pures qui évoquent subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine. Chaque métaphore peut résonner indépendamment. Elles s'enchaînent naturellement sans rupture.\nRègles strictes :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation TOUJOURS hypothétique en 'peut-être que...' — JAMAIS affirmatif.\n- INTERDIT — ARITHMÉTIQUE DE LA PERTE. Ne JAMAIS faire de décompte numérique d'une absence ('on était trois, on est deux', 'à quatre et désormais trois', 'vous étiez X, vous êtes Y'). NE PAS inférer la composition familiale (nombre d'enfants, fratrie, âge exact, lien précis). Une perte, un deuil, un départ se nomment par l'ABSENCE elle-même — par la trace, l'écho, le silence, la lumière éteinte, la place qui reste — JAMAIS par un nombre. Exemples corrects : 'une lumière qui s'est éteinte trop tôt', 'une présence dont l'image reste vivante', 'un silence là où une voix résonnait', 'une chaise vide à la table intérieure', 'un chemin qui résonne différemment maintenant'. Exemples INTERDITS : 'deux voyageurs qui marchaient à trois', 'on était plusieurs et maintenant on est moins', toute mention chiffrée d'une famille avant/après.\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " qui détermine la modalité (Visuel=image/forme/lumière ; Auditif=son/écho/silence ; Kinesthésique=poids/pression/vibration ; Rationnel=structure/équation) ; (b) l'archétype " + archetype.name + " qui détermine l'univers symbolique (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Chaque métaphore appartient naturellement à l'univers de l'archétype tout en utilisant la modalité du canal VAKOG.\n- Exemples : 'peut-être qu'une pierre a été posée trop tôt sur une fondation pas tout à fait sèche...' (Bâtisseur × Visuel) ; 'peut-être qu'un silence s'est installé là où une voix manquait...' (Compagnon × Auditif).\n- Ne jamais sortir le client de sa relaxation — tout doit couler.\n- Terminer EXACTEMENT par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n===METAPHORES_END===", 3000);
 
       // ─── APPEL 4 (CONDITIONNEL) : VERSION DOUCE DES 3 SCÈNES — uniquement si profil sensible ───
       // Phase A : protection scène 1 pour éviter de déclencher une crise chez les profils fragiles.
@@ -4787,7 +4867,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Scène 2 (220 mots, NORMAL) : Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
         "Scène 3 (220 mots, NORMAL) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage ([PAUSE_5s]), l'écran s'enveloppe. Phrase de bascule OBLIGATOIRE : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]\n\n" +
-        "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes ULTRA-DOUX — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement, dans le cadre de sécurité déjà établi par les phrases d'observateur.]\nGénère EXACTEMENT 4 métaphores ultra-douces qui évoquent très subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine.\nRègles strictes (version DOUCE) :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation ENCORE PLUS hypothétique en 'peut-être que... peut-être... ou peut-être que tout cela parle d'autre chose' — TRIPLE peut-être obligatoire dans au moins 2 des 4 métaphores.\n- Maintenir la distance d'observateur (verbes contemplatifs : tu observes, tu remarques, tu portes ton attention, tu aperçois).\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " ; (b) l'archétype " + archetype.name + " (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Ne JAMAIS sortir le client de sa relaxation — tout doit couler TRÈS doucement.\n- Terminer EXACTEMENT par : 'Laisse résonner si quelque chose résonne... et laisse glisser sans effort si rien ne vient... [PAUSE_5s]'\n===METAPHORES_END===", 3000) : Promise.resolve(null);
+        "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes ULTRA-DOUX — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement, dans le cadre de sécurité déjà établi par les phrases d'observateur.]\nGénère EXACTEMENT 4 métaphores ultra-douces qui évoquent très subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine.\nRègles strictes (version DOUCE) :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation ENCORE PLUS hypothétique en 'peut-être que... peut-être... ou peut-être que tout cela parle d'autre chose' — TRIPLE peut-être obligatoire dans au moins 2 des 4 métaphores.\n- INTERDIT — ARITHMÉTIQUE DE LA PERTE. Ne JAMAIS faire de décompte numérique d'une absence ('on était trois, on est deux', 'à quatre et désormais trois', 'vous étiez X, vous êtes Y'). NE PAS inférer la composition familiale (nombre d'enfants, fratrie, âge exact, lien précis). Une perte, un deuil, un départ se nomment par l'ABSENCE elle-même — par la trace, l'écho, le silence, la lumière éteinte, la place qui reste — JAMAIS par un nombre. Exemples corrects : 'une lumière qui s'est éteinte trop tôt', 'une présence dont l'image reste vivante', 'un silence là où une voix résonnait', 'une chaise vide à la table intérieure', 'un chemin qui résonne différemment maintenant'. Exemples INTERDITS : 'deux voyageurs qui marchaient à trois', 'on était plusieurs et maintenant on est moins', toute mention chiffrée d'une famille avant/après.\n- Maintenir la distance d'observateur (verbes contemplatifs : tu observes, tu remarques, tu portes ton attention, tu aperçois).\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " ; (b) l'archétype " + archetype.name + " (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Ne JAMAIS sortir le client de sa relaxation — tout doit couler TRÈS doucement.\n- Terminer EXACTEMENT par : 'Laisse résonner si quelque chose résonne... et laisse glisser sans effort si rien ne vient... [PAUSE_5s]'\n===METAPHORES_END===", 3000) : Promise.resolve(null);
 
       // APPEL 3 : Clôture spirituelle + Désophronisation
       // BUG FIX : tokens augmentés de 1500 -> 2500 (les profils verbeux étaient tronqués).
@@ -6782,18 +6862,27 @@ function App() {
     setUserData(d => {
       const p1 = d.person1 || {};
       const p2 = d.person2 || {};
+      // v_couple Session 8 — Capitalisation defensive des prénoms en cas où
+      // l'Anamnèse onBlur ne se serait pas déclenchée (ex : Enter direct depuis le champ).
+      const cap = s => (s && s.length > 0) ? (s.charAt(0).toUpperCase() + s.slice(1)) : "";
+      const p1Prenom = cap(p1.prenom);
+      const p2Prenom = cap(p2.prenom);
       return {
         ...d,
         ...prefs,
         couple: true,
         seanceNum: 1,
         // Champs synthétisés (SeancePlayer reste mono-mode)
-        prenom: (p1.prenom || "") + " et " + (p2.prenom || ""),
+        prenom: p1Prenom + " et " + p2Prenom,
         email: p1.email || p2.email || "",  // Session 5 enverra aussi à p2.email
-        problem: "[" + (p1.prenom || "P1") + "] " + (p1.problem || "") + "\n[" + (p2.prenom || "P2") + "] " + (p2.problem || ""),
-        objectif: "[" + (p1.prenom || "P1") + "] " + (p1.objectif || "") + "\n[" + (p2.prenom || "P2") + "] " + (p2.objectif || ""),
+        problem: "[" + (p1Prenom || "P1") + "] " + (p1.problem || "") + "\n[" + (p2Prenom || "P2") + "] " + (p2.problem || ""),
+        objectif: "[" + (p1Prenom || "P1") + "] " + (p1.objectif || "") + "\n[" + (p2Prenom || "P2") + "] " + (p2.objectif || ""),
         bigFiveScores: p1.bigFiveScores,    // P1 prioritaire (sera override par couple block du prompt)
         vakogResult: p1.vakogResult,        // P1 prioritaire (sera override par couple block du prompt)
+        // On met aussi les prénoms capitalisés dans person1/person2 pour que buildSystemPrompt
+        // les reçoive correctement dans le bloc couple.
+        person1: { ...p1, prenom: p1Prenom },
+        person2: { ...p2, prenom: p2Prenom },
       };
     });
     setStep("seance-couple");
