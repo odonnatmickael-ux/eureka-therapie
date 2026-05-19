@@ -818,6 +818,7 @@ function buildSystemPrompt(data) {
     "    - sentez (PAS 'sentés', 'centez')\n" +
     "    - cet amour (PAS 'cette amour'). Le mot « amour » est masculin singulier : on dit cet amour, mon amour, ton amour, son amour. JAMAIS cette amour, ma amour, ta amour. Cette règle vaut aussi pour les variantes : cet amour pur, mon grand amour, ton amour fou, etc.\n" +
     "    - participes passés accentués : effacé (PAS 'efface'), traversé (PAS 'traverse'), apaisé (PAS 'apaise'), allumé (PAS 'allume'), éteint (PAS 'eteint'). Quand un mot est un PARTICIPE PASSÉ ou un ADJECTIF dérivé d'un verbe en -er, il PORTE TOUJOURS l'accent aigu sur le 'e' final (sauf au féminin pluriel). Exemples : « un sentier effacé », « un chemin traversé », « un cœur apaisé », « une flamme allumée », « un feu éteint ». ❌ INTERDIT : « un sentier efface » (=verbe à la 3e personne, n'a pas de sens dans une métaphore descriptive).\n" +
+    "    - démonstratifs « ce » vs « cet » devant nouvel / vieil / bel / fol / mol : les formes « nouvel, vieil, bel, fol, mol » sont DÉJÀ des formes élidées des adjectifs « nouveau, vieux, beau, fou, mou » devant voyelle. On utilise donc « CE » (sans 't') devant elles, jamais « cet ». ❌ INTERDIT : « cet nouvel écran », « cet vieil homme », « cet bel arbre ». ✅ CORRECT : « ce nouvel écran », « ce vieil homme », « ce bel arbre », « ce fol espoir », « ce mol amour ». RÈGLE GÉNÉRALE : « cet » s'utilise uniquement devant un nom masculin commençant par voyelle ou h muet SANS adjectif élidé intermédiaire (« cet écran », « cet espace », « cet homme »). Devant nouvel/vieil/bel/fol/mol → toujours « ce ».\n" +
     "    Tous les accents français doivent être présents : é è ê à â î ô û ç.\n" +
     "    RELECTURE FINALE OBLIGATOIRE : avant de rendre le texte, relis-le mentalement et vérifie : (1) tous les participes passés portent leur accent aigu (effacé, traversé, transformé, etc.) ; (2) tous les impératifs s'adressant à plusieurs personnes sont au pluriel (Laissez, Sentez, Respirez) ; (3) aucun mot homophone n'a été substitué (à/a, ou/où, ces/ses, cet/cette). Si tu détectes une erreur, corrige-la AVANT de produire le texte final.\n" +
     "    Audio = chaque mot SERA prononcé. Une faute = une voix qui dit n'importe quoi.\n\n" +
@@ -4953,6 +4954,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         return s
           .replace(/===\s*METAPHORES_START\s*===[\s\S]*?===\s*METAPHORES_END\s*===/gi, "")
           .replace(/===\s*METAPHORES_(START|END|GO_HERE)\s*===/gi, "")
+          // v_couple Session 15 — Collapse les [PAUSE_Xs]\n\n[PAUSE_Xs] consécutifs
+          // en un seul (artefact observé 5× dans les cycles 3-7 de la séance Bâtisseur).
+          // Boucle pour gérer les triples/quadruples au cas où.
+          .replace(/(\[PAUSE_[\d.]+s\])\s*\n\s*\n\s*(\[PAUSE_[\d.]+s\])/g, "$1")
+          .replace(/(\[PAUSE_[\d.]+s\])\s*\n\s*\n\s*(\[PAUSE_[\d.]+s\])/g, "$1")
           .replace(/\n{3,}/g, "\n\n")
           .trim();
       };
