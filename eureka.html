@@ -849,6 +849,14 @@ function buildSystemPrompt(data) {
       "    « vous êtes debout » (invariable, OK)\n" +
       "    « vous êtes présent » → « vous êtes présents »\n" +
       "  Genre : utiliser le masculin pluriel inclusif (« accomplis », « traversés ») sauf en nomination explicite avec genre (« " + p1.prenom + ", tu es accompli ... " + p2.prenom + ", tu es accomplie » si féminin évident).\n" +
+      "  CAS PARTICULIER « cet être X » — quand l'attribut est précédé de « cet être » (ou « ces êtres » au pluriel), l'adjectif s'accorde TOUJOURS au masculin, MÊME en nomination explicite d'une personne féminine. Le mot « être » est un nom masculin, l'accord suit le nom et NON le genre de la personne nommée. Exemples obligatoires :\n" +
+      "    ❌ INTERDIT : « " + p2.prenom + ", TOI AUSSI tu es cet être accomplie » (mélange masc « être » + fém « accomplie »)\n" +
+      "    ✅ CORRECT : « " + p2.prenom + ", TOI AUSSI tu es cet être accompli » (masc générique, accord avec « être »)\n" +
+      "    ❌ INTERDIT : « " + p2.prenom + ", tu es cet être traversée et transformée » (mélange)\n" +
+      "    ✅ CORRECT : « " + p2.prenom + ", tu es cet être traversé et transformé » (masc générique)\n" +
+      "    ✅ ALTERNATIVE acceptée : si le féminin est important, supprime « cet être » et utilise directement l'adjectif au féminin : « " + p2.prenom + ", TOI AUSSI tu es accomplie » (sans « cet être »).\n" +
+      "    ✅ ALTERNATIVE acceptée : « " + p2.prenom + ", TOI AUSSI tu es cette femme accomplie » (nom féminin « femme » → accord féminin cohérent).\n" +
+      "  RÈGLE D'OR : si tu utilises « cet être / ces êtres », tout ce qui s'y rattache reste masculin. Si tu veux du féminin, change le NOM (« cette femme », « cette mère », etc.) ou supprime le nom (« tu es accomplie »).\n" +
       "1bis. RÈGLE GRAMMATICALE STRICTE TU → VOUS — TRÈS IMPORTANT, applique-la SYSTÉMATIQUEMENT à chaque phrase. Toutes les instructions et exemples du prompt système utilisent « tu / toi / te / t' » au singulier (conçues pour un client unique). En mode couple tu DOIS les convertir SYSTÉMATIQUEMENT en « vous / vous deux » au pluriel. Exemples obligatoires de réécriture :\n" +
       "    « Tu observes cette image » → « Vous observez cette image tous les deux »\n" +
       "    « Tu es libre, tu es l'observateur paisible » → « Vous êtes libres, vous êtes les observateurs paisibles »\n" +
@@ -3418,15 +3426,16 @@ function ProfilCouple({ person1, person2, onNext }) {
   const [relaxDir, setRelaxDir] = useState(saved?.relaxDir || "");
   const [beliefSystem, setBeliefSystem] = useState(saved?.beliefSystem || "");
   const [musicChoice, setMusicChoice] = useState(saved?.musicChoice || "");
-  const [selectedVoice, setSelectedVoice] = useState(saved?.selectedVoice || "");
+  // v_couple Session 13 — selectedVoice retiré : la voix sera choisie après
+  // GenreVoix → DemoAudio → VoiceSelection (4 voix dans SeancePlayer).
 
   useEffect(() => {
     try {
       localStorage.setItem(PROFIL_COUPLE_KEY, JSON.stringify({
-        relaxDir, beliefSystem, musicChoice, selectedVoice
+        relaxDir, beliefSystem, musicChoice
       }));
     } catch {}
-  }, [relaxDir, beliefSystem, musicChoice, selectedVoice]);
+  }, [relaxDir, beliefSystem, musicChoice]);
 
   // Dérivation des profils (archétype + VAKOG dominant pour chacun)
   const arch1Key = archetypeFromBigFive(person1?.bigFiveScores);
@@ -3444,7 +3453,7 @@ function ProfilCouple({ person1, person2, onNext }) {
     { id:"perso", icon:"🎶", name:"Ma propre musique", desc:"Jouez votre musique en fond pendant la séance" },
   ];
 
-  const canContinue = relaxDir && beliefSystem && musicChoice && selectedVoice;
+  const canContinue = relaxDir && beliefSystem && musicChoice;
 
   return (
     <Card style={{ maxWidth:"720px" }}>
@@ -3605,40 +3614,15 @@ function ProfilCouple({ person1, person2, onNext }) {
         </div>
       </div>
 
-      {/* ─── Voix unique partagée (4 cartes) ─── */}
-      <div style={{ marginBottom:"2rem" }}>
-        <h3 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px", color:C.cream,
-          fontWeight:"400", marginBottom:"0.5rem" }}>La voix qui vous accompagne</h3>
-        <p style={{ fontSize:"12px", color:C.muted, marginBottom:"1rem" }}>
-          Une seule voix narratrice qui s'adresse à vous deux pendant toute la séance.
-        </p>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
-          {VOICES.map(v => (
-            <button key={v.id} className="opt-card" onClick={() => setSelectedVoice(v.id)}
-              style={{ padding:"1rem", background: selectedVoice===v.id ? `rgba(184,149,90,.15)` : C.panel,
-                border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"12px",
-                cursor:"pointer", textAlign:"left", transition:"all .2s" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
-                <span style={{ width:"32px", height:"32px", borderRadius:"50%",
-                  background: selectedVoice===v.id ? C.gold : C.tealDark,
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:"14px", color: selectedVoice===v.id ? "#1a0e00" : C.cream,
-                  fontWeight:"700", flexShrink:0 }}>{v.name[0]}</span>
-                <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px",
-                  color:C.cream, fontWeight:"400" }}>{v.name}</p>
-              </div>
-              <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.5" }}>{v.desc}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* v_couple Session 13 — Bloc 4 voix retiré ici, déplacé vers genre-voix-couple
+          (étape suivante du funnel) + grille 4 voix dans SeancePlayer (pattern solo). */}
 
       <Btn onClick={() => {
           try { localStorage.removeItem(PROFIL_COUPLE_KEY); } catch {}
-          onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice });
+          onNext({ relaxDir, beliefSystem, musicChoice });
         }}
         disabled={!canContinue} variant="gold">
-        Lancer la séance partagée ✦
+        Continuer ✦
       </Btn>
       {!canContinue && (
         <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", marginTop:"0.75rem",
@@ -6729,7 +6713,7 @@ function App() {
   // v_couple — Liste des step IDs propres au parcours couple ; sert à masquer
   // le StepIndicator (chaque composant Anamnèse/BigFive/VAKOG a son propre indicateur
   // interne, et le funnel couple à 8 étapes ne match pas STEP_LABELS).
-  const COUPLE_STEPS = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","seance-couple"];
+  const COUPLE_STEPS = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","genre-voix-couple","seance-couple"];
 
   // ─── Capture intention tarifaire — apparaît UNE fois à la 5e séance ──
   // On stocke le compteur de séances générées dans localStorage pour décider
@@ -6762,7 +6746,7 @@ function App() {
         // v_couple — Reprise du funnel couple (anamnese-1 → seance-couple)
         // après refresh navigateur. Le userData est restauré depuis sessionStorage,
         // les composants Anamnese/Quiz retrouvent leur état via leur propre localStorage.
-        const _coupleSteps = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","seance-couple"];
+        const _coupleSteps = ["anamnese-1","bigfive-1","vakog-1","anamnese-2","bigfive-2","vakog-2","profil-couple","genre-voix-couple","seance-couple"];
         if (lastStep && _coupleSteps.includes(lastStep)) {
           const _rawCouple = sessionStorage.getItem('eureka_couple_userdata');
           if (_rawCouple) {
@@ -6877,8 +6861,7 @@ function App() {
   const handleProfilCoupleNext = (prefs) => {
     track("couple_profil_completed", {
       music: prefs.musicChoice || "?",
-      belief: prefs.beliefSystem || "?",
-      voice: prefs.selectedVoice || "?"
+      belief: prefs.beliefSystem || "?"
     });
     setUserData(d => {
       const p1 = d.person1 || {};
@@ -6906,6 +6889,15 @@ function App() {
         person2: { ...p2, prenom: p2Prenom },
       };
     });
+    // v_couple Session 13 — Passage par genre-voix-couple AVANT seance-couple
+    // (aligne sur le pattern solo : Profil → GenreVoix → Séance avec démo+4 voix).
+    setStep("genre-voix-couple");
+  };
+
+  // v_couple Session 13 — handler du choix de voix pour le couple
+  const handleGenreVoixCoupleNext = (prefs) => {
+    track("couple_genre_voix_completed", { gender: prefs.genderPref || "?" });
+    setUserData(d => ({ ...d, ...prefs }));
     setStep("seance-couple");
   };
 
@@ -7071,6 +7063,11 @@ function App() {
         {step === "profil-couple" && (
           <ProfilCouple person1={userData.person1} person2={userData.person2}
             onNext={handleProfilCoupleNext} />
+        )}
+        {/* v_couple Session 13 — Étape genre-voix réutilisée du flow solo
+            (composant GenreVoix générique : 2 cartes Bella/Marcel). */}
+        {step === "genre-voix-couple" && (
+          <GenreVoix onNext={handleGenreVoixCoupleNext} />
         )}
         {step === "seance-couple" && (
           <SeancePlayer userData={userData} resumeData={null} onRestart={handleRestart} />
