@@ -46,6 +46,7 @@ export default async function handler(req, res) {
     const payload = {
       month: data.currentMonth || null,
       title: c.title || "",
+      themeLabel: c.themeLabel || "",
       body: c.body || [],
       generatedAt: c.generatedAt || null,
     };
