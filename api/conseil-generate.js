@@ -167,7 +167,7 @@ LIVRE UNIQUEMENT UN OBJET JSON VALIDE, sans markdown autour, sans préambule, av
     "Paragraphe 2 — 2 à 4 phrases. Propose un geste ou une observation concrète.",
     "Paragraphe 3 — 2 à 4 phrases. Ouvre, sans conclure de manière prescriptive."
   ],
-  "facebookPost": "Texte Facebook 90 à 180 mots, ton chaleureux mais sobre. Pas plus de 2 emojis discrets. Termine impérativement par les deux lignes :\\n\\nLes conseils du mois ↓\\nhttps://eureka-therapie.com/conseils.html"
+  "facebookPost": "Texte Facebook 90 à 180 mots, ton chaleureux mais sobre. Pas plus de 2 emojis discrets. Termine impérativement par les deux lignes :\\n\\nLes conseils du mois ↓\\nhttps://eureka-therapie.vercel.app/conseils.html"
 }
 
 Réponds UNIQUEMENT par le JSON. Pas un mot avant, pas un mot après.`;
