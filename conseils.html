@@ -84,6 +84,16 @@
       padding: 3rem 2.25rem;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
+    .theme-tag {
+      text-align: center;
+      color: var(--gold);
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-family: 'Raleway', sans-serif;
+      font-weight: 500;
+      margin: 0 0 1.25rem;
+    }
     h1 {
       font-family: 'Cormorant Garamond', serif;
       font-weight: 500;
@@ -105,6 +115,16 @@
       margin: 0 0 1.4rem;
     }
     p:last-child { margin-bottom: 0; }
+    .section-label {
+      font-family: 'Raleway', sans-serif;
+      font-weight: 500;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 2rem 0 0.85rem;
+    }
+    .section-label:first-child { margin-top: 0; }
 
     .loading, .error {
       text-align: center;
@@ -236,10 +256,28 @@
           if (data.month) metaEl.textContent = 'Le conseil de ' + frMonth(data.month);
 
           const title = esc(data.title || 'Le conseil du mois');
-          const paras = (data.body || []).map(function (p) {
-            return '<p>' + esc(p) + '</p>';
+          const themeTag = data.themeLabel
+            ? '<div class="theme-tag">' + esc(data.themeLabel) + '</div>'
+            : '';
+          // 4 sous-titres fonctionnels pour les 4 paragraphes du conseil
+          const SECTION_LABELS = [
+            'Ce que vous vivez',
+            'Pourquoi c’est ainsi',
+            'Un geste à pratiquer',
+            'Pour aller plus loin'
+          ];
+          const body = data.body || [];
+          // On affiche les sous-titres uniquement si on a exactement 4 paragraphes,
+          // sinon (format ancien ou anomalie) on rend en prose sans labels.
+          const useLabels = body.length === 4;
+          const paras = body.map(function (p, i) {
+            const label = useLabels
+              ? '<div class="section-label">' + SECTION_LABELS[i] + '</div>'
+              : '';
+            return label + '<p>' + esc(p) + '</p>';
           }).join('');
           article.innerHTML =
+            themeTag +
             '<h1>' + title + '</h1>' +
             '<div class="ornament"></div>' +
             paras;
