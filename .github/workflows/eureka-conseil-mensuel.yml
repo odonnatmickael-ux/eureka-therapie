@@ -3,12 +3,15 @@ name: EUREKA — Conseil du mois (auto)
 # Cron : tous les lundis à 6h UTC.
 # Le job filtre ensuite : il ne lance la génération QUE si le jour du mois est <= 7
 # → cela garantit qu'on ne tourne que le PREMIER lundi de chaque mois.
-# (Cette astuce contourne une bizarrerie de cron où "day-of-month + day-of-week"
-#  fonctionne en OU et non en ET.)
 on:
   schedule:
     - cron: '0 6 * * 1'
-  workflow_dispatch:  # Permet aussi un déclenchement manuel depuis l'onglet Actions
+  workflow_dispatch:
+    inputs:
+      theme:
+        description: 'Tag du thème à forcer (ex: anxiete, sommeil, confiance). Laisser vide pour automatique.'
+        required: false
+        default: ''
 
 jobs:
   generate:
@@ -33,11 +36,18 @@ jobs:
 
       - name: Déclencher la génération du conseil mensuel
         if: steps.check.outputs.should_run == 'true'
+        env:
+          THEME_OVERRIDE: ${{ inputs.theme }}
         run: |
           set -e
-          echo "Appel de l'endpoint de génération…"
+          URL="${{ secrets.EUREKA_CONSEIL_URL }}"
+          if [ -n "$THEME_OVERRIDE" ]; then
+            URL="${URL}?theme=${THEME_OVERRIDE}"
+            echo "Thème forcé : $THEME_OVERRIDE"
+          fi
+          echo "Appel de : $URL"
           HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
-            -X POST "${{ secrets.EUREKA_CONSEIL_URL }}" \
+            -X POST "$URL" \
             -H "Authorization: Bearer ${{ secrets.EUREKA_CRON_SECRET }}" \
             -H "Content-Type: application/json")
           echo "Code HTTP : $HTTP_CODE"
