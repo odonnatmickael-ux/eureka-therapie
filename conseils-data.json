@@ -2,17 +2,20 @@
   "version": 1,
   "currentMonth": "2026-05",
   "currentConseil": {
-    "title": "Ce que les épaules portent en silence",
-    "theme": "le_geste_des_epaules",
+    "title": "Quand l'inquiétude s'installe sans raison apparente",
+    "theme": "anxiete",
+    "themeLabel": "Calmer l'anxiété du quotidien",
     "body": [
-      "Il y a des tensions que l'on ne remarque plus, non parce qu'elles ont disparu, mais parce qu'on s'y est habitué. Les épaules en sont souvent le premier signe : remontées vers les oreilles, légèrement crispées, sans raison apparente. Ce n'est pas un défaut de posture. C'est une réponse, souvent ancienne, à une charge que le corps a décidé de tenir à sa place.",
-      "Une fois au cours de la journée — au bureau, dans les transports, ou simplement avant de vous lever — prenez un instant pour observer vos épaules sans chercher à les corriger. Puis, très lentement, inspirez. En expirant, laissez-les descendre d'un millimètre, comme si vous posiez quelque chose que vous n'aviez pas besoin de porter en ce moment précis. Rien de plus. Ce geste n'a pas à être spectaculaire pour être réel.",
-      "Ce que l'on découvre parfois en répétant cette observation, c'est moins une technique qu'une question : qu'est-ce que je tiens, là, sans m'en être rendu compte ? La réponse n'est pas toujours nécessaire. L'attention, elle, suffit souvent à changer quelque chose."
+      "Il y a des journées où rien de particulier ne s'est passé, et pourtant quelque chose en vous ne se pose pas. Une légère tension dans la poitrine, des pensées qui tournent en boucle, une vigilance constante que vous ne savez pas vraiment expliquer. Vous fonctionnez, vous assurez, mais à l'intérieur, c'est comme si le volume était monté trop fort sans que vous ayez touché au bouton.",
+      "Ce que vous ressentez a une logique. Votre système nerveux, sollicité en permanence par les exigences du quotidien, peut rester en état d'alerte même lorsque le danger réel est absent — un peu comme un moteur qui continue de tourner après l'arrêt du contact. Ce n'est pas une faiblesse, c'est une réponse du corps qui a appris à anticiper. Et ce qui a été appris peut, progressivement, être apaisé.",
+      "Posez les deux pieds à plat sur le sol, là où vous êtes. Inspirez lentement par le nez pendant 4 secondes, puis expirez par la bouche pendant 6 secondes, comme si vous souffliez doucement sur une flamme sans l'éteindre. Répétez trois fois, en laissant chaque expiration être un peu plus relâchée que la précédente. Ce simple décalage entre inspiration et expiration envoie au corps un signal de sécurité.",
+      "Si vous souhaitez aller plus loin, une séance EUREKA peut vous accompagner avec une pratique audio construite autour de ce que vous vivez spécifiquement. Pour l'instant, posez simplement la main sur votre poitrine un instant — et laissez-vous exister, là, sans rien avoir à résoudre."
     ],
-    "facebookPost": "Vos épaules sont-elles détendues, en ce moment, pendant que vous lisez ces lignes ? 🤍\n\nCe mois-ci, notre conseil porte sur un geste discret que beaucoup d'entre nous oublient : simplement observer ce que les épaules portent, sans juger, sans forcer. Le corps retient souvent ce que l'esprit n'a pas encore eu le temps de poser. Et parfois, une seule expiration suffit à rappeler qu'on n'est pas obligé de tout tenir en permanence.\n\nCe n'est pas une méthode miracle. C'est une invitation à un moment d'attention, disponible à n'importe quelle heure, sans aucun matériel. Doux et concret à la fois.\n\nLe conseil complet vous attend sur notre blog. Prenez le temps de le lire tranquillement. ✨\n\nLes conseils du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-05-20T19:44:26.618Z"
+    "facebookPost": "Il y a des jours où tout semble aller... et pourtant quelque chose en vous ne se pose pas vraiment. Une tension diffuse, des pensées qui ne s'arrêtent pas, une sorte de bruit de fond intérieur que vous ne savez pas comment éteindre.\n\nCe vécu est plus courant qu'on ne le dit. Et surtout, il est légitime.\n\nDans notre Conseil du mois, Mickael vous propose un regard bienveillant sur cette expérience — sans étiquette, sans discours trop rapide — ainsi qu'un exercice de respiration simple que vous pouvez essayer maintenant, en moins d'une minute, là où vous êtes. 🌿\n\nPas de grande promesse. Juste un geste concret, et quelques mots pour vous sentir un peu moins seul avec ce que vous portez.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-05-20T19:59:10.717Z"
   },
   "recentThemes": [
+    "anxiete",
     "le_geste_des_epaules",
     "la_lumiere_du_matin",
     "respiration_apaisement"
