@@ -1,0 +1,51 @@
+name: EUREKA — Conseil du mois (auto)
+
+# Cron : tous les lundis à 6h UTC.
+# Le job filtre ensuite : il ne lance la génération QUE si le jour du mois est <= 7
+# → cela garantit qu'on ne tourne que le PREMIER lundi de chaque mois.
+# (Cette astuce contourne une bizarrerie de cron où "day-of-month + day-of-week"
+#  fonctionne en OU et non en ET.)
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:  # Permet aussi un déclenchement manuel depuis l'onglet Actions
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier que c'est bien le 1er lundi du mois
+        id: check
+        run: |
+          DAY=$(date -u +%d)
+          DAY_NUM=$((10#$DAY))
+          IS_MANUAL="${{ github.event_name == 'workflow_dispatch' }}"
+          if [ "$IS_MANUAL" = "true" ]; then
+            echo "Lancement manuel : on continue."
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          elif [ "$DAY_NUM" -le 7 ]; then
+            echo "Jour du mois = $DAY_NUM → c'est bien le 1er lundi du mois. On continue."
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "Jour du mois = $DAY_NUM → ce n'est PAS le 1er lundi. On saute."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Déclencher la génération du conseil mensuel
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          set -e
+          echo "Appel de l'endpoint de génération…"
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "${{ secrets.EUREKA_CONSEIL_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.EUREKA_CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          echo "Code HTTP : $HTTP_CODE"
+          echo "--- Réponse ---"
+          cat /tmp/response.json
+          echo ""
+          echo "---------------"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Échec de la génération (code $HTTP_CODE)"
+            exit 1
+          fi
