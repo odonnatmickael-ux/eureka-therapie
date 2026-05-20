@@ -237,9 +237,11 @@ export default async function handler(req, res) {
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
     const token = process.env.GITHUB_TOKEN;
-    const claudeKey = process.env.ANTHROPIC_API_KEY;
+    // Accepte les deux noms : CLAUDE_API_KEY (nom utilisé sur ce projet Vercel)
+    // ou ANTHROPIC_API_KEY (nom standard chez Anthropic) — l'un OU l'autre suffit.
+    const claudeKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
     if (!repo || !token || !claudeKey) {
-      throw new Error("Variables d'env manquantes (GITHUB_REPO / GITHUB_TOKEN / ANTHROPIC_API_KEY).");
+      throw new Error("Variables d'env manquantes (GITHUB_REPO / GITHUB_TOKEN / CLAUDE_API_KEY).");
     }
 
     // 2. Lecture du JSON courant
