@@ -2,17 +2,18 @@
   "version": 1,
   "currentMonth": "2026-05",
   "currentConseil": {
-    "title": "Le souffle, un point d'appui quotidien",
-    "theme": "respiration_apaisement",
+    "title": "Ce que la lumière du matin peut offrir",
+    "theme": "la_lumiere_du_matin",
     "body": [
-      "On cherche souvent au-dehors ce qu'on a déjà tout près. Le souffle est l'un de ces points d'appui silencieux : toujours présent, gratuit, fidèle. Il ne demande aucun équipement, aucune méthode complexe, juste un peu d'attention.",
-      "Posez-vous une minute. Une seule. Sentez l'air qui entre par les narines, doucement, puis qui ressort. Vous n'avez rien à modifier. Juste à écouter ce mouvement naturel qui ne vous a jamais quitté depuis votre naissance.",
-      "Ce qu'on appelle « se centrer » commence souvent comme ça : non pas par un grand exercice, mais par cette reconnaissance discrète que quelque chose en vous, déjà, sait respirer."
+      "Il y a quelque chose de particulier dans les premières minutes après le réveil. Avant que la journée ne prenne sa vitesse, avant les écrans et les listes, il existe un espace bref où la conscience se pose encore doucement sur le monde. Beaucoup d'entre nous traversent cet espace sans le remarquer, pressés d'aller ailleurs.",
+      "Un geste simple consiste à s'accorder quelques instants face à la lumière naturelle — une fenêtre, un balcon, même un carré de ciel aperçu depuis le lit. Pas pour méditer au sens formel du terme, mais pour poser le regard sans objectif : observer la qualité de cette lumière, sa teinte, sa douceur ou son intensité selon la saison. Laisser les yeux s'ajuster sans rien chercher de plus.",
+      "Ce type de pause matinale ne transforme pas une journée difficile en journée facile. Mais il peut créer une infime distance entre soi et l'élan automatique du quotidien — un moment où l'on choisit, ne serait-ce qu'une seconde, comment commencer. Certains trouvent que c'est suffisant pour aborder ce qui vient avec un peu plus de légèreté."
     ],
-    "facebookPost": "Le souffle est l'un de ces points d'appui silencieux qu'on oublie d'utiliser. Une minute par jour suffit : poser l'attention sur l'air qui entre et qui sort, sans rien chercher à modifier. C'est par là que commence ce qu'on appelle « se centrer ». 🌿\n\nLes conseils du mois ↓\nhttps://eureka-therapie.com/conseils.html",
-    "generatedAt": "2026-05-01T06:00:00Z"
+    "facebookPost": "Le matin a une texture que l'on oublie souvent d'habiter.\n\nAvant que la journée ne s'emballe, il existe quelques minutes où la lumière est encore neuve, où rien n'a tout à fait commencé. S'y attarder — même brièvement, même sans méthode — c'est offrir à son attention un point d'ancrage doux avant le bruit du reste.\n\nNotre conseil du mois explore ce geste discret : regarder la lumière du matin sans en attendre grand-chose, et voir ce que cela apporte. Pas de promesse, pas de protocole. Juste une invitation à remarquer ce qui est déjà là. 🌤\n\nSi cela vous parle, retrouvez l'article complet et tous nos conseils bien-être sur EUREKA Thérapie.\n\nLes conseils du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-05-20T15:57:59.729Z"
   },
   "recentThemes": [
+    "la_lumiere_du_matin",
     "respiration_apaisement"
   ]
 }
