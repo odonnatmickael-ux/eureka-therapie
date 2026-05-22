@@ -5249,7 +5249,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Pour profil stable, tous les cycles = standard (comportement historique).
       // Phase A — texte-pont entre cycle 2 (douce) et cycle 3 (standard) : prépare psychologiquement
       // au passage "silhouette/forme abstraite" → "Mickael nommé/crise d'angoisse" (exposition graduelle).
-      const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
+      // v2_endo bugfix : variante solo (tu, neutre en genre) vs couple (vous, pluriel masculin inclusif).
+      // "tu peux" évite le piège du genre — "tu es prêt(e)" forcerait à connaître le genre du client.
+      const PONT_SENSIBLE = couple
+        ? "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]"
+        : "Maintenant que tu as observé cette image en toute sécurité, deux fois... tu peux la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
 
       // Filet de sécurité : si Claude n'a pas inclus la phrase de fin (sortie tronquée
       // ou ignorée), on l'ajoute manuellement pour que la séance ne se termine pas en l'air.
@@ -5551,7 +5555,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         const douce = scriptParts.scenesDouce;
         const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
         // Phase A — texte-pont identique à l'assemblage initial (synchronisation script ↔ audio)
-        const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
+        // v2_endo bugfix : même conditionnel couple/solo que dans l'assemblage initial.
+        const PONT_SENSIBLE = couple
+          ? "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]"
+          : "Maintenant que tu as observé cette image en toute sécurité, deux fois... tu peux la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
         let cycles = "";
         for (let i = 0; i < annonces.length; i++) {
           if (i === 2 && sensible && douce) {
