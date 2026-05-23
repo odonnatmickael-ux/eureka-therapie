@@ -868,23 +868,6 @@ function buildSystemPrompt(data) {
     }
   }
 
-  // ─── v2_visionMatinee — Directive Silva : tisser la projection du futur résolu dans la scène 3 ───
-  // Si la cliente a renseigné une projection sensorielle (Option E / miracle question),
-  // Claude doit construire la scène 3 (incarnation accomplie) AVEC les détails qu'elle a décrits,
-  // au lieu de générer une scène d'accomplissement générique.
-  let visionSuffix = "";
-  if (data.visionMatinee && data.visionMatinee.trim().length > 10) {
-    visionSuffix = "\n\n=== VISION DU FUTUR RÉSOLU (APPLICATION DU PRINCIPE SILVA — DÉSIR ARDENT) ===\n" +
-      "La cliente a décrit elle-même sa première matinée dans la vie où son problème est résolu :\n" +
-      "« " + data.visionMatinee.trim() + " »\n\n" +
-      "RÈGLES NON NÉGOCIABLES POUR CONSTRUIRE LA SCÈNE 3 :\n" +
-      "1. ANCRAGE SENSORIEL — Tu DOIS extraire les détails CONCRETS de cette projection (objets, lieux, lumières, sensations, gestes, présences, sons) et les utiliser comme points de gravitation de la scène 3. PAS de scène 3 générique du type « il/elle se tient debout dans un espace lumineux ». La scène 3 doit être SA scène 3, construite à partir de SES éléments.\n" +
-      "2. TISSAGE DISCRET — Ne cite JAMAIS la phrase de la cliente verbatim. Tisse les détails sensoriels DANS la description à la 3e personne pendant la PHASE A, puis dans l'incarnation à la 1ère personne pendant la PHASE B.\n" +
-      "3. RESPECT DU NON-DIT — N'invente pas d'éléments que la cliente n'a pas mentionnés. Si elle a parlé d'un café, intègre le café. Si elle n'a rien dit du regard d'autrui, n'invente pas de regards. Tu ENRICHIS sa vision avec sa sensorialité dominante (canal VAKOG = " + (data.vakog || "?") + "), pas avec ton imagination.\n" +
-      "4. PRINCIPE SILVA APPLIQUÉ — Le désir ardent (burning desire) prend sa force dans la SPÉCIFICITÉ sensorielle, pas dans l'abstraction. Plus la scène 3 est précise et fidèle à la projection de la cliente, plus l'engrainement subconscient est efficace pendant l'état alpha.\n" +
-      "5. PAS DE COMMENTAIRE — Tu n'expliques pas à la cliente que tu utilises sa projection. Tu la lui rends, transformée et incarnée, sans jamais nommer le mécanisme.\n";
-  }
-
   // ─── v_couple — Bloc couple ajouté en fin de prompt système si data.couple est posé ───
   // Cette section prime sur tout ce qui précède (alternance VAKOG, cycle 4-2-6 imposé,
   // alternance des prénoms, convergence, scène 3 commune, posture déontologique couple).
@@ -956,9 +939,9 @@ function buildSystemPrompt(data) {
       "  INTERDICTION ABSOLUE — ne JAMAIS prononcer les termes « Phase A », « Phase B », « phase 1 », « phase 2 », « premier temps », « second temps », « partie 1 », « partie 2 », ou tout autre marqueur de structure dans le script audio. Ces termes sont des consignes INTERNES de construction, jamais des paroles à dire à voix haute. Le passage entre les deux temps doit se faire fluidement, par le contenu de la métaphore (zoom de l'écran, enveloppement progressif), sans jamais nommer la structure. ❌ INTERDIT : « En Phase A, vous observez... ». ✅ CORRECT : « Vous observez Mickael et Emilie... » (sans aucune annonce structurelle).\n" +
       "6. POSTURE DÉONTOLOGIQUE — séance de sophrologie PARTAGÉE pour traverser ENSEMBLE un objectif commun (épreuve à deux, lien à approfondir, transition partagée, accompagnement mutuel d'une perte ou d'un changement). PAS de thérapie de couple. PAS de médiation de conflit interpersonnel. Si tu détectes une intention de nuire (à autrui ou à soi) dans l'un des deux objectifs, applique la règle d'Intent Guard du prompt système (séance de retour à soi commun, sans amplifier l'objectif nuisible).\n" +
       "7. RESPECT ABSOLU DU NON-DIT — NE JAMAIS extrapoler au-delà de ce que les clients ont EXPLICITEMENT écrit dans leurs anamnèses (problème + objectif). Spécifiquement, si une perte est mentionnée (enfant, proche, projet) : (a) NE PAS deviner l'âge de la personne perdue, (b) NE PAS deviner le moment de la perte (avant la naissance, dans l'enfance, à l'âge adulte), (c) NE PAS deviner les circonstances (maladie, accident, fausse couche, etc.), (d) NE PAS deviner la durée de la relation (« à peine connu·e », « toute une vie ensemble »). Reste sur du factuel ouvert : « cet enfant », « cette personne », « cet amour », « cette présence » — sans aucune précision temporelle ou contextuelle. EXEMPLE D'ERREUR DÉVASTATRICE (séance réelle problématique) : Claude a généré 'une lumière qui aurait dû éclairer les pièces prévues' parce qu'il a deviné un deuil périnatal — alors que l'enfant était mort déjà grand. Cette phrase NIE la vie qu'il a eue. Conséquence : douleur supplémentaire au lieu de soulagement. Règle d'or : si tu ne sais pas, RESTE OUVERT pour que le client puisse investir la métaphore avec SA vérité.\n"
-      + endoSuffix + visionSuffix;
+      + endoSuffix;
   }
-  return baseSysPrompt + endoSuffix + visionSuffix;
+  return baseSysPrompt + endoSuffix;
 }
 // ══════════════════════════════════════════════════════════════════
 // COULEURS & STYLES
@@ -2350,12 +2333,6 @@ function Anamnese({ onNext, personId }) {
   const [consentement, setConsentement] = useState(saved?.consentement || false);
   const [hasSupport, setHasSupport] = useState(saved?.hasSupport ?? null); // null=non répondu, false=non, true=oui
 
-  // ─── v2_visionMatinee — Projection silvienne du futur résolu (Option E) ──────
-  // Miracle question de De Shazer (1985) adaptée Silva : on demande à la cliente d'imaginer
-  // sa première matinée dans la vie où son problème est résolu. Champ optionnel, signal
-  // sensoriel riche pour personnaliser la scène 3 (incarnation).
-  const [visionMatinee, setVisionMatinee] = useState(saved?.visionMatinee || "");
-
   // ─── État détecteur de crise ───────────────────────────────────────
   const [crisisDetected, setCrisisDetected] = useState(false);  // vrai = écran de redirection affiché
   const [crisisOverride, setCrisisOverride] = useState(false);  // vrai = utilisateur confirme et continue malgré tout
@@ -2379,7 +2356,7 @@ function Anamnese({ onNext, personId }) {
   // Détection de crise déclenchée dès la sortie des écrans 2 (problème) et 3 (objectif),
   // pour ne pas faire perdre 3 écrans à un visiteur en détresse.
   // v2_endo : si endoDetected, on ajoute 2 écrans (6=cycle, 7=crises) → TOTAL = 8.
-  const TOTAL_SCREENS = endoDetected ? 9 : 7;
+  const TOTAL_SCREENS = endoDetected ? 8 : 6;
   // v27 fix : on demarre TOUJOURS a l'ecran 0 (prenom) meme si saved.screen existe.
   // Cela permet a l'utilisateur de voir/modifier ses donnees pre-remplies plutot que
   // d'arriver direct sur le dernier ecran de consentement.
@@ -2391,11 +2368,11 @@ function Anamnese({ onNext, personId }) {
     try {
       localStorage.setItem(ANAMNESE_KEY, JSON.stringify({
         email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen,
-        endoDetected, cyclePhase, crisisTypes, visionMatinee
+        endoDetected, cyclePhase, crisisTypes
       }));
     } catch {}
   }, [email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen,
-      endoDetected, cyclePhase, crisisTypes, visionMatinee]);
+      endoDetected, cyclePhase, crisisTypes]);
 
   const emailErr = emailTouched && !isValidEmail(email);
 
@@ -2408,12 +2385,11 @@ function Anamnese({ onNext, personId }) {
     isValidEmail(email),             // 1 — email
     problem.trim().length > 15,      // 2 — problème
     objectif.trim().length > 10,     // 3 — objectif
-    true,                            // 4 — vision matinée (optionnel, toujours valide)
-    hasSupport !== null,             // 5 — suivi pro
-    consentement,                    // 6 — consentement RGPD
-    // Écrans 7 et 8 actifs uniquement si endoDetected
-    !!cyclePhase,                    // 7 — phase du cycle (endo)
-    true,                            // 8 — types de crises (cocher 0 à N est OK)
+    hasSupport !== null,             // 4 — suivi pro
+    consentement,                    // 5 — consentement RGPD
+    // Écrans 6 et 7 actifs uniquement si endoDetected
+    !!cyclePhase,                    // 6 — phase du cycle (endo)
+    true,                            // 7 — types de crises (cocher 0 à N est OK)
   ];
 
   const goBack = () => { if (screen > 0) setScreen(screen - 1); };
@@ -2489,8 +2465,7 @@ function Anamnese({ onNext, personId }) {
     // try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
     // v2_endo : on transmet aussi endo / cyclePhase / crisisTypes au flow suivant.
     onNext({ prenom, email, problem, objectif, hasSupport, crisisOverride,
-             endo: endoDetected, cyclePhase: cyclePhase || null, crisisTypes,
-             visionMatinee: visionMatinee.trim() });
+             endo: endoDetected, cyclePhase: cyclePhase || null, crisisTypes });
   };
 
   // ─── Écran de redirection vers le 3114 + ressources d'urgence ──────
@@ -2867,42 +2842,8 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── v2_visionMatinee — Écran 4 : projection du futur résolu (Option E, Silva × De Shazer) ─── */}
-        {/* Question type "miracle question" : ne demande pas d'introspection psy, juste une projection sensorielle. */}
+        {/* ─── Écran 4 : Suivi pro ─── */}
         {screen === 4 && (
-          <div style={{ animation:"fadeUp .35s ease" }}>
-            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
-              fontWeight:"400", marginBottom:"0.5rem" }}>
-              Imaginez votre première matinée
-            </h2>
-            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem" }}>
-              Imaginez que ce que vous traversez est résolu, doucement, naturellement.
-              Décrivez votre première matinée dans cette vie-là.
-              Que voyez-vous en ouvrant les yeux ? Que ressentez-vous dans votre corps ?
-              Qu'est-ce qui est devenu possible ?
-            </p>
-            <textarea
-              value={visionMatinee}
-              onChange={e => setVisionMatinee(e.target.value)}
-              placeholder="Quelques phrases suffisent..."
-              style={{ width:"100%", minHeight:"110px", padding:"0.875rem 1rem",
-                background:C.panel, border:`1.5px solid ${C.border}`, borderRadius:"12px",
-                color:C.cream, fontSize:"13px", fontFamily:"'Raleway', sans-serif",
-                lineHeight:"1.6", resize:"vertical", outline:"none" }}
-            />
-            <div style={{ marginTop:"0.75rem", padding:"0.75rem 1rem",
-              background:"rgba(184,149,90,.06)", borderRadius:"10px",
-              border:`1px solid rgba(184,149,90,.2)` }}>
-              <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
-                💛 Quelques phrases suffisent. Pas besoin de tout imaginer — juste ce qui vient
-                naturellement. Si rien ne vient aujourd'hui, vous pouvez cliquer Suivant.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ─── Écran 5 : Suivi pro ─── */}
-        {screen === 5 && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>Êtes-vous suivi(e) par un professionnel de santé ?</h2>
@@ -2935,8 +2876,8 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── Écran 6 : Récap + consentement RGPD ─── */}
-        {screen === 6 && (
+        {/* ─── Écran 5 : Récap + consentement RGPD ─── */}
+        {screen === 5 && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
@@ -2988,8 +2929,8 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── v2_endo — Écran 7 : phase du cycle (uniquement si endoDetected) ─── */}
-        {screen === 7 && endoDetected && (
+        {/* ─── v2_endo — Écran 6 : phase du cycle (uniquement si endoDetected) ─── */}
+        {screen === 6 && endoDetected && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
@@ -3026,8 +2967,8 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── v2_endo — Écran 8 : types de crises dominantes (uniquement si endoDetected) ─── */}
-        {screen === 8 && endoDetected && (
+        {/* ─── v2_endo — Écran 7 : types de crises dominantes (uniquement si endoDetected) ─── */}
+        {screen === 7 && endoDetected && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
@@ -4596,9 +4537,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // est défini et est utilisé comme valeur initiale du state local.
   const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref, couple, person1, person2,
     // v2_endo — données endométriose remontées depuis l'anamnèse
-    endo, cyclePhase, crisisTypes,
-    // v2_visionMatinee — projection silvienne du futur résolu (Option E)
-    visionMatinee
+    endo, cyclePhase, crisisTypes
   } = userData;
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice || "");
   // States pour la preview audio dans la grille VoiceSelection (4 boutons ▶ Écouter)
@@ -5044,9 +4983,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         couple, person1, person2,
         // v2_endo — Si flag endo posé, buildSystemPrompt ajoute le modifier endométriose
         // (corps allié, métaphores phase de cycle, douleur jamais niée, etc.)
-        endo, cyclePhase, crisisTypes,
-        // v2_visionMatinee — projection silvienne tissée dans scène 3
-        visionMatinee
+        endo, cyclePhase, crisisTypes
       });
 
       const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
@@ -6042,8 +5979,6 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         endo: !!(userData && userData.endo),
         cyclePhase: (userData && userData.cyclePhase) || null,
         crisisTypes: (userData && userData.crisisTypes) || [],
-        // v2_visionMatinee — Projection silvienne du futur résolu (Option E)
-        visionMatinee: (userData && userData.visionMatinee) || "",
       };
       const fullData = { audioBlob, script, userData, ...meta };
       // 1. Sauvegarde "current" (séance active, pour bouton "Reprendre")
