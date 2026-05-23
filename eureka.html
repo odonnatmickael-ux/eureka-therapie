@@ -962,7 +962,9 @@ function buildSystemPrompt(data) {
   // Choix utilisateur·rice posé à l'écran prénom (M / F / N). Posée à la FIN du prompt
   // pour primer sur les exemples hardcodés (« cet homme accompli », etc.).
   let accordDirective = "";
-  const accordVal = accord || "M";
+  // FIX 2026-05-23 : on lit data.accord directement (pas la destructure) pour éviter
+  // un ReferenceError si la version déployée n'a pas le champ accord dans la destructure.
+  const accordVal = (data && data.accord) || "M";
   if (accordVal === "M") {
     accordDirective = "\n\n=== ACCORD GRAMMATICAL (PRIORITÉ ABSOLUE SUR LES EXEMPLES HARDCODÉS) ===\n" +
       "Le client a choisi l'accord MASCULIN pour sa séance. Tous les adjectifs, participes passés et attributs qui s'appliquent à la personne s'accordent au MASCULIN singulier.\n" +
