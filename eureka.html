@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<!-- EUREKA v2_endo — Module endométriose -->
+<!-- ADAPTATIONS : détection endo, écrans cycle/crise, prompt modifier, SOS séances -->
+<!-- ATTENTION : EUREKA accompagne, ne soigne pas. -->
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EUREKA — Thérapie Guidée par Sophrologie</title>
@@ -828,6 +832,59 @@ function buildSystemPrompt(data) {
     "Je cultive l'amour... je cultive la vérité... je cultive la paix... je fais toujours de mon mieux maintenant...\n" +
     spirituel;
 
+  // ─── v2_endo — Bloc endométriose ajouté en fin de prompt système si data.endo est vrai ───
+  // S'ajoute en SUFFIXE à baseSysPrompt (mode solo) ET au prompt couple (si data.couple aussi).
+  // Adapte le ton, les métaphores et la posture sans rallonger la séance — modifier sémantique, pas ajout de scène.
+  let endoSuffix = "";
+  if (data.endo) {
+    const cyclePhase = data.cyclePhase || "no_answer";
+    const crisisTypes = Array.isArray(data.crisisTypes) ? data.crisisTypes : [];
+    const phaseMetaphor = {
+      menstrual:  "PHASE RÈGLES (J1-J5) — métaphores de FLUX QUI SE RETIRE, marée descendante qui emporte ce qui pèse, terre qui se laisse traverser par la pluie. Le corps est fatigué, traité avec une douceur ABSOLUE. Aucune demande d'effort, aucun mouvement suggéré. Respiration ultra-douce.",
+      follicular: "PHASE FOLLICULAIRE / ACCALMIE (J6-J12) — métaphores de RENOUVELLEMENT, premières feuilles, eau claire qui circule librement, lumière qui revient. Le corps respire un peu. On peut introduire une légère reprise d'élan.",
+      ovulation:  "PHASE OVULATION (J13-J15) — métaphores d'ANCRAGE STABLE, pierre chaude au soleil, montagne qui ne bouge pas malgré le vent. Si douleur ovarienne aiguë : visualiser le point de douleur comme un foyer qui rayonne sans détruire, jamais à éteindre.",
+      luteal:     "PHASE LUTÉALE / PRÉMENSTRUELLE (J16-J28) — métaphores de CONTENANT QUI ACCUEILLE, vase qui se remplit lentement, foyer qui se prépare pour la nuit. La tension monte naturellement — on l'accueille, on ne la combat pas. Anxiété montante = traitée avec validation.",
+      noncyclic:  "PAS DE CYCLE RÉGULIER (ménopause / contraception continue / autre) — métaphores neutres et intemporelles, sans référence au cycle. Centrer sur le moment présent et le corps tel qu'il est aujourd'hui.",
+      no_answer:  "PHASE NON DÉCLARÉE — utiliser des métaphores ouvertes qui peuvent résonner quelle que soit la phase du cycle. Ne JAMAIS deviner ni présupposer la phase."
+    }[cyclePhase] || "";
+    endoSuffix = "\n\n=== INSTRUCTIONS ENDOMÉTRIOSE (MODIFIER, NE PAS RALLONGER LA SÉANCE) ===\n" +
+      "La cliente vit avec une endométriose (ou adénomyose / douleur pelvienne chronique). " +
+      "Tu N'AJOUTES PAS de nouvelles scènes — tu ADAPTES le contenu sémantique de TOUTES les scènes existantes " +
+      "(sophronisation, scène 1, scène 2, scène 3, désophronisation) selon les règles ci-dessous. " +
+      "La structure et la durée totale de la séance restent IDENTIQUES.\n\n" +
+      "RÈGLES NON NÉGOCIABLES :\n" +
+      "1. CORPS ALLIÉ BLESSÉ — JAMAIS le corps n'est nommé ennemi, traître, à combattre, à dompter. Le corps est un allié qui SOUFFRE et qui mérite tendresse. Toutes les invitations corporelles s'adressent au corps comme à un proche qu'on prend dans ses bras.\n" +
+      "2. DOULEUR JAMAIS NIÉE — INTERDIT ABSOLU de dire 'tu n'as pas mal', 'la douleur disparaît', 'plus de douleur', 'ton corps va bien', 'la souffrance s'en va'. La douleur EXISTE — elle peut être ACCUEILLIE, APAISÉE, TRANSFORMÉE, ACCOMPAGNÉE, mais jamais effacée verbalement (cela RÉACTIVE la sensation au lieu de la calmer).\n" +
+      "3. PAS DE PROMESSE DE GUÉRISON — INTERDIT les mots 'guérir', 'guérison', 'soigner', 'traiter', 'thérapeutique', 'médical'. Vocabulaire AUTORISÉ : apaiser, accompagner, accueillir, soutenir, traverser, dénouer, calmer, soulager temporairement, retrouver un peu d'espace.\n" +
+      "4. RECONNAISSANCE DU VÉCU — insérer UNE FOIS, et UNE SEULE FOIS, dans la première scène, une phrase courte qui VALIDE le vécu de la cliente. Exemples acceptés : « ce qui se passe dans ton corps est réel », « tu as raison d'écouter ton corps », « ta douleur a une histoire, elle a sa légitimité », « ton corps parle d'une vraie histoire ». Cette phrase ne se répète pas — elle est dite une fois, puis on continue.\n" +
+      "5. SCÈNE DE RÉCONCILIATION CORPORELLE — la sophronisation et la scène 1 portent une intention de RÉCONCILIATION au corps (pas simple détente). Métaphore-pivot autorisée : le FEU DOMESTIQUÉ — la sensation de brûlure/crampe/tiraillement existe comme un feu intérieur, on lui donne UN FOYER où il a sa place et rayonne sans détruire. JAMAIS 'éteindre' le feu (réactivation). TOUJOURS 'lui donner sa juste place', 'le canaliser', 'l'apprivoiser'.\n" +
+      "6. " + (phaseMetaphor || "Phase du cycle non spécifiée — métaphores ouvertes.") + "\n" +
+      "7. CYCLE RESPIRATOIRE PRIVILÉGIÉ — si la phase est 'menstrual', utiliser le cycle 5-5 (plus doux pour un corps épuisé). Si 'luteal', cycle 4-2-6. Sinon, suivre le cycle Big Five déjà choisi.\n" +
+      "8. TYPES DE CRISES DÉCLARÉES — la cliente a coché : " + (crisisTypes.length ? crisisTypes.join(", ") : "aucune coche spécifique") + ". Si pertinent, glisser SUBTILEMENT dans la scène 2 ou 3 une métaphore qui résonne avec ces types (sans les nommer ni les médicaliser).\n" +
+      "9. POSTURE DÉONTOLOGIQUE — EUREKA est un COMPLÉMENT au suivi médical, JAMAIS un substitut. Si tu sens le besoin d'évoquer la dimension médicale (très rare), utilise exactement la formulation : « ce travail accompagne ton suivi habituel, il ne le remplace pas ». N'évoque AUCUN traitement, AUCUN protocole, AUCUNE recommandation médicale.\n" +
+      "10. POUR LES SÉANCES SOS COURTES (data.sos défini) — séance compacte de 3 à 5 minutes maximum, AUCUNE désophronisation longue, juste une sortie douce de 30 secondes. Cible : la crise aiguë qui se vit MAINTENANT. Aller à l'essentiel : ancrage rapide, respiration, métaphore-pivot du foyer/feu domestiqué, sortie. Pas de scène 2 ni 3.\n";
+    if (data.sos) {
+      endoSuffix += "\nMODE SOS — TYPE DE CRISE : " + data.sos + ". Concentre toute la séance sur cette crise spécifique. Voir règle 10.\n";
+    }
+  }
+
+  // ─── v2_visionMatinee — Directive Silva : tisser la projection du futur résolu dans la scène 3 ───
+  // Si la cliente a renseigné une projection sensorielle (Option E / miracle question),
+  // Claude doit construire la scène 3 (incarnation accomplie) AVEC les détails qu'elle a décrits,
+  // au lieu de générer une scène d'accomplissement générique.
+  let visionSuffix = "";
+  if (data.visionMatinee && data.visionMatinee.trim().length > 10) {
+    visionSuffix = "\n\n=== VISION DU FUTUR RÉSOLU (APPLICATION DU PRINCIPE SILVA — DÉSIR ARDENT) ===\n" +
+      "La cliente a décrit elle-même sa première matinée dans la vie où son problème est résolu :\n" +
+      "« " + data.visionMatinee.trim() + " »\n\n" +
+      "RÈGLES NON NÉGOCIABLES POUR CONSTRUIRE LA SCÈNE 3 :\n" +
+      "1. ANCRAGE SENSORIEL — Tu DOIS extraire les détails CONCRETS de cette projection (objets, lieux, lumières, sensations, gestes, présences, sons) et les utiliser comme points de gravitation de la scène 3. PAS de scène 3 générique du type « il/elle se tient debout dans un espace lumineux ». La scène 3 doit être SA scène 3, construite à partir de SES éléments.\n" +
+      "2. TISSAGE DISCRET — Ne cite JAMAIS la phrase de la cliente verbatim. Tisse les détails sensoriels DANS la description à la 3e personne pendant la PHASE A, puis dans l'incarnation à la 1ère personne pendant la PHASE B.\n" +
+      "3. RESPECT DU NON-DIT — N'invente pas d'éléments que la cliente n'a pas mentionnés. Si elle a parlé d'un café, intègre le café. Si elle n'a rien dit du regard d'autrui, n'invente pas de regards. Tu ENRICHIS sa vision avec sa sensorialité dominante (canal VAKOG = " + (data.vakog || "?") + "), pas avec ton imagination.\n" +
+      "4. PRINCIPE SILVA APPLIQUÉ — Le désir ardent (burning desire) prend sa force dans la SPÉCIFICITÉ sensorielle, pas dans l'abstraction. Plus la scène 3 est précise et fidèle à la projection de la cliente, plus l'engrainement subconscient est efficace pendant l'état alpha.\n" +
+      "5. PAS DE COMMENTAIRE — Tu n'expliques pas à la cliente que tu utilises sa projection. Tu la lui rends, transformée et incarnée, sans jamais nommer le mécanisme.\n";
+  }
+
   // ─── v_couple — Bloc couple ajouté en fin de prompt système si data.couple est posé ───
   // Cette section prime sur tout ce qui précède (alternance VAKOG, cycle 4-2-6 imposé,
   // alternance des prénoms, convergence, scène 3 commune, posture déontologique couple).
@@ -898,9 +955,37 @@ function buildSystemPrompt(data) {
       "5. SCÈNE 3 PARTAGÉE — moment-clé en DEUX temps successifs (pas de transition explicite, pas d'annonce verbale). Premier temps (60-70% du contenu) : observation à deux de la version transformée du couple, depuis un espace de paix ; le couple reste spectateur. Second temps (30-40% du contenu) : bascule et identification en 1ère personne POUR LES DEUX simultanément. Phrase de bascule type : « et maintenant… l'écran vous enveloppe vous deux… " + p1.prenom + ", tu n'es plus spectateur·rice… " + p2.prenom + ", tu n'es plus spectateur·rice non plus… VOUS DEUX êtes ces êtres accomplis… VOUS RESSENTEZ cette paix partagée… VOUS VIVEZ cette vie nouvelle ensemble… »\n" +
       "  INTERDICTION ABSOLUE — ne JAMAIS prononcer les termes « Phase A », « Phase B », « phase 1 », « phase 2 », « premier temps », « second temps », « partie 1 », « partie 2 », ou tout autre marqueur de structure dans le script audio. Ces termes sont des consignes INTERNES de construction, jamais des paroles à dire à voix haute. Le passage entre les deux temps doit se faire fluidement, par le contenu de la métaphore (zoom de l'écran, enveloppement progressif), sans jamais nommer la structure. ❌ INTERDIT : « En Phase A, vous observez... ». ✅ CORRECT : « Vous observez Mickael et Emilie... » (sans aucune annonce structurelle).\n" +
       "6. POSTURE DÉONTOLOGIQUE — séance de sophrologie PARTAGÉE pour traverser ENSEMBLE un objectif commun (épreuve à deux, lien à approfondir, transition partagée, accompagnement mutuel d'une perte ou d'un changement). PAS de thérapie de couple. PAS de médiation de conflit interpersonnel. Si tu détectes une intention de nuire (à autrui ou à soi) dans l'un des deux objectifs, applique la règle d'Intent Guard du prompt système (séance de retour à soi commun, sans amplifier l'objectif nuisible).\n" +
-      "7. RESPECT ABSOLU DU NON-DIT — NE JAMAIS extrapoler au-delà de ce que les clients ont EXPLICITEMENT écrit dans leurs anamnèses (problème + objectif). Spécifiquement, si une perte est mentionnée (enfant, proche, projet) : (a) NE PAS deviner l'âge de la personne perdue, (b) NE PAS deviner le moment de la perte (avant la naissance, dans l'enfance, à l'âge adulte), (c) NE PAS deviner les circonstances (maladie, accident, fausse couche, etc.), (d) NE PAS deviner la durée de la relation (« à peine connu·e », « toute une vie ensemble »). Reste sur du factuel ouvert : « cet enfant », « cette personne », « cet amour », « cette présence » — sans aucune précision temporelle ou contextuelle. EXEMPLE D'ERREUR DÉVASTATRICE (séance réelle problématique) : Claude a généré 'une lumière qui aurait dû éclairer les pièces prévues' parce qu'il a deviné un deuil périnatal — alors que l'enfant était mort déjà grand. Cette phrase NIE la vie qu'il a eue. Conséquence : douleur supplémentaire au lieu de soulagement. Règle d'or : si tu ne sais pas, RESTE OUVERT pour que le client puisse investir la métaphore avec SA vérité.\n";
+      "7. RESPECT ABSOLU DU NON-DIT — NE JAMAIS extrapoler au-delà de ce que les clients ont EXPLICITEMENT écrit dans leurs anamnèses (problème + objectif). Spécifiquement, si une perte est mentionnée (enfant, proche, projet) : (a) NE PAS deviner l'âge de la personne perdue, (b) NE PAS deviner le moment de la perte (avant la naissance, dans l'enfance, à l'âge adulte), (c) NE PAS deviner les circonstances (maladie, accident, fausse couche, etc.), (d) NE PAS deviner la durée de la relation (« à peine connu·e », « toute une vie ensemble »). Reste sur du factuel ouvert : « cet enfant », « cette personne », « cet amour », « cette présence » — sans aucune précision temporelle ou contextuelle. EXEMPLE D'ERREUR DÉVASTATRICE (séance réelle problématique) : Claude a généré 'une lumière qui aurait dû éclairer les pièces prévues' parce qu'il a deviné un deuil périnatal — alors que l'enfant était mort déjà grand. Cette phrase NIE la vie qu'il a eue. Conséquence : douleur supplémentaire au lieu de soulagement. Règle d'or : si tu ne sais pas, RESTE OUVERT pour que le client puisse investir la métaphore avec SA vérité.\n"
+      + endoSuffix + visionSuffix;
   }
-  return baseSysPrompt;
+  // ─── Directive d'accord grammatical (mode solo) — 2026-05-23 ───
+  // Choix utilisateur·rice posé à l'écran prénom (M / F / N). Posée à la FIN du prompt
+  // pour primer sur les exemples hardcodés (« cet homme accompli », etc.).
+  let accordDirective = "";
+  const accordVal = accord || "M";
+  if (accordVal === "M") {
+    accordDirective = "\n\n=== ACCORD GRAMMATICAL (PRIORITÉ ABSOLUE SUR LES EXEMPLES HARDCODÉS) ===\n" +
+      "Le client a choisi l'accord MASCULIN pour sa séance. Tous les adjectifs, participes passés et attributs qui s'appliquent à la personne s'accordent au MASCULIN singulier.\n" +
+      "Exemples obligatoires : « tu es prêt », « tu es accompli », « tu es traversé », « tu es détendu », « tu es vivant », « TU ES cet homme accompli ».\n" +
+      "Si un exemple du prompt système dit « tu es prête » ou « tu es accomplie », tu le convertis en « tu es prêt » / « tu es accompli ».\n";
+  } else if (accordVal === "F") {
+    accordDirective = "\n\n=== ACCORD GRAMMATICAL (PRIORITÉ ABSOLUE SUR LES EXEMPLES HARDCODÉS) ===\n" +
+      "La cliente a choisi l'accord FÉMININ pour sa séance. Tous les adjectifs, participes passés et attributs qui s'appliquent à la personne s'accordent au FÉMININ singulier.\n" +
+      "Exemples obligatoires : « tu es prête », « tu es accomplie », « tu es traversée », « tu es détendue », « tu es vivante », « TU ES cette femme accomplie ».\n" +
+      "INTERDICTION ABSOLUE : aucun « cet homme accompli » ou « tu es prêt » au masculin appliqué à la cliente. Si le prompt système contient un exemple avec « cet homme », tu le remplaces par « cette femme » (« TU ES cette femme accomplie ») OU tu supprimes le nom et utilises directement l'adjectif au féminin (« TU ES accomplie », sans nom). Tous les participes passés appliqués à la cliente portent un « e » final : accomplie, traversée, transformée, détendue, prête.\n";
+  } else if (accordVal === "N") {
+    accordDirective = "\n\n=== ACCORD GRAMMATICAL (PRIORITÉ ABSOLUE SUR LES EXEMPLES HARDCODÉS) ===\n" +
+      "La personne a choisi un accord NEUTRE (sans marqueur de genre). Tu N'UTILISES AUCUN adjectif ou participe passé genré qui s'appliquerait directement à la personne. À la place :\n" +
+      "  — utilise des VERBES sans accord : « tu peux », « tu sens », « tu vis », « tu respires », « tu accueilles », « tu deviens »\n" +
+      "  — déplace l'accord sur un NOM neutre : au lieu de « tu es accompli·e », dis « ton parcours est accompli » (accord avec parcours, masculin) ou « ton aboutissement est là »\n" +
+      "  — formulations objet : « cet aboutissement t'appartient », « cette plénitude est en toi », « cette vie nouvelle est à toi »\n" +
+      "Les exemples du prompt système qui disent « tu es prêt(e) », « tu es accompli(e) », « TU ES cet homme accompli » doivent être REFORMULÉS en formulation neutre. Exemples de réécriture :\n" +
+      "    « tu es prêt(e) » → « tu peux y aller », « le moment est là »\n" +
+      "    « tu es accompli(e) » → « ce parcours est accompli », « cet aboutissement t'appartient »\n" +
+      "    « TU ES cet homme accompli » → « TU VIS cette plénitude », « cet aboutissement EST en toi »\n" +
+      "INTERDICTION ABSOLUE : aucun accord genré explicite (« prêt », « prête », « accompli », « accomplie », « cet homme », « cette femme ») appliqué à la personne. Si un participe doit absolument s'accorder, il s'accorde avec un nom neutre/objet, jamais avec la personne.\n";
+  }
+  return baseSysPrompt + accordDirective + endoSuffix + visionSuffix;
 }
 // ══════════════════════════════════════════════════════════════════
 // COULEURS & STYLES
@@ -1961,6 +2046,104 @@ function Landing({ onStart, onStartCouple, onResume, onMentions, onTutorial, onH
         </div>
       )}
 
+      {/* ─── v2_endo — Panneau SOS Endométriose ─────────────────────
+          Visible UNIQUEMENT si l'utilisatrice a été détectée comme endo
+          (savedMeta.endo === true). Affiche les 6 SOS possibles :
+          - 1 déverrouillée (celle qui correspond à savedMeta.cyclePhase)
+          - 5 grisées avec cadenas : déblocables par clé ElevenLabs perso
+            OU par abonnement Premium $6/mois (USD, pas €).
+          ─────────────────────────────────────────────────────────── */}
+      {savedMeta && savedMeta.endo && (() => {
+        const unlockedSos = (savedMeta.cyclePhase && CYCLE_PHASES[savedMeta.cyclePhase])
+          ? CYCLE_PHASES[savedMeta.cyclePhase].sos
+          : "regles";
+        // L'utilisatrice peut avoir débloqué des SOS supplémentaires via sa propre clé ElevenLabs.
+        let userUnlocked = [];
+        try {
+          userUnlocked = JSON.parse(localStorage.getItem('eureka_sos_unlocked') || '[]');
+        } catch {}
+        const hasUserKey = !!localStorage.getItem('eureka_user_elevenlabs_key');
+        return (
+          <div style={{ background:`rgba(184,149,90,.04)`,
+            borderRadius:"16px", padding:"1.25rem 1.25rem 1rem", border:`1px solid ${C.border}`,
+            marginBottom:"1.25rem", textAlign:"left" }}>
+            <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2.5px",
+              textTransform:"uppercase", fontWeight:"600", marginBottom:"0.25rem" }}>
+              🩸 Séances SOS Endométriose
+            </p>
+            <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6", marginBottom:"0.875rem" }}>
+              Séances courtes (3 à 5 min) à lancer en pleine crise.
+              Une est offerte à votre phase actuelle — les autres se débloquent avec
+              votre clé ElevenLabs (10 000 crédits gratuits) ou avec Premium $6/mois.
+            </p>
+            <div style={{ display:"grid", gap:"0.5rem" }}>
+              {CRISIS_TYPE_KEYS.map((key) => {
+                const ct = CRISIS_TYPES[key];
+                const isUnlocked = key === unlockedSos || userUnlocked.includes(key);
+                return (
+                  <button key={key} type="button"
+                    onClick={() => {
+                      if (isUnlocked) {
+                        // TODO v2_endo : router vers le player de cette SOS (audio IndexedDB)
+                        // Pour l'instant on signale juste l'intention.
+                        alert("Lecture de la SOS « " + ct.label + " » — à brancher sur le player audio (TODO).");
+                      } else if (hasUserKey) {
+                        alert("Génération de la SOS « " + ct.label + " » via votre clé ElevenLabs — à brancher (TODO).");
+                      } else {
+                        // TODO v2_endo : ouvrir le modal saisie clé ElevenLabs / upsell Premium
+                        const choice = window.confirm(
+                          "« " + ct.label + " » est verrouillée.\n\n" +
+                          "OK → Coller votre clé ElevenLabs (gratuit, 10 000 crédits offerts)\n" +
+                          "Annuler → Voir l'offre Premium $6/mois (USD)"
+                        );
+                        if (choice) {
+                          const key = window.prompt("Collez votre clé API ElevenLabs (commence par 'sk_...')\n\nCréez un compte gratuit sur elevenlabs.io si nécessaire.");
+                          if (key && key.startsWith('sk_')) {
+                            localStorage.setItem('eureka_user_elevenlabs_key', key);
+                            alert("Clé enregistrée. Vous pouvez maintenant débloquer les SOS de votre choix.");
+                          }
+                        } else {
+                          alert("Premium $6/mois (USD) — à brancher sur Stripe (TODO).");
+                        }
+                      }
+                    }}
+                    disabled={false}
+                    style={{ display:"flex", alignItems:"center", gap:"0.75rem",
+                      padding:"0.75rem 0.875rem", textAlign:"left",
+                      background: isUnlocked ? `rgba(42,138,143,.12)` : "transparent",
+                      border:`1px solid ${isUnlocked ? C.teal : C.border}`,
+                      borderRadius:"10px", fontSize:"12px", fontFamily:"'Raleway',sans-serif",
+                      color: isUnlocked ? C.cream : C.muted, cursor:"pointer",
+                      transition:"all .2s", opacity: isUnlocked ? 1 : 0.65 }}>
+                    <span style={{ fontSize:"16px" }}>{ct.icon}</span>
+                    <span style={{ flex:1 }}>{ct.label}</span>
+                    <span style={{ fontSize:"13px", color: isUnlocked ? C.teal : C.hint }}>
+                      {isUnlocked ? "▶" : "🔒"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {/* CTA Premium $6/mois (USD, pas €) */}
+            <button type="button"
+              onClick={() => alert("Premium $6/mois (USD) — à brancher sur Stripe (TODO).")}
+              style={{ display:"block", width:"100%", padding:"0.75rem",
+                background:"transparent", color:C.gold,
+                border:`1px dashed ${C.gold}`, borderRadius:"10px",
+                fontSize:"11px", fontFamily:"'Raleway',sans-serif", fontWeight:"600",
+                letterSpacing:"2px", textTransform:"uppercase", cursor:"pointer",
+                marginTop:"0.75rem" }}>
+              ✨ Tout débloquer — Premium $6/mois (USD)
+            </button>
+            <p style={{ fontSize:"10px", color:C.hint, lineHeight:"1.6",
+              marginTop:"0.625rem", textAlign:"center" }}>
+              EUREKA accompagne, ne soigne pas. En cas de douleur intense, fièvre
+              ou symptômes inhabituels, contactez votre médecin ou le 15.
+            </p>
+          </div>
+        );
+      })()}
+
       <button className="step-btn" onClick={onStart}
         style={{ display:"block", width:"100%", padding:"1.25rem",
           background:`linear-gradient(135deg, ${C.gold}, #9a7a40)`,
@@ -2055,11 +2238,65 @@ const SENSIBILITY_PATTERNS = [
   /PTSD/i, /angoisse/i, /burn.?out/i, /d[ée]pression/i, /attaque/i,
   /[ée]puis(?:é|ée|ement)/i, /effondre/i, /\b[ée]motions? (?:fortes|intenses)\b/i,
   /crise/i, /stress chronique/i, /fragile/i,
+  // v2_endo — patterns douleur chronique invisible / endométriose
+  /endom[ée]tr/i, /ad[ée]nomyose/i, /douleur\s+chronique/i,
+  /douleurs?\s+pelviennes?/i, /douleurs?\s+(?:de\s+)?r[èe]gles/i,
+  /r[èe]gles\s+(?:douloureuses|tr[èe]s\s+douloureuses|invalidantes|abondantes)/i,
+  /dysm[ée]norrh/i, /dyspareun/i,
 ];
 function detectSensibility(text) {
   if (!text) return false;
   return SENSIBILITY_PATTERNS.some(rx => rx.test(text));
 }
+
+// ─── v2_endo — DÉTECTEUR ENDOMÉTRIOSE ─────────────────────────────
+// Patterns plus stricts que SENSIBILITY_PATTERNS : on cherche spécifiquement
+// les marqueurs cliniques de l'endométriose / adénomyose / douleurs gynéco
+// chroniques pour déclencher le mini-parcours endo (questions cycle + crise)
+// et le modifier endo du prompt système.
+const ENDO_PATTERNS = [
+  /endom[ée]tr/i,
+  /ad[ée]nomyose/i,
+  /r[èe]gles\s+(?:douloureuses|tr[èe]s\s+douloureuses|invalidantes|abondantes)/i,
+  /douleurs?\s+(?:de\s+)?r[èe]gles/i,
+  /dysm[ée]norrh/i,
+  /douleurs?\s+pelviennes?/i,
+  /kyste\s+ovarien/i,
+  /adh[ée]rences\s+pelviennes/i,
+  /laparoscopie/i,
+  /c[oe]lioscopie/i,
+  /dyspareun/i,
+  /endo[\s-]?belly/i,
+];
+function detectEndometriosis(text) {
+  if (!text) return false;
+  return ENDO_PATTERNS.some(rx => rx.test(text));
+}
+
+// ─── v2_endo — Helpers profil endométriose ────────────────────────
+// CYCLE_PHASES : libellés des phases de cycle déclarées par l'utilisatrice
+// à l'écran anamnèse 'cycle'. Servent à : (1) piloter la métaphore principale,
+// (2) déterminer la SOS débloquée à l'inscription, (3) adapter le cycle respiratoire.
+const CYCLE_PHASES = {
+  menstrual:    { label: "Je suis dans mes règles (J1 à J5 environ)",                  icon: "🌑", sos: "regles",        breath: "5-5"   },
+  follicular:   { label: "Phase d'accalmie après les règles (J6 à J12 environ)",       icon: "🌒", sos: "regles",        breath: "4-2-8" },
+  ovulation:    { label: "Autour de l'ovulation (J13 à J15 environ)",                  icon: "🌕", sos: "ovulation",     breath: "4-2-8" },
+  luteal:       { label: "Phase qui précède les règles (J16 à J28 environ)",           icon: "🌘", sos: "premenstruel",  breath: "4-2-6" },
+  noncyclic:    { label: "Je n'ai pas de cycle régulier / ménopause / contraception",  icon: "🔁", sos: "regles",        breath: "4-2-8" },
+  no_answer:    { label: "Je préfère ne pas répondre",                                 icon: "⊝",  sos: "regles",        breath: "4-2-8" },
+};
+// CRISIS_TYPES : crises possibles, sélectionnables en cases à cocher multiples.
+// Pilotent la priorité d'affichage des SOS sur l'écran d'accueil.
+const CRISIS_TYPES = {
+  regles:        { label: "Crises pendant les règles",                          icon: "🩸" },
+  ovulation:     { label: "Douleurs d'ovulation",                               icon: "⚡" },
+  premenstruel:  { label: "Tension qui monte avant les règles",                 icon: "🌊" },
+  endobelly:     { label: "Douleurs digestives, ballonnements, endo-belly",     icon: "🌀" },
+  nuit:          { label: "Réveils nocturnes liés à la douleur",                icon: "🌙" },
+  declencheur:   { label: "Douleurs déclenchées par effort, stress ou rapports",icon: "💢" },
+};
+// CRISIS_TYPE_KEYS : ordre canonique d'affichage des SOS sur l'accueil
+const CRISIS_TYPE_KEYS = ["regles", "ovulation", "premenstruel", "endobelly", "nuit", "declencheur"];
 
 // ─── DÉTECTEUR D'OBJECTIF NUISIBLE — INTENT GUARD (SAFE) ───────────
 // Mesure de sûreté déontologique : EUREKA ne génère pas de séance affirmant
@@ -2135,10 +2372,22 @@ function Anamnese({ onNext, personId }) {
   const [email, setEmail] = useState(saved?.email || "");
   const [emailTouched, setET] = useState(saved?.emailTouched || false);
   const [prenom, setPrenom] = useState(saved?.prenom || "");
+  // ─── Accord grammatical (2026-05-23) ────────────────────────────────
+  // Posé sur le même écran que le prénom. Trois valeurs possibles :
+  //   "M" — masculin (« tu es prêt, accompli »)
+  //   "F" — féminin (« tu es prête, accomplie »)
+  //   "N" — neutre (formulations sans accord : « tu peux », « tu vis »)
+  const [accord, setAccord] = useState(saved?.accord || "");
   const [problem, setProblem] = useState(saved?.problem || "");
   const [objectif, setObjectif] = useState(saved?.objectif || "");
   const [consentement, setConsentement] = useState(saved?.consentement || false);
   const [hasSupport, setHasSupport] = useState(saved?.hasSupport ?? null); // null=non répondu, false=non, true=oui
+
+  // ─── v2_visionMatinee — Projection silvienne du futur résolu (Option E) ──────
+  // Miracle question de De Shazer (1985) adaptée Silva : on demande à la cliente d'imaginer
+  // sa première matinée dans la vie où son problème est résolu. Champ optionnel, signal
+  // sensoriel riche pour personnaliser la scène 3 (incarnation).
+  const [visionMatinee, setVisionMatinee] = useState(saved?.visionMatinee || "");
 
   // ─── État détecteur de crise ───────────────────────────────────────
   const [crisisDetected, setCrisisDetected] = useState(false);  // vrai = écran de redirection affiché
@@ -2149,35 +2398,56 @@ function Anamnese({ onNext, personId }) {
   // Si match → écran de reformulation, l'utilisateur doit modifier son objectif.
   const [maliciousDetected, setMaliciousDetected] = useState(false);
 
-  // ─── Onboarding doux (option C) — 6 mini-écrans plutôt qu'un mur de formulaire
+  // ─── v2_endo — État détecteur endométriose + données complémentaires ────────
+  // FIX 2026-05-23 : endoDetected est DÉRIVÉ de problem+objectif (plus de useState).
+  // Bug avant fix : useState(saved?.endoDetected || false) → si l'utilisatrice avait
+  // précédemment tapé un mot-clé endo, endoDetected restait true dans localStorage,
+  // et l'écran cycle s'affichait pour TOUS les problèmes ultérieurs (même non-endo).
+  // Maintenant : recalculé à chaque render depuis le texte courant → impossible à polluer.
+  const endoDetected = detectEndometriosis(problem) || detectEndometriosis(objectif);
+  const [cyclePhase, setCyclePhase] = useState(saved?.cyclePhase || "");
+  const [crisisTypes, setCrisisTypes] = useState(saved?.crisisTypes || []);
+
+  // ─── Onboarding doux (option C) — 6 mini-écrans (ou 8 si endométriose détectée)
   // Chaque écran présente UN champ unique, validation par étape, navigation Retour/Suivant.
   // Détection de crise déclenchée dès la sortie des écrans 2 (problème) et 3 (objectif),
   // pour ne pas faire perdre 3 écrans à un visiteur en détresse.
-  const TOTAL_SCREENS = 6;
+  // v2_endo : si endoDetected, on ajoute 2 écrans (6=cycle, 7=crises) → TOTAL = 8.
+  const TOTAL_SCREENS = endoDetected ? 9 : 7;
   // v27 fix : on demarre TOUJOURS a l'ecran 0 (prenom) meme si saved.screen existe.
   // Cela permet a l'utilisateur de voir/modifier ses donnees pre-remplies plutot que
   // d'arriver direct sur le dernier ecran de consentement.
   const [screen, setScreen] = useState(0);
 
   // Persiste à chaque modification d'un champ (debounce naturel via React batching)
+  // v2_endo : ajout des champs endoDetected / cyclePhase / crisisTypes au snapshot.
   useEffect(() => {
     try {
       localStorage.setItem(ANAMNESE_KEY, JSON.stringify({
-        email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen
+        email, emailTouched, prenom, accord, problem, objectif, consentement, hasSupport, screen,
+        cyclePhase, crisisTypes, visionMatinee
       }));
     } catch {}
-  }, [email, emailTouched, prenom, problem, objectif, consentement, hasSupport, screen]);
+  }, [email, emailTouched, prenom, accord, problem, objectif, consentement, hasSupport, screen,
+      cyclePhase, crisisTypes, visionMatinee]);
 
   const emailErr = emailTouched && !isValidEmail(email);
 
   // Validation par écran : le bouton Suivant n'est actif que si le champ courant est valide.
+  // v2_endo : écrans 6 et 7 ajoutés si endoDetected (cyclePhase + crisisTypes).
+  //   - cyclePhase est requise (string non vide) — l'option "no_answer" est acceptable.
+  //   - crisisTypes peut être vide (toutes les patientes endo n'ont pas forcément de crise déclarée).
   const screenValid = [
-    prenom.trim().length > 0,        // 0 — prénom
+    prenom.trim().length > 0 && !!accord,  // 0 — prénom + accord grammatical (même écran)
     isValidEmail(email),             // 1 — email
     problem.trim().length > 15,      // 2 — problème
     objectif.trim().length > 10,     // 3 — objectif
-    hasSupport !== null,             // 4 — suivi pro
-    consentement,                    // 5 — consentement RGPD
+    true,                            // 4 — vision matinée (optionnel, toujours valide)
+    hasSupport !== null,             // 5 — suivi pro
+    consentement,                    // 6 — consentement RGPD
+    // Écrans 7 et 8 actifs uniquement si endoDetected
+    !!cyclePhase,                    // 7 — phase du cycle (endo)
+    true,                            // 8 — types de crises (cocher 0 à N est OK)
   ];
 
   const goBack = () => { if (screen > 0) setScreen(screen - 1); };
@@ -2212,6 +2482,15 @@ function Anamnese({ onNext, personId }) {
       setMaliciousDetected(true);
       return;
     }
+    // ─── v2_endo — Tracking endométriose à la sortie des écrans 2 / 3
+    // FIX 2026-05-23 : endoDetected est maintenant dérivé, plus de setEndoDetected.
+    // On garde uniquement le tracking analytics (pas d'effet sur la logique de flow).
+    if (screen === 2 && detectEndometriosis(problem)) {
+      track("endometriosis_detected", { field: "problem" });
+    }
+    if (screen === 3 && !detectEndometriosis(problem) && detectEndometriosis(objectif)) {
+      track("endometriosis_detected", { field: "objectif" });
+    }
     // Avance d'un écran (sauf le dernier où on submit)
     if (screen < TOTAL_SCREENS - 1) {
       setScreen(screen + 1);
@@ -2238,7 +2517,10 @@ function Anamnese({ onNext, personId }) {
     // v27 fix : on NE supprime PLUS l'etat anamnese pour permettre la persistance entre sessions
     // (prenom, problem, objectif, etc. seront pre-remplis a la prochaine visite — utile pour test)
     // try { localStorage.removeItem(ANAMNESE_KEY); } catch {}
-    onNext({ prenom, email, problem, objectif, hasSupport, crisisOverride });
+    // v2_endo : on transmet aussi endo / cyclePhase / crisisTypes au flow suivant.
+    onNext({ prenom, email, accord, problem, objectif, hasSupport, crisisOverride,
+             endo: endoDetected, cyclePhase: cyclePhase || null, crisisTypes,
+             visionMatinee: visionMatinee.trim() });
   };
 
   // ─── Écran de redirection vers le 3114 + ressources d'urgence ──────
@@ -2539,6 +2821,37 @@ function Anamnese({ onNext, personId }) {
                   setPrenom(prenom.charAt(0).toUpperCase() + prenom.slice(1));
                 }
               }} />
+
+            {/* ─── Accord grammatical (2026-05-23) ───────────────────────
+                3 boutons cartes M / F / Neutre. La valeur est utilisée par l'IA
+                pour générer les bons accords dans le script de la séance. */}
+            <div style={{ marginTop:"1.5rem" }}>
+              <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.65", marginBottom:"0.75rem" }}>
+                Pour adapter la formulation de votre séance, comment souhaitez-vous être accordé·e ?
+              </p>
+              <div style={{ display:"grid", gap:"0.5rem" }}>
+                {[
+                  { key:"M", label:"Au masculin",  ex:"« tu es prêt, accompli »" },
+                  { key:"F", label:"Au féminin",   ex:"« tu es prête, accomplie »" },
+                  { key:"N", label:"Sans accord",  ex:"formulations neutres : « tu peux, tu vis »" },
+                ].map(opt => (
+                  <button key={opt.key} type="button" onClick={() => setAccord(opt.key)}
+                    className="opt-card"
+                    style={{ display:"flex", alignItems:"center", gap:"0.75rem",
+                      padding:"0.75rem 0.95rem", textAlign:"left",
+                      background: accord === opt.key ? `rgba(184,149,90,.15)` : C.panel,
+                      border:`1.5px solid ${accord === opt.key ? C.gold : C.border}`,
+                      borderRadius:"12px", fontFamily:"'Raleway',sans-serif",
+                      color: accord === opt.key ? C.cream : C.muted, cursor:"pointer",
+                      transition:"all .2s" }}>
+                    <span style={{ flex:1 }}>
+                      <span style={{ fontSize:"14px", display:"block", marginBottom:"2px" }}>{opt.label}</span>
+                      <span style={{ fontSize:"11px", color:C.hint, fontStyle:"italic" }}>{opt.ex}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -2615,8 +2928,42 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── Écran 4 : Suivi pro ─── */}
+        {/* ─── v2_visionMatinee — Écran 4 : projection du futur résolu (Option E, Silva × De Shazer) ─── */}
+        {/* Question type "miracle question" : ne demande pas d'introspection psy, juste une projection sensorielle. */}
         {screen === 4 && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              Imaginez votre première matinée
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem" }}>
+              Imaginez que ce que vous traversez est résolu, doucement, naturellement.
+              Décrivez votre première matinée dans cette vie-là.
+              Que voyez-vous en ouvrant les yeux ? Que ressentez-vous dans votre corps ?
+              Qu'est-ce qui est devenu possible ?
+            </p>
+            <textarea
+              value={visionMatinee}
+              onChange={e => setVisionMatinee(e.target.value)}
+              placeholder="Quelques phrases suffisent..."
+              style={{ width:"100%", minHeight:"110px", padding:"0.875rem 1rem",
+                background:C.panel, border:`1.5px solid ${C.border}`, borderRadius:"12px",
+                color:C.cream, fontSize:"13px", fontFamily:"'Raleway', sans-serif",
+                lineHeight:"1.6", resize:"vertical", outline:"none" }}
+            />
+            <div style={{ marginTop:"0.75rem", padding:"0.75rem 1rem",
+              background:"rgba(184,149,90,.06)", borderRadius:"10px",
+              border:`1px solid rgba(184,149,90,.2)` }}>
+              <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+                💛 Quelques phrases suffisent. Pas besoin de tout imaginer — juste ce qui vient
+                naturellement. Si rien ne vient aujourd'hui, vous pouvez cliquer Suivant.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Écran 5 : Suivi pro ─── */}
+        {screen === 5 && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>Êtes-vous suivi(e) par un professionnel de santé ?</h2>
@@ -2649,8 +2996,8 @@ function Anamnese({ onNext, personId }) {
           </div>
         )}
 
-        {/* ─── Écran 5 : Récap + consentement RGPD ─── */}
-        {screen === 5 && (
+        {/* ─── Écran 6 : Récap + consentement RGPD ─── */}
+        {screen === 6 && (
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
@@ -2697,6 +3044,90 @@ function Anamnese({ onNext, personId }) {
               borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)` }}>
               <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
                 ⚕️ Service de relaxation et sophrologie générée par IA — ne remplace pas un suivi médical, psychologique ou thérapeutique professionnel.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ─── v2_endo — Écran 7 : phase du cycle (uniquement si endoDetected) ─── */}
+        {screen === 7 && endoDetected && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              Où en êtes-vous dans votre cycle aujourd'hui ?
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem" }}>
+              Cette information reste sur votre appareil. Elle aide l'IA à choisir des métaphores justes pour
+              ce moment précis — votre corps en phase de règles n'a pas les mêmes besoins qu'au milieu du cycle.
+              Si vous préférez ne pas répondre, c'est tout à fait possible.
+            </p>
+            <div style={{ display:"grid", gap:"0.625rem" }}>
+              {Object.entries(CYCLE_PHASES).map(([key, val]) => (
+                <button key={key} type="button" onClick={() => setCyclePhase(key)}
+                  className="opt-card"
+                  style={{ display:"flex", alignItems:"center", gap:"0.75rem",
+                    padding:"0.875rem 1rem", textAlign:"left",
+                    background: cyclePhase === key ? `rgba(184,149,90,.15)` : C.panel,
+                    border:`1.5px solid ${cyclePhase === key ? C.gold : C.border}`,
+                    borderRadius:"12px", fontSize:"13px", fontFamily:"'Raleway',sans-serif",
+                    color: cyclePhase === key ? C.cream : C.muted, cursor:"pointer",
+                    transition:"all .2s" }}>
+                  <span style={{ fontSize:"18px" }}>{val.icon}</span>
+                  <span style={{ flex:1 }}>{val.label}</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop:"1rem", padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
+              borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)` }}>
+              <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+                💛 EUREKA accompagne, ne soigne pas. En cas de douleur intense, fièvre ou symptômes inhabituels,
+                contactez votre médecin ou le 15.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ─── v2_endo — Écran 8 : types de crises dominantes (uniquement si endoDetected) ─── */}
+        {screen === 8 && endoDetected && (
+          <div style={{ animation:"fadeUp .35s ease" }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
+              fontWeight:"400", marginBottom:"0.5rem" }}>
+              Quels types de crises sont les plus difficiles pour vous en ce moment ?
+            </h2>
+            <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.25rem" }}>
+              Cochez ce qui résonne (plusieurs choix possibles, ou aucun si vous préférez).
+              Cela permet de débloquer les séances « SOS Crise » adaptées à ce que vous vivez.
+            </p>
+            <div style={{ display:"grid", gap:"0.625rem" }}>
+              {CRISIS_TYPE_KEYS.map((key) => {
+                const val = CRISIS_TYPES[key];
+                const checked = crisisTypes.includes(key);
+                return (
+                  <button key={key} type="button"
+                    onClick={() => setCrisisTypes(checked
+                      ? crisisTypes.filter(k => k !== key)
+                      : [...crisisTypes, key])}
+                    className="opt-card"
+                    style={{ display:"flex", alignItems:"center", gap:"0.75rem",
+                      padding:"0.875rem 1rem", textAlign:"left",
+                      background: checked ? `rgba(184,149,90,.15)` : C.panel,
+                      border:`1.5px solid ${checked ? C.gold : C.border}`,
+                      borderRadius:"12px", fontSize:"13px", fontFamily:"'Raleway',sans-serif",
+                      color: checked ? C.cream : C.muted, cursor:"pointer",
+                      transition:"all .2s" }}>
+                    <span style={{ fontSize:"18px" }}>{val.icon}</span>
+                    <span style={{ flex:1 }}>{val.label}</span>
+                    <span style={{ fontSize:"16px", color: checked ? C.gold : C.hint }}>
+                      {checked ? "✓" : "○"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop:"1rem", padding:"0.75rem 1rem", background:"rgba(184,149,90,.06)",
+              borderRadius:"10px", border:`1px solid rgba(184,149,90,.2)` }}>
+              <p style={{ fontSize:"11px", color:C.hint, lineHeight:"1.65" }}>
+                💛 EUREKA est un complément, jamais un substitut au suivi médical.
               </p>
             </div>
           </div>
@@ -4224,7 +4655,14 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   // (grille des 4 voix affichée juste avant le bouton « Générer la séance complète »).
   // Pour le cas RESUME (le client revient sur sa séance déjà générée), userData.selectedVoice
   // est défini et est utilisé comme valeur initiale du state local.
-  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref, couple, person1, person2 } = userData;
+  const { prenom, email, problem, objectif, bigFiveScores, vakogResult, relaxDir, beliefSystem, selectedVoice: initialSelectedVoice, seanceNum, genderPref, couple, person1, person2,
+    // v2_endo — données endométriose remontées depuis l'anamnèse
+    endo, cyclePhase, crisisTypes,
+    // v2_visionMatinee — projection silvienne du futur résolu (Option E)
+    visionMatinee,
+    // 2026-05-23 — accord grammatical (M/F/N) saisi à l'écran prénom
+    accord
+  } = userData;
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice || "");
   // States pour la preview audio dans la grille VoiceSelection (4 boutons ▶ Écouter)
   const [playingPreview, setPlayingPreview] = useState(null);
@@ -4665,8 +5103,15 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         relaxDir, beliefSystem, problem, objectif, prenom,
         useV3Tags: useV3Mode,
         bigFiveScores, archetypeKey, selectedVoice,
+        // 2026-05-23 — accord grammatical (M/F/N) saisi à l'écran prénom
+        accord,
         // v_couple — Si flag couple posé, buildSystemPrompt ajoute le bloc dédié
-        couple, person1, person2
+        couple, person1, person2,
+        // v2_endo — Si flag endo posé, buildSystemPrompt ajoute le modifier endométriose
+        // (corps allié, métaphores phase de cycle, douleur jamais niée, etc.)
+        endo, cyclePhase, crisisTypes,
+        // v2_visionMatinee — projection silvienne tissée dans scène 3
+        visionMatinee
       });
 
       const info = "Prenom: " + prenom + " | Problemes: " + problem + " | Objectifs: " + objectif +
@@ -4831,7 +5276,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "APRÈS Scène 1, insère TEXTUELLEMENT cette ligne de séparation sur sa propre ligne (sans rien d'autre autour) :\n===METAPHORES_GO_HERE===\n\n" +
         "Transition métaphorique vers Scène 2 (MAXIMUM 2 à 3 phrases) : Pendant que l'écran se déplace doucement 15 degrés vers la gauche, évoque sans nommer le chemin parcouru — ce qui vient de se dissoudre, ce qui commence à apparaître. Ton hypothétique et poétique. Aucun mot psychologique ou médical. [PAUSE_2s]\n\n" +
         "Scène 2 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots): Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
-        "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR de cette image accomplie. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage (marqué par [PAUSE_5s]), l'écran s'enveloppe autour du client. Phrase de bascule OBLIGATOIRE de type : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène, jusqu'à 'La transformation est RÉELLE'.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
+        "Scène 3 (MAXIMUM 220 mots au total - compter chaque mot - s'arrêter strictement à 220 mots) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR de cette image accomplie. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage (marqué par [PAUSE_5s]), l'écran s'enveloppe autour du client. Phrase de bascule OBLIGATOIRE de type : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène, jusqu'à 'La transformation est RÉELLE'.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\nINTERDICTION ABSOLUE — le verbe « envelopper » et ses dérivés (« t'enveloppent », « t'enveloppe », « enveloppant·e », « enveloppé·e », « enveloppe-toi », « l'enveloppe », « qui l'enveloppe ») ne doivent apparaître QU'UNE SEULE FOIS dans toute la scène 3, EXACTEMENT à la phrase de bascule (PHASE B), juste après le [PAUSE_5s] d'ancrage. Toute mention de « envelopper » AVANT la phrase de bascule est STRICTEMENT INTERDITE — y compris pour décrire les couleurs qui montent, la lumière qui descend, l'écran qui s'élargit, le rayonnement de la silhouette, ou toute progression d'intensité. Pendant la PHASE A, utiliser EXCLUSIVEMENT des verbes d'observation et d'expansion neutres (s'agrandit, s'illumine, s'intensifie, se rapproche, devient plus vif) — JAMAIS un verbe qui suggère un mouvement d'enveloppement vers le client. Le mot « envelopper » est RÉSERVÉ à la bascule.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]\n\n" +
         "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement du problème.]\nGénère EXACTEMENT 4 métaphores pures qui évoquent subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine. Chaque métaphore peut résonner indépendamment. Elles s'enchaînent naturellement sans rupture.\nRègles strictes :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation TOUJOURS hypothétique en 'peut-être que...' — JAMAIS affirmatif.\n- INTERDIT — ARITHMÉTIQUE DE LA PERTE. Ne JAMAIS faire de décompte numérique d'une absence ('on était trois, on est deux', 'à quatre et désormais trois', 'vous étiez X, vous êtes Y'). NE PAS inférer la composition familiale (nombre d'enfants, fratrie, âge exact, lien précis). Une perte, un deuil, un départ se nomment par l'ABSENCE elle-même — par la trace, l'écho, le silence, la lumière éteinte, la place qui reste — JAMAIS par un nombre. Exemples corrects : 'une lumière qui s'est éteinte trop tôt', 'une présence dont l'image reste vivante', 'un silence là où une voix résonnait', 'une chaise vide à la table intérieure', 'un chemin qui résonne différemment maintenant'. Exemples INTERDITS : 'deux voyageurs qui marchaient à trois', 'on était plusieurs et maintenant on est moins', toute mention chiffrée d'une famille avant/après.\n- INTERDIT ABSOLU — EXTRAPOLATION SUR L'ÂGE OU LE MOMENT DE LA PERTE. Si le client mentionne la perte d'un enfant ou d'un proche, NE JAMAIS deviner ni présupposer : (a) l'âge de la personne perdue (bébé, enfant en bas âge, adolescent, adulte) ; (b) le moment de la perte (avant la naissance, à la naissance, dans l'enfance, à l'âge adulte) ; (c) la durée de vie (« n'a pas pu se déployer », « avant d'avoir vécu », « avant d'avoir grandi », « avant que sa vie commence », « avant d'avoir éclairé », « une vie qui n'a pas eu le temps », etc.) ; (d) les circonstances (maladie, accident, fausse couche, mort-né, etc.). Exemples INTERDITS (extraits d'une séance réelle problématique) : 'une lumière qui aurait dû éclairer les pièces prévues' (présuppose une vie non vécue), 'une pièce dont les plans étaient déjà tracés' (présuppose un projet non réalisé), 'une lumière qui aurait dû prendre sa place' (présuppose une place jamais occupée), 'un enfant qui n'a pas eu le temps de...' (présuppose une vie courte), 'cette présence à peine entrevue' (présuppose une rencontre brève). Une perte d'un enfant à 8 ans, 15 ans ou 30 ans EXISTE — l'enfant A VÉCU. Toute formulation qui suggère « pas encore vécu » est dévastatrice et NIE cette vie. Reformulations SÛRES : 'une lumière qui s'est éteinte trop tôt' (laisse libre l'interprétation du « tôt »), 'une présence qui demeure en vous', 'cet amour qui ne s'efface pas', 'cette image intérieure que le cœur garde', 'ce qui a été vraiment, pleinement', 'ce qui demeure en lumière'. Le client doit pouvoir INVESTIR la métaphore avec SA propre histoire, quelle qu'elle soit.\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " qui détermine la modalité (Visuel=image/forme/lumière ; Auditif=son/écho/silence ; Kinesthésique=poids/pression/vibration ; Rationnel=structure/équation) ; (b) l'archétype " + archetype.name + " qui détermine l'univers symbolique (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Chaque métaphore appartient naturellement à l'univers de l'archétype tout en utilisant la modalité du canal VAKOG.\n- Exemples : 'peut-être qu'une pierre a été posée trop tôt sur une fondation pas tout à fait sèche...' (Bâtisseur × Visuel) ; 'peut-être qu'un silence s'est installé là où une voix manquait...' (Compagnon × Auditif).\n- Ne jamais sortir le client de sa relaxation — tout doit couler.\n- Terminer EXACTEMENT par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n===METAPHORES_END===", 3000);
 
@@ -4879,7 +5324,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "APRÈS Scène 1, insère TEXTUELLEMENT cette ligne de séparation sur sa propre ligne (sans rien d'autre autour) :\n===METAPHORES_GO_HERE===\n\n" +
         "Transition métaphorique vers Scène 2 (MAXIMUM 2 à 3 phrases) : Pendant que l'écran se déplace doucement 15 degrés vers la gauche, évoque sans nommer le chemin parcouru — ce qui vient de se dissoudre, ce qui commence à apparaître. Ton hypothétique et poétique. Aucun mot psychologique ou médical. [PAUSE_2s]\n\n" +
         "Scène 2 (220 mots, NORMAL) : Voir " + prenom + " EN ACTION pour '" + objectif + "'. Actions concrètes. Organise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'incarnation.\n\n" +
-        "Scène 3 (220 mots, NORMAL) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage ([PAUSE_5s]), l'écran s'enveloppe. Phrase de bascule OBLIGATOIRE : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\n\n" +
+        "Scène 3 (220 mots, NORMAL) — DEUX PHASES OBLIGATOIRES :\nPHASE A (environ 60-70% du temps) — OBSERVATION DISSOCIÉE : Voir " + prenom + " DANS sa vie transformée. Description visuelle détaillée à la 3e personne — posture, regard, gestes, environnement, présence rayonnante. Verbes contemplatifs : tu observes, tu vois, tu distingues, tu remarques, tu contemples. Le client reste SPECTATEUR. NE PAS basculer en 1ère personne pendant cette phase.\nPHASE B (environ 30-40% du temps) — BASCULE PUIS INCARNATION : Au moment-clé d'ancrage ([PAUSE_5s]), l'écran s'enveloppe. Phrase de bascule OBLIGATOIRE : 'et maintenant... l'écran t'enveloppe complètement... tu n'es plus spectateur... TU ES cet homme/cette femme accompli·e...' Puis identification 1ère personne (TU ES, TU ressens, TU vis) pour la fin de la scène.\nOrganise en MICRO-BLOCS de 2 phrases avec '......' à l'intérieur, [PAUSE_2s] entre chaque micro-bloc, [PAUSE_5s] au moment-clé d'ancrage.\nINTERDICTION ABSOLUE — le verbe « envelopper » et ses dérivés (« t'enveloppent », « t'enveloppe », « enveloppant·e », « enveloppé·e », « enveloppe-toi », « l'enveloppe », « qui l'enveloppe ») ne doivent apparaître QU'UNE SEULE FOIS dans toute la scène 3, EXACTEMENT à la phrase de bascule (PHASE B), juste après le [PAUSE_5s] d'ancrage. Toute mention de « envelopper » AVANT la phrase de bascule est STRICTEMENT INTERDITE — y compris pour décrire les couleurs qui montent, la lumière qui descend, l'écran qui s'élargit, le rayonnement de la silhouette, ou toute progression d'intensité. Pendant la PHASE A, utiliser EXCLUSIVEMENT des verbes d'observation et d'expansion neutres (s'agrandit, s'illumine, s'intensifie, se rapproche, devient plus vif) — JAMAIS un verbe qui suggère un mouvement d'enveloppement vers le client. Le mot « envelopper » est RÉSERVÉ à la bascule.\n\n" +
         "Terminer par: La transformation est RÉELLE...... elle est PERMANENTE...... elle est MAINTENANT...... [PAUSE_5s]\n\n" +
         "APRÈS cette phrase de fin, génère ENCORE un BLOC SÉPARÉ délimité PRÉCISÉMENT par ces deux marqueurs (chacun sur sa propre ligne, sans rien d'autre autour) :\n===METAPHORES_START===\n[Bloc métaphores des causes ULTRA-DOUX — MAXIMUM 200 mots, 20 phrases au total. Sera joué une seule fois après Scène 1 du premier cycle, dans le silence qui suit l'effacement, dans le cadre de sécurité déjà établi par les phrases d'observateur.]\nGénère EXACTEMENT 4 métaphores ultra-douces qui évoquent très subtilement les origines possibles du problème '" + problem + "' — chacune suggère une cause possible DIFFÉRENTE parmi les domaines : émotionnelle, relationnelle, corporelle, existentielle, professionnelle, identitaire, familiale/transgénérationnelle ou spirituelle. ANALYSE la nature spécifique du problème '" + problem + "' et CHOISIS les 4 domaines les plus probablement liés. Ne pas en choisir au hasard. Pas deux fois le même domaine.\nRègles strictes (version DOUCE) :\n- Ne jamais nommer la cause directement. Laisser la métaphore faire le travail.\n- Formulation ENCORE PLUS hypothétique en 'peut-être que... peut-être... ou peut-être que tout cela parle d'autre chose' — TRIPLE peut-être obligatoire dans au moins 2 des 4 métaphores.\n- INTERDIT — ARITHMÉTIQUE DE LA PERTE. Ne JAMAIS faire de décompte numérique d'une absence ('on était trois, on est deux', 'à quatre et désormais trois', 'vous étiez X, vous êtes Y'). NE PAS inférer la composition familiale (nombre d'enfants, fratrie, âge exact, lien précis). Une perte, un deuil, un départ se nomment par l'ABSENCE elle-même — par la trace, l'écho, le silence, la lumière éteinte, la place qui reste — JAMAIS par un nombre. Exemples corrects : 'une lumière qui s'est éteinte trop tôt', 'une présence dont l'image reste vivante', 'un silence là où une voix résonnait', 'une chaise vide à la table intérieure', 'un chemin qui résonne différemment maintenant'. Exemples INTERDITS : 'deux voyageurs qui marchaient à trois', 'on était plusieurs et maintenant on est moins', toute mention chiffrée d'une famille avant/après.\n- INTERDIT ABSOLU — EXTRAPOLATION SUR L'ÂGE OU LE MOMENT DE LA PERTE. Même règle que dans la version standard : ne JAMAIS deviner l'âge de la personne perdue (bébé, enfant, adolescent, adulte), ni le moment (périnatal, enfance, âge adulte), ni la durée de vie (« n'a pas pu se déployer », « avant d'avoir vécu », « avant d'avoir éclairé »), ni les circonstances. Formulations INTERDITES (extraits problématiques) : 'une lumière qui aurait dû éclairer les pièces prévues', 'une pièce dont les plans étaient déjà tracés', 'une lumière qui aurait dû prendre sa place', 'cette présence à peine entrevue'. Reformulations SÛRES : 'une lumière qui s'est éteinte trop tôt', 'une présence qui demeure en vous', 'cet amour qui ne s'efface pas', 'cette image intérieure que le cœur garde'. Le client doit pouvoir INVESTIR la métaphore avec SA propre histoire — l'enfant a peut-être vécu 1 jour, 5 ans ou 30 ans, ce n'est PAS au système de présupposer.\n- Maintenir la distance d'observateur (verbes contemplatifs : tu observes, tu remarques, tu portes ton attention, tu aperçois).\n- Les métaphores doivent croiser DEUX dimensions : (a) le canal sensoriel dominant " + vakog + " ; (b) l'archétype " + archetype.name + " (Bâtisseur=construction/chantier ; Compagnon=liens/présence ; Pèlerin=chemin/sentier ; Voyageur=mer/vent).\n- Ne JAMAIS sortir le client de sa relaxation — tout doit couler TRÈS doucement.\n- Terminer EXACTEMENT par : 'Laisse résonner si quelque chose résonne... et laisse glisser sans effort si rien ne vient... [PAUSE_5s]'\n===METAPHORES_END===", 3000) : Promise.resolve(null);
 
@@ -4932,7 +5377,11 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // Pour profil stable, tous les cycles = standard (comportement historique).
       // Phase A — texte-pont entre cycle 2 (douce) et cycle 3 (standard) : prépare psychologiquement
       // au passage "silhouette/forme abstraite" → "Mickael nommé/crise d'angoisse" (exposition graduelle).
-      const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
+      // v2_endo bugfix : variante solo (tu, neutre en genre) vs couple (vous, pluriel masculin inclusif).
+      // "tu peux" évite le piège du genre — "tu es prêt(e)" forcerait à connaître le genre du client.
+      const PONT_SENSIBLE = couple
+        ? "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]"
+        : "Maintenant que tu as observé cette image en toute sécurité, deux fois... tu peux la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
 
       // Filet de sécurité : si Claude n'a pas inclus la phrase de fin (sortie tronquée
       // ou ignorée), on l'ajoute manuellement pour que la séance ne se termine pas en l'air.
@@ -5234,7 +5683,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         const douce = scriptParts.scenesDouce;
         const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
         // Phase A — texte-pont identique à l'assemblage initial (synchronisation script ↔ audio)
-        const PONT_SENSIBLE = "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
+        // v2_endo bugfix : même conditionnel couple/solo que dans l'assemblage initial.
+        const PONT_SENSIBLE = couple
+          ? "Maintenant que vous avez observé cette image en toute sécurité, deux fois... vous êtes prêts à la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]"
+          : "Maintenant que tu as observé cette image en toute sécurité, deux fois... tu peux la regarder un peu plus près... avec le même calme... la même distance intérieure... [PAUSE_5s]";
         let cycles = "";
         for (let i = 0; i < annonces.length; i++) {
           if (i === 2 && sensible && douce) {
@@ -5650,6 +6102,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         couple: !!couple,
         person1Prenom: (couple && person1) ? person1.prenom : undefined,
         person2Prenom: (couple && person2) ? person2.prenom : undefined,
+        // v2_endo — Flag endométriose + phase de cycle + types de crises déclarés.
+        // Permet à la Landing d'afficher le panneau SOS adapté à la phase courante.
+        endo: !!(userData && userData.endo),
+        cyclePhase: (userData && userData.cyclePhase) || null,
+        crisisTypes: (userData && userData.crisisTypes) || [],
+        // v2_visionMatinee — Projection silvienne du futur résolu (Option E)
+        visionMatinee: (userData && userData.visionMatinee) || "",
       };
       const fullData = { audioBlob, script, userData, ...meta };
       // 1. Sauvegarde "current" (séance active, pour bouton "Reprendre")
@@ -5664,6 +6123,27 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       // la capture d'intention tarifaire à la 5e séance)
       const newCount = incrementSessionCount();
       console.log("[EUREKA] Séance n°" + newCount + " générée (id:" + sessionId + ")");
+
+      // ─── v2_endo — TODO : génération automatique de la SOS de la phase courante ──
+      // Si userData.endo === true et userData.cyclePhase est défini, on devrait
+      // ici déclencher UNE génération supplémentaire d'une séance SOS courte
+      // (~3-5 min) correspondant à la phase de cycle déclarée, et la sauvegarder
+      // dans IndexedDB sous une clé séparée (par exemple eureka_sos_<sosType>).
+      // Cette SOS est offerte avec la clé du propriétaire (gratuite à l'utilisatrice).
+      // Les 5 autres SOS restent verrouillées et nécessitent la clé ElevenLabs
+      // perso de l'utilisatrice ou un abonnement Premium $6/mois (USD).
+      //
+      // Pseudocode :
+      //   if (userData.endo && userData.cyclePhase) {
+      //     const sosType = CYCLE_PHASES[userData.cyclePhase].sos;  // ex. "regles"
+      //     const sosPrompt = buildSystemPrompt({ ...userData, sos: sosType, endo: true });
+      //     const sosScript = await gpt(sosPrompt, "Génère une séance SOS de 3-5 minutes maximum.", 1500);
+      //     const sosAudio = await elevenLabsSynth(sosScript, selectedVoice);
+      //     await idbSaveSos(sosType, { audio: sosAudio, script: sosScript });
+      //   }
+      // Cette intégration nécessite une fonction idbSaveSos() à créer (similaire à
+      // saveSession mais sur un store IndexedDB séparé), et un player audio dédié
+      // sur la Landing pour lire la SOS sans toucher au streak de la séance principale.
     } catch (e) {
       console.warn("Persist personal session failed:", e);
     }
