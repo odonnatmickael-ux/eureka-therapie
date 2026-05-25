@@ -5730,17 +5730,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         setMantraData(null);
       }
 
-      // AUDIO — chargement depuis Vercel Blob selon archétype Big Five
-      // Les 4 archétypes Big Five mappent sur les 4 blocs audio existants
-      // Format URL Blob : demo_<voix>_<archetype>_<canal>.mp3
+      // v4_express (2026-05-25) — chargement de l'échantillon DÉSACTIVÉ.
+      // L'échantillon découverte audio n'est plus parfait → on saute son chargement
+      // jusqu'à refonte. Code original conservé ci-dessous (commenté) pour réactivation.
+      // Le client ne voit plus le player « Échantillon type » : il va direct sur le
+      // choix de voix + boutons « Générer la séance complète/découverte ».
+      /* AUDIO ÉCHANTILLON — CODE MORT V4_EXPRESS
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const bloc = archetype.bloc || "pelerin";
-      // v26bis — la voix de l'extrait découverte est déterminée par genderPref
-      // (choix Femme/Homme fait à l'étape GenreVoix), PAS par selectedVoice
-      // (qui n'est défini qu'après VoiceSelection en bas de la page séance).
-      // Fallback historique : si selectedVoice est déjà défini (cas resume séance), on l'utilise.
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
@@ -5750,10 +5749,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const voiceName = selectedVoice
         ? (VOICE_NAMES[selectedVoice] || "bella")
         : (genderPref === "M" ? "marcel" : "bella");
-      // BÊTA : ?t=timestamp force le navigateur à re-télécharger l'échantillon Blob
-      // (au cas où on remplace le MP3 pendant le développement). À retirer quand stable.
       const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3?t=" + Date.now();
       setAudioUrl(blobUrl);
+      FIN CODE MORT */
 
       // EMAIL — ANONYMISATION TOTALE (RGPD)
       // On n'envoie AUCUNE donnée perso à EmailJS : pas de prénom, pas de problème,
@@ -6496,41 +6494,35 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               )}
             </div>
 
-            <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
-              <div style={{ width:"48px", height:"48px", borderRadius:"50%",
-                background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
-              <div>
-                <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>
-                  {isPersonalized
-                    ? "Votre séance personnalisée"
-                    : `Échantillon type — ${blocName} × ${VAKOG_NAMES[vakog]}`}
-                </p>
-                <p style={{ fontSize:"12px", color:C.muted }}>
-                  {isPersonalized
-                    ? "Avec votre prénom et vos problèmes · Casque · Assis(e), dos droit · Yeux fermés"
-                    : "Avant-goût adapté à votre profil — sans votre prénom"}
-                </p>
-              </div>
-            </div>
-            <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
-              onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
-              onTimeUpdate={handleAudioTimeUpdate}
-              onLoadedMetadata={handleAudioLoadedMetadata}
-              onEnded={handleAudioEnded} />
-            {/* Slider de vitesse de lecture (modif #7 — 2026-05-06) */}
-            <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={seanceFullyGenerated ? (VOICE_PLAYBACK_DEFAULTS[selectedVoice] || 1.00) : 1.00} />
-
-            {/* Si échantillon : flèche claire vers la section séance complète */}
-            {!isPersonalized && (
-              <div style={{ background:"rgba(184,149,90,.08)", borderRadius:"10px",
-                padding:"0.875rem 1rem", marginTop:"1rem",
-                border:`1px dashed ${C.gold}` }}>
-                <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.6" }}>
-                  ✦ Pour entendre <strong>VOTRE séance complète</strong> avec votre prénom <strong>{prenom}</strong> et vos problèmes précis,
-                  voir « Générer ma séance complète » ci-dessous ↓
-                </p>
-              </div>
+            {/* v4_express (2026-05-25) — bloc échantillon UI gaté.
+                Ne s'affiche QUE si audio personnalisé chargé (séance complète/découverte/express déjà générée).
+                Plus d'échantillon découverte automatique. */}
+            {audioUrl && (
+              <>
+                <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
+                  <div style={{ width:"48px", height:"48px", borderRadius:"50%",
+                    background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+                    display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
+                  <div>
+                    <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>
+                      {isPersonalized
+                        ? "Votre séance personnalisée"
+                        : `Échantillon type — ${blocName} × ${VAKOG_NAMES[vakog]}`}
+                    </p>
+                    <p style={{ fontSize:"12px", color:C.muted }}>
+                      {isPersonalized
+                        ? "Avec votre prénom et vos problèmes · Casque · Assis(e), dos droit · Yeux fermés"
+                        : "Avant-goût adapté à votre profil — sans votre prénom"}
+                    </p>
+                  </div>
+                </div>
+                <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
+                  onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
+                  onTimeUpdate={handleAudioTimeUpdate}
+                  onLoadedMetadata={handleAudioLoadedMetadata}
+                  onEnded={handleAudioEnded} />
+                <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={seanceFullyGenerated ? (VOICE_PLAYBACK_DEFAULTS[selectedVoice] || 1.00) : 1.00} />
+              </>
             )}
 
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
