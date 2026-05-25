@@ -987,7 +987,30 @@ function buildSystemPrompt(data) {
       "    « TU ES cet homme accompli » → « TU VIS cette plénitude », « cet aboutissement EST en toi »\n" +
       "INTERDICTION ABSOLUE : aucun accord genré explicite (« prêt », « prête », « accompli », « accomplie », « cet homme », « cette femme ») appliqué à la personne. Si un participe doit absolument s'accorder, il s'accorde avec un nom neutre/objet, jamais avec la personne.\n";
   }
-  return baseSysPrompt + accordDirective + endoSuffix + visionSuffix;
+  // v4_express (2026-05-25) — directive ÉCRASE-TOUT pour la séance Express
+  // Activée uniquement quand data.expressMode === true (sinon string vide → aucun effet).
+  // Applique les 3 allègements définis dans la conv claude.ai (24 mai 2026) :
+  //   1) Relaxation corporelle = 5 zones, 2 phrases max chacune
+  //   2) Scène 1 (hypothèses peut-être) = 1 seule au lieu de 4
+  //   3) Cycles = 1 seul cycle complet, pas de répétition
+  // Toute la posture, le ton, la respiration, la désophronisation restent identiques.
+  let expressOverride = "";
+  if (data && data.expressMode === true) {
+    const _archeKey = (data && data.archetypeKey) || "compagnon";
+    expressOverride = "\n\n=== MODE EXPRESS — OVERRIDE FINAL (PRIORITÉ ABSOLUE SUR LES INSTRUCTIONS PRÉCÉDENTES DE LONGUEUR) ===\n" +
+      "Tu génères une SÉANCE EXPRESS d'environ 20 minutes (vs ~1h08 pour la complète). Applique ces 3 allègements OBLIGATOIRES sans toucher au reste de la posture sophrologique :\n\n" +
+      "1. RELAXATION CORPORELLE ALLÉGÉE — au lieu de la relaxation détaillée doigt par doigt / orteil par orteil (groupes complets), utilise UNIQUEMENT ces 5 grandes zones, 2 phrases MAX par zone :\n" +
+      "   • Tête (front, mâchoire, paupières, langue détendus)\n" +
+      "   • Cou (nuque qui se relâche, épaules qui s'abaissent)\n" +
+      "   • Bras (depuis les épaules jusqu'aux doigts, ouverts et lourds)\n" +
+      "   • Tronc (dos, poitrine, ventre, organes en paix)\n" +
+      "   • Jambes (depuis le bassin jusqu'aux pieds, posés)\n" +
+      "   Format : 2 phrases courtes par zone, [PAUSE_3s] après chaque zone, puis [PAUSE_5s] à la fin de la 5e zone pour annoncer le corps entièrement détendu. Ne PAS énumérer les doigts ni les orteils.\n\n" +
+      "2. SCÈNE 1 — HYPOTHÈSE UNIQUE — dans le bloc METAPHORES (entre ===METAPHORES_START=== et ===METAPHORES_END===), génère UNE SEULE hypothèse « peut-être que... », la plus universelle pour l'archétype " + _archeKey + ". Pas 4 hypothèses, UNE SEULE. Plus longue et plus profonde que les hypothèses de la complète (puisqu'elle est seule). Termine quand même par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n\n" +
+      "3. CYCLES — UN SEUL CYCLE — tu génères les Scènes 1, 2, 3 UNE SEULE FOIS. Pas de répétition, pas de « Nous recommençons », pas de « Une deuxième fois ». C'est une séance unique d'introduction/d'entretien. L'ancrage viendra par la pratique répétée (revenir écouter à nouveau), pas par les cycles internes.\n\n" +
+      "TOUT LE RESTE IDENTIQUE À LA COMPLÈTE : accueil, briefing respiratoire, descente 10→1, mantra final, désophronisation/réveil. Mêmes règles d'accord grammatical, mêmes interdits, même posture déontologique. Seulement les 3 points ci-dessus changent.\n";
+  }
+  return baseSysPrompt + accordDirective + endoSuffix + visionSuffix + expressOverride;
 }
 // ══════════════════════════════════════════════════════════════════
 // COULEURS & STYLES
@@ -2275,6 +2298,84 @@ function detectEndometriosis(text) {
   return ENDO_PATTERNS.some(rx => rx.test(text));
 }
 
+// ─── THEME_SUGGESTIONS (2026-05-25) ─────────────────────────────
+// Pour chaque thème détecté dans le champ « problème », on propose une
+// reformulation positive de l'objectif (placeholder dynamique de l'écran 3).
+// Détection ordonnée — première regex qui match l'emporte (du plus spécifique au plus général).
+// Pas utilisé dans le prompt système : c'est uniquement un aide à la saisie pour le client.
+const THEME_SUGGESTIONS = [
+  { key:"stress_chronique", pri:true, patterns:[/stress\s+chronique/i, /stress(\s+(au\s+travail|permanent|constant|au\s+quotidien))/i, /\bstress\b/i], suggestion:"Retrouver un état de détente durable au cœur de mon quotidien" },
+  { key:"anxiete_generalisee", pri:true, patterns:[/anxi[eé]t[eé]\s+g[eé]n[eé]ralis[eé]e/i, /toujours\s+anxi/i, /anxi[eé]t[eé]/i], suggestion:"Apprendre à apaiser mon esprit et faire confiance au présent" },
+  { key:"panique", pri:true, patterns:[/crise[s]?\s+de\s+panique/i, /attaque[s]?\s+de\s+panique/i, /angoisse[s]?/i, /panique/i], suggestion:"Trouver un point d'ancrage stable pour traverser les moments d'angoisse" },
+  { key:"burnout", pri:true, patterns:[/burn[\s-]?out/i, /[eé]puisement\s+(professionnel|au\s+travail)/i, /[eé]puis[eé]/i, /\bcram[eé]\b/i], suggestion:"Retrouver mon énergie et un rapport sain au travail" },
+  { key:"anxiete_sociale", pri:false, patterns:[/anxi[eé]t[eé]\s+sociale/i, /peur\s+(des|du)\s+(autre|groupe|monde)/i, /phobie\s+sociale/i], suggestion:"Cultiver une présence apaisée face aux autres" },
+  { key:"hypocondrie", pri:false, patterns:[/hypocondr/i, /peur\s+(d'|de)\s*(la\s+)?maladie/i, /peur\s+d'[eê]tre\s+malade/i], suggestion:"Me réconcilier avec mon corps et lui faire à nouveau confiance" },
+  { key:"ruminations", pri:false, patterns:[/rumination/i, /pens[eé]es?\s+(en\s+boucle|qui\s+tournent)/i, /\bmental[e]?\s+qui\s+(tourne|ne\s+s'arr[eê]te)/i], suggestion:"Apaiser le bavardage de mes pensées et retrouver le silence intérieur" },
+  { key:"coleres", pri:false, patterns:[/col[eè]re[s]?\s+(incontr|qui\s+monte|explos)/i, /je\s+m'?[eé]nerve/i, /col[eè]re/i], suggestion:"Apprendre à reconnaître mes émotions et à les accueillir avec calme" },
+  { key:"emotivite", pri:false, patterns:[/[eé]motivit[eé]/i, /trop\s+[eé]motif/i, /pleure\s+(souvent|tout\s+le\s+temps|trop)/i, /hypersensib/i], suggestion:"Trouver une distance intérieure qui me protège sans m'isoler" },
+  { key:"insomnie", pri:true, patterns:[/insomnie/i, /je\s+ne\s+dors\s+(plus|pas)/i, /sans\s+dormir/i], suggestion:"Retrouver un sommeil profond et réparateur" },
+  { key:"endormissement", pri:true, patterns:[/endormissement/i, /(j'arrive\s+pas|n'arrive\s+pas)\s+(.*?\s+)?(à|a)\s+(m'?)?endormir/i, /mal\s+(à|a)\s+dormir/i], suggestion:"Apaiser mon mental le soir pour glisser sereinement dans le sommeil" },
+  { key:"cauchemars", pri:false, patterns:[/cauchemar/i], suggestion:"Apaiser les images qui m'agitent la nuit et retrouver un repos calme" },
+  { key:"reveils_nuit", pri:false, patterns:[/r[eé]veil[s]?\s+(nocturn|la\s+nuit|en\s+pleine\s+nuit)/i, /me\s+r[eé]veille\s+la\s+nuit/i], suggestion:"Apprendre à me rendormir avec confiance après un réveil" },
+  { key:"fatigue_reveil", pri:false, patterns:[/fatigu[eé]\s+(au\s+r[eé]veil|en\s+me\s+r[eé]veillant|le\s+matin)/i], suggestion:"Me réveiller avec un sentiment d'énergie disponible" },
+  { key:"confiance", pri:true, patterns:[/manque\s+de\s+confiance/i, /pas\s+confiance\s+en\s+(moi|soi)/i, /je\s+doute\s+(de\s+moi|de\s+tout)/i], suggestion:"Cultiver une assurance tranquille face aux situations qui m'intimident" },
+  { key:"estime", pri:true, patterns:[/estime\s+de\s+(moi|soi)/i, /je\s+vaux\s+rien/i, /(nul|m[eé]diocre)\b/i], suggestion:"Reconnaître ma propre valeur et m'accueillir avec bienveillance" },
+  { key:"timidite", pri:false, patterns:[/timidit[eé]/i, /\btimide\b/i, /inhibition/i], suggestion:"Oser prendre ma place dans les échanges et les rencontres" },
+  { key:"perfectionnisme", pri:false, patterns:[/perfectionn/i, /jamais\s+(assez\s+)?bien/i], suggestion:"Apprendre à avancer même quand ce n'est pas parfait" },
+  { key:"dialogue_int", pri:false, patterns:[/dialogue\s+int[eé]rieur/i, /voix\s+(int[eé]rieure|critique)/i, /je\s+me\s+(juge|critique)/i], suggestion:"Apaiser ma voix critique et cultiver une voix bienveillante" },
+  { key:"jugement", pri:false, patterns:[/peur\s+du\s+jugement/i, /regard\s+des\s+autres/i, /qu'?on\s+pense\s+de\s+moi/i], suggestion:"Me sentir libre du regard d'autrui sans me couper d'eux" },
+  { key:"imposteur", pri:false, patterns:[/imposteur/i, /l[eé]gitimit[eé]/i, /pas\s+(à\s+ma\s+place|l[eé]gitime)/i], suggestion:"Reconnaître que ma place est légitime, ici, maintenant" },
+  { key:"procrastination", pri:false, patterns:[/procrastin/i, /je\s+remets\s+à\s+(plus\s+tard|demain)/i, /je\s+repousse/i], suggestion:"Retrouver l'élan d'action sur ce qui compte vraiment" },
+  { key:"concentration", pri:false, patterns:[/concentr/i, /focus/i, /attention\s+(qui\s+)?(s'?[eé]parpille|ne\s+tient\s+pas)/i], suggestion:"Cultiver une attention stable et présente" },
+  { key:"examen", pri:false, patterns:[/examen/i, /concours/i, /baccalaur/i, /\bbac\b/i, /oral/i, /[eé]preuve\s+([eé]crite|orale)/i], suggestion:"Aborder l'épreuve avec calme et toutes mes ressources" },
+  { key:"sport", pri:false, patterns:[/comp[eé]tition/i, /performance\s+sport/i, /pr[eé]paration\s+sport/i, /match\s+important/i], suggestion:"Entrer dans la performance avec confiance et concentration" },
+  { key:"creativite", pri:false, patterns:[/cr[eé]ativit[eé]/i, /bloqu[eé]\s+(cr[eé]ativ|artistique)/i, /page\s+blanche/i], suggestion:"Libérer ma créativité et accueillir les idées qui veulent émerger" },
+  { key:"memoire", pri:false, patterns:[/\bm[eé]moire\b/i, /j'oublie/i, /trous\s+de\s+m[eé]moire/i], suggestion:"Renforcer la clarté et la disponibilité de ma mémoire" },
+  { key:"decision", pri:false, patterns:[/prise\s+de\s+d[eé]cision/i, /choisir/i, /d[eé]cider/i, /indecision/i], suggestion:"Trouver l'écoute intérieure qui me permet de choisir avec confiance" },
+  { key:"tabac", pri:true, patterns:[/tabac/i, /cigarette/i, /\bfum[eé]\b/i, /arr[eê]ter\s+de\s+fumer/i, /vapot/i], suggestion:"Retrouver une liberté intérieure face au tabac" },
+  { key:"alcool", pri:false, patterns:[/alcool/i, /je\s+bois\s+trop/i, /d[eé]pendance.*?alcool/i], suggestion:"Renforcer mon ancrage pour soutenir mon parcours de sobriété" },
+  { key:"cannabis", pri:false, patterns:[/cannabis/i, /\bweed\b/i, /\bjoint\b/i, /shit\b/i, /herbe\b/i], suggestion:"Renforcer mon équilibre intérieur pour accompagner mon sevrage" },
+  { key:"sucre", pri:false, patterns:[/sucre/i, /grignotage\s+compulsif/i, /compulsif/i], suggestion:"Retrouver une relation paisible avec la nourriture" },
+  { key:"ecrans", pri:false, patterns:[/[eé]crans/i, /r[eé]seaux\s+sociaux/i, /smartphone/i, /t[eé]l[eé]phone\s+trop/i], suggestion:"Reprendre la main sur mon temps et mon attention" },
+  { key:"jeux", pri:false, patterns:[/jeux\s+d'argent/i, /addiction.*?jeu/i, /gambling/i, /\bcasino\b/i], suggestion:"Renforcer mon ancrage intérieur dans mon parcours de soin" },
+  { key:"onychophagie", pri:false, patterns:[/onychophagie/i, /ronge\s+(les|mes)\s+ongles/i], suggestion:"Apaiser le geste répétitif et retrouver des mains tranquilles" },
+  { key:"poids", pri:true, patterns:[/perte\s+de\s+poids/i, /perdre\s+du\s+poids/i, /\br[eé]gime\b/i, /maigrir/i], suggestion:"Cultiver une relation apaisée à mon corps et à l'alimentation" },
+  { key:"hyperphagie", pri:false, patterns:[/hyperphagie/i, /manger\s+(mes|ses)\s+[eé]motions/i, /crises\s+alimentaires/i], suggestion:"Reconnaître les émotions sous l'envie de manger et les accueillir autrement" },
+  { key:"grignotage", pri:false, patterns:[/grignotage/i, /grignote/i], suggestion:"Retrouver le plaisir simple de manger en conscience" },
+  { key:"tca", pri:false, patterns:[/\btca\b/i, /trouble.*?alimentaire/i, /anorexie/i, /boulimie/i], suggestion:"Renforcer mon ancrage corporel dans mon parcours de soin" },
+  { key:"douleur_chr", pri:false, patterns:[/douleur[s]?\s+chronique/i, /fibromyalgie/i], suggestion:"Trouver des moments de répit dans ma relation à la douleur" },
+  { key:"migraine", pri:false, patterns:[/migraine/i, /maux\s+de\s+t[eê]te/i, /c[eé]phal[eé]e/i], suggestion:"Détendre les zones de tension qui nourrissent la douleur" },
+  { key:"dos", pri:false, patterns:[/douleur[s]?\s+dorsal/i, /mal\s+(au|de)\s+dos/i, /lombalgie/i, /cervicalgie/i, /lumbago/i], suggestion:"Relâcher les tensions accumulées dans mon dos" },
+  { key:"gastro", pri:false, patterns:[/gastro/i, /colon\s+irritable/i, /intestin\s+irritable/i, /mal\s+au\s+ventre/i, /\bsci\b/i], suggestion:"Apaiser mon ventre quand le stress s'y installe" },
+  { key:"operation", pri:false, patterns:[/pr[eé]paration\s+(op[eé]ration|chirurgie|acte\s+m[eé]dical|intervention)/i, /op[eé]ration\s+(à\s+venir|prochaine)/i], suggestion:"Aborder l'intervention avec calme et confiance" },
+  { key:"asthme", pri:false, patterns:[/asthme/i, /essoufflement/i], suggestion:"Cultiver une respiration ample et apaisée" },
+  { key:"hypertension", pri:false, patterns:[/hypertension/i, /tension\s+(art[eé]rielle|trop\s+haute)/i], suggestion:"Cultiver un état intérieur qui soutient l'équilibre de mon corps" },
+  { key:"avion", pri:false, patterns:[/peur\s+(de\s+l'|d'\s*)avion/i, /aviophobie/i, /avion/i], suggestion:"Aborder le vol avec calme et ressources intérieures" },
+  { key:"claustrophobie", pri:false, patterns:[/claustro/i, /peur\s+(des|de)\s+(espaces\s+ferm|petits\s+espaces)/i, /ascenseur/i], suggestion:"Cultiver mon sentiment de sécurité même en espace fermé" },
+  { key:"dentiste", pri:false, patterns:[/peur\s+du\s+dentiste/i, /phobie\s+(du\s+)?dentiste/i, /\bdentiste\b/i], suggestion:"Aborder la consultation avec calme et coopération avec moi-même" },
+  { key:"deuil", pri:false, patterns:[/\bdeuil\b/i, /perdu\s+(un|une|mon|ma)/i, /d[eé]c[eé]s/i, /s[eé]paration/i, /rupture\b/i], suggestion:"Faire une place à ce qui n'est plus, sans le perdre" },
+  { key:"trauma", pri:false, patterns:[/trauma/i, /\bptsd\b/i, /choc\s+(traumatique|émotionnel)/i], suggestion:"Renforcer mes ressources intérieures dans mon parcours de soin" },
+  { key:"phobie_spec", pri:false, patterns:[/phobie/i, /peur\s+(des|d')\s*(araignée|insecte|serpent|chien)/i], suggestion:"M'approcher progressivement de ce qui m'effraie depuis un endroit sûr" },
+  { key:"malaise", pri:false, patterns:[/mal[\s-]+[eê]tre/i, /vide\s+int[eé]rieur/i, /plus\s+de\s+go[uû]t/i, /sens\s+de\s+la\s+vie/i], suggestion:"Retrouver un sens et un goût à ma vie quotidienne" },
+  { key:"voie", pri:false, patterns:[/trouver\s+(ma|sa)\s+voie/i, /motivation\s+de\s+vie/i, /orientation\s+professionnelle/i, /reconversion/i], suggestion:"Écouter ce qui m'appelle vraiment et oser y aller" },
+  { key:"changement", pri:false, patterns:[/changement\s+(de\s+vie|important)/i, /transition/i, /d[eé]m[eé]nagement/i, /nouveau\s+travail/i], suggestion:"Traverser cette transition avec ancrage et ouverture" },
+  { key:"retraite", pri:false, patterns:[/retraite\b/i, /fin\s+de\s+carri[eè]re/i], suggestion:"Construire cette nouvelle étape avec confiance et envie" },
+  { key:"solitude", pri:false, patterns:[/solitude/i, /isol[eé]/i, /je\s+suis\s+seul/i, /isolement/i], suggestion:"Cultiver une présence à moi-même qui ne dépend plus du regard des autres" },
+  { key:"relations", pri:false, patterns:[/relation[s]?\s+difficile/i, /conflit/i, /famille\s+(difficile|toxique)/i, /couple\s+(difficile|qui)/i], suggestion:"Trouver ma juste place dans cette relation, sans m'oublier ni la rompre" },
+  { key:"communication", pri:false, patterns:[/communication/i, /assertivit[eé]/i, /oser\s+dire/i, /savoir\s+dire\s+non/i], suggestion:"Oser dire ce qui est juste pour moi, calmement" },
+  { key:"accouchement", pri:true, patterns:[/accouchement/i, /grossesse/i, /enceinte/i, /pr[eé]paration\s+(à\s+)?(la\s+)?naissance/i], suggestion:"Aborder l'accouchement avec confiance et un corps préparé" },
+  { key:"baby_blues", pri:false, patterns:[/baby\s+blues/i, /d[eé]pression\s+post\s*partum/i, /apr[eè]s\s+l'accouchement/i], suggestion:"Renforcer ma stabilité intérieure dans cette traversée" },
+  { key:"anxiete_parent", pri:false, patterns:[/anxi[eé]t[eé]\s+parentale/i, /anxi[eé]t[eé]\s+(de\s+)?(m[eè]re|p[eè]re|parent)/i, /peur\s+(pour\s+mon\s+enfant|de\s+mal\s+faire)/i], suggestion:"Cultiver ma confiance en moi en tant que parent" },
+];
+
+function detectTheme(text) {
+  if (!text || typeof text !== "string") return null;
+  for (const t of THEME_SUGGESTIONS) {
+    if (t.patterns.some(rx => rx.test(text))) return t;
+  }
+  return null;
+}
+
 // ─── v2_endo — Helpers profil endométriose ────────────────────────
 // CYCLE_PHASES : libellés des phases de cycle déclarées par l'utilisatrice
 // à l'écran anamnèse 'cycle'. Servent à : (1) piloter la métaphore principale,
@@ -2915,7 +3016,12 @@ function Anamnese({ onNext, personId }) {
               Imaginez que ce problème soit résolu. Que ressentiriez-vous ? Qu'est-ce qui aurait changé pour vous ?
             </p>
             <textarea value={objectif} onChange={e => setObjectif(e.target.value)}
-              placeholder="Retrouver le calme, dormir paisiblement, oser m'exprimer…"
+              placeholder={(() => {
+                // Placeholder dynamique : suggestion basée sur le thème détecté dans le champ problème.
+                // Fallback générique si aucun thème détecté.
+                const t = detectTheme(problem);
+                return t ? "Par exemple : " + t.suggestion : "Retrouver le calme, dormir paisiblement, oser m'exprimer…";
+              })()}
               rows={4} autoFocus
               style={{ width:"100%", padding:"1rem 1.25rem", background:C.panel,
                 border:`1.5px solid ${C.border}`, borderRadius:"12px", fontSize:"15px",
@@ -4732,7 +4838,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   }, [elevenClientKey]);
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
-  const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
+  const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta" | "express"
   // v27 — Mantra personnalise (bonus offert apres la seance, echec silencieux si l'API plante)
   const [mantraData, setMantraData] = useState(null);
   const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
@@ -5003,7 +5109,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         // Variables attendues par template_nc5fh13 : to_email, notification_type, date, script
         // Anonymisation stricte : aucune donnée personnelle (pas de prénom).
         // v27 — Tagging du type de seance : "beta"=decouverte, "complete"=complete
-        const _typeLabel = fullGenMode === "beta" ? "decouverte" : (fullGenMode === "complete" ? "complete" : "non precise");
+        const _typeLabel = fullGenMode === "express" ? "express" : (fullGenMode === "beta" ? "decouverte" : (fullGenMode === "complete" ? "complete" : "non precise"));
         await emailjs.send(CONFIG.EJS_SERVICE_ID, CONFIG.EJS_ADMIN_TEMPLATE_ID, {
           to_email: "odonnat.mickael@gmail.com",
           notification_type: isBilanMode
@@ -5374,6 +5480,12 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Nous recommençons une deuxième fois...",
         "Une dernière fois... pour ancrer cette transformation..."
       ];
+      // v4_express (2026-05-25) — 1 cycle pour la séance Express (~20 min)
+      // Annonce unique, sans recommencement. Le client a déjà fait la complète,
+      // l'express est un format ressource quand la complète est trop longue.
+      const annonces1 = [
+        "Je vous invite maintenant... à commencer ce travail de transformation, " + prenom + "... [PAUSE_2s] Installez-vous... encore plus profondément... [PAUSE_2s]"
+      ];
       const annonces = annonces7;
       // Phase A — Variante 2 : pour profil sensible, cycles 1-2 = version douce, cycles 3-7 = standard.
       // Pour profil stable, tous les cycles = standard (comportement historique).
@@ -5511,7 +5623,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         isProfileSensible: isProfileSensible,
         cloture: cleaner(part3),
         annonces7: annonces7,
-        annonces3: annonces3
+        annonces3: annonces3,
+        annonces1: annonces1  // v4_express : 1 cycle, Express ~20 min
       });
 
       // v27 — APPEL 4 : Mantra personnalise (bonus offert)
@@ -5673,14 +5786,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     lastPositionSaveRef.current = 0;
     setFullGenMode(mode);
     setFullGenPhase("generating");
-    setFullGenMsg(mode === "beta" ? "Préparation de votre séance découverte..." : "Préparation de votre séance complète...");
+    setFullGenMsg(
+      mode === "express" ? "Préparation de votre séance express..."
+      : mode === "beta" ? "Préparation de votre séance découverte..."
+      : "Préparation de votre séance complète..."
+    );
     try {
       // ─── Reconstruction du script selon le mode ──────────────────
       // bêta = 3 cycles (annonces3) ; complète = 7 cycles (annonces7)
       // Phase A : si profil sensible, cycles 1-2 utilisent scenesDouce, cycles 3+ standard
       let activeScript = script;
       if (scriptParts) {
-        const annonces = mode === "beta" ? scriptParts.annonces3 : scriptParts.annonces7;
+        // v4_express : mode "express" → 1 cycle, "beta" → 3 cycles, autre (complete) → 7 cycles
+        const annonces = mode === "express" ? scriptParts.annonces1
+                       : mode === "beta" ? scriptParts.annonces3
+                       : scriptParts.annonces7;
         const sensible = scriptParts.isProfileSensible;
         const douce = scriptParts.scenesDouce;
         const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
@@ -5818,7 +5938,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           r = await safeFetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: key, voiceId: selectedVoice, ...body })
+            body: JSON.stringify({ key: key, voiceId: selectedVoice, sessionMode: fullGenMode || "complete", ...body })
           }, { timeoutMs: 60000, maxRetries: 1 });
         } catch (netErr) {
           throw new Error("Erreur réseau ElevenLabs (" + netErr.message + "). Modèle utilisé : " + effectiveModelId + ". Si v3 actif, vérifier que ta voix supporte v3 et que ton plan a accès au modèle v3.");
@@ -6669,6 +6789,32 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             <div style={{ padding:"0.75rem 1rem", background:C.greenBg,
               borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:"#4ade80" }}>
               ✓ {fullGenMsg}
+            </div>
+          )}
+
+          {/* v4_express (2026-05-25) — Bouton bonus Express, visible UNIQUEMENT après Complète générée.
+              Pas après Découverte. La séance Express est un format ressource ~20 min pour les jours où
+              la complète est trop longue. Réutilise scriptParts (pas de régén Claude pour MVP).
+              Phase 2 : régén Claude avec expressMode pour vraies 20 min + IndexedDB séparée. */}
+          {fullGenPhase === "done" && fullGenMode === "complete" && scriptParts && !isResume && (
+            <div style={{ marginTop:"1rem", marginBottom:"1rem", padding:"1rem 1.25rem",
+              background:"rgba(184,149,90,.08)", borderRadius:"12px",
+              border:"1px solid rgba(184,149,90,.35)" }}>
+              <p style={{ fontSize:"11px", color:"#d4b483", letterSpacing:"1px",
+                textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:"600" }}>
+                ✦ Bonus : Séance Express (~20 min, 1 cycle)
+              </p>
+              <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.65", marginBottom:"0.75rem" }}>
+                Pour les jours où vous avez moins de temps, la séance express condense le travail en 20 minutes — moins approfondie mais plus accessible.
+              </p>
+              <Btn onClick={() => generateFullAudio("express")}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
+                variant="primary" style={{ marginTop:0, fontSize:"13px" }}>
+                Générer la séance express →
+              </Btn>
+              <p style={{ fontSize:"10px", color:C.hint, fontStyle:"italic", marginTop:"0.5rem", lineHeight:"1.55" }}>
+                Avec votre token bêta, l'Express est gratuite après une Complète générée. Sinon, votre clé ElevenLabs sera utilisée.
+              </p>
             </div>
           )}
           {fullGenPhase === "error" && (
