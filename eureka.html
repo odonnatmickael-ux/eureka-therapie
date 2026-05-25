@@ -3978,31 +3978,22 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
         </div>
       </div>
 
-      {/* v4_express (2026-05-25) — 2 boutons de génération, remplacent l'ancien « Choisir ma voix »
-          qui menait à une page séance séparée. Maintenant tout est sur le bilan : choix + lancement. */}
-      <div style={{ display:"grid", gap:"0.75rem", marginTop:"1rem" }}>
-        <Btn onClick={() => {
-            try { localStorage.removeItem(PROFIL_KEY); } catch {}
-            onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice, fullGenMode: "complete" });
-          }}
-          disabled={!canContinue || !selectedVoice}
-          variant="gold">
-          ✦ Générer la séance complète →
-        </Btn>
-        <Btn onClick={() => {
-            try { localStorage.removeItem(PROFIL_KEY); } catch {}
-            onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice, fullGenMode: "beta" });
-          }}
-          disabled={!canContinue || !selectedVoice}
-          variant="primary">
-          ◈ Générer la séance découverte →
-        </Btn>
-        {!selectedVoice && canContinue && (
-          <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", fontStyle:"italic", marginTop:"4px" }}>
-            ↑ Choisissez d'abord une voix pour activer les boutons ↓
-          </p>
-        )}
-      </div>
+      {/* v4_express (2026-05-25) — Bilan se termine par un seul « Continuer → ».
+          Les boutons de génération (Complète/Découverte) sont sur la page suivante,
+          où le client saisit sa clé ElevenLabs. Logique : clé + génération sur la même page. */}
+      <Btn onClick={() => {
+          try { localStorage.removeItem(PROFIL_KEY); } catch {}
+          onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice });
+        }}
+        disabled={!canContinue || !selectedVoice}
+        variant="gold" style={{ marginTop:"1rem" }}>
+        Continuer →
+      </Btn>
+      {!selectedVoice && canContinue && (
+        <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", fontStyle:"italic", marginTop:"0.5rem" }}>
+          ↑ Choisissez d'abord une voix pour continuer
+        </p>
+      )}
     </Card>
   );
 }
@@ -5283,16 +5274,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     }
   }, []);
 
-  // v4_express (2026-05-25) — Auto-trigger de generateFullAudio quand :
-  // (a) le script est prêt (phase === "ready")
-  // (b) un mode a été choisi sur le bilan (requestedMode défini)
-  // (c) on n'a pas déjà lancé une génération (fullGenPhase pas en "generating" ni "done")
-  // → enchaîne automatiquement script gen → audio gen, le client a UN seul écran de chargement.
-  useEffect(() => {
-    if (phase === "ready" && requestedMode && !fullGenPhase && !isResume && selectedVoice && elevenClientKey.trim()) {
-      generateFullAudio(requestedMode);
-    }
-  }, [phase, requestedMode, fullGenPhase, selectedVoice, elevenClientKey]);
+  // v4_express (2026-05-25) — Auto-trigger retiré : le client clique le bouton Générer
+  // explicitement sur la page séance (avec sa clé ElevenLabs déjà saisie).
 
   // WakeLock — empêche l'écran de se verrouiller pendant la lecture audio.
   // Sans ça, sur Samsung A54 (et autres Android), l'OS suspend l'app au lock
@@ -6955,8 +6938,8 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           )}
 
           {/* v4_express (2026-05-25) — Grille des voix MASQUÉE car déjà choisie sur le bilan.
-              Code conservé en condition pour fallback (si requestedMode pas défini, ancien flow restauré). */}
-          {fullGenPhase !== "done" && !requestedMode && (
+              On garde le code mais on cache toujours (false) — il reste comme fallback du SeancePlayer historique. */}
+          {false && fullGenPhase !== "done" && (
             <div style={{ marginBottom:"1rem", padding:"1rem", background:C.panel,
               borderRadius:"12px", border:`1.5px solid ${selectedVoice ? C.gold : C.border}` }}>
               <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
@@ -7008,14 +6991,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             </div>
           )}
 
-          {/* v4_express (2026-05-25) — Boutons Complète/Découverte MASQUÉS quand la génération
-              a été déclenchée depuis le bilan (requestedMode défini). Visible en fallback uniquement. */}
-          {!requestedMode && (
+          {/* v4_express (2026-05-25) — Boutons Complète/Découverte avec descriptions thérapeutiques
+              + technique (plan ElevenLabs). Visible toujours (le client choisit ici, après avoir saisi sa clé). */}
           <div style={{ display:"grid", gap:"0.75rem" }}>
             <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
               border:"1px solid rgba(184,149,90,.3)" }}>
               <p style={{ fontSize:"11px", color:"#d4b483", marginBottom:"6px", fontWeight:"600" }}>
-                ✦ Séance EUREKA Complète — Protocole original 7 cycles
+                ✦ Séance EUREKA Complète — 7 cycles
+              </p>
+              <p style={{ fontSize:"11.5px", color:C.cream, marginBottom:"6px", lineHeight:"1.55", fontStyle:"italic" }}>
+                Le format thérapeutique de référence. Sept cycles d'ancrage par répétition (engrainement Silva) pour un travail en profondeur.
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
                 Plan Starter ElevenLabs recommandé (6 $/mois — 30 000 crédits ≈ 1-2 séances complètes/mois)
@@ -7029,7 +7014,10 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             <div style={{ background:"rgba(42,138,143,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
               border:"1px solid rgba(42,138,143,.3)" }}>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"6px", fontWeight:"600" }}>
-                ◈ Séance Découverte — Version bêta 3 cycles
+                ◈ Séance Découverte — 3 cycles
+              </p>
+              <p style={{ fontSize:"11.5px", color:C.cream, marginBottom:"6px", lineHeight:"1.55", fontStyle:"italic" }}>
+                Format intermédiaire. Trois cycles d'ancrage — seuil minimal pour qu'un travail réel s'installe, plus court que la complète.
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
                 Plan gratuit ElevenLabs suffit (10 000 crédits/mois ≈ 1 découverte par mois)
@@ -7041,7 +7029,6 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               </Btn>
             </div>
           </div>
-          )}
         </div>
         )}
 
@@ -7713,11 +7700,11 @@ function App() {
     track("profil_completed", {
       music: prefs.musicChoice || "?",
       belief: prefs.beliefSystem || "?",
-      voice: prefs.selectedVoice || "?",
-      mode: prefs.fullGenMode || "?"
+      voice: prefs.selectedVoice || "?"
     });
-    // v4_express (2026-05-25) — prefs contient désormais aussi selectedVoice + fullGenMode
-    // (choix faits sur le bilan élargi). SeancePlayer lit fullGenMode et auto-démarre la gén.
+    // v4_express (2026-05-25) — prefs contient relaxDir + beliefSystem + musicChoice + selectedVoice
+    // (choix faits sur le bilan élargi). Le client clique ensuite Générer Complète/Découverte
+    // sur la page séance (où il saisit sa clé ElevenLabs).
     updateUser({ ...prefs, seanceNum: 1 });
     setStep("seance");
   };
