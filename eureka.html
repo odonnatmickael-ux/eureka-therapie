@@ -2899,7 +2899,32 @@ function Anamnese({ onNext, personId }) {
 
         {/* ─── Écran 0 : Prénom ─── */}
         {screen === 0 && (
-          <div style={{ animation:"fadeUp .35s ease" }}>
+          <div style={{ animation:"fadeUp .35s ease", position:"relative" }}>
+            {/* v4_express (2026-05-25) — bouton « Recommencer » accessible dès le premier écran.
+                Permet à un client qui s'est trompé de mode (solo/couple) de repartir proprement
+                sans passer par DevTools ni Mentions légales. Efface tout localStorage EUREKA. */}
+            <button type="button"
+              onClick={() => {
+                if (!window.confirm("Recommencer depuis le début ? Vos saisies de ce parcours seront effacées.")) return;
+                try {
+                  // Clear toutes les clés Anamnèse/Quiz solo + couple
+                  const keys = ["eureka_anamnese_state",
+                                "eureka_anamnese_p1_state", "eureka_anamnese_p2_state",
+                                "eureka_quiz_bigfive", "eureka_quiz_bigfive_p1", "eureka_quiz_bigfive_p2",
+                                "eureka_quiz_vakog", "eureka_quiz_vakog_p1", "eureka_quiz_vakog_p2"];
+                  keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+                } catch {}
+                window.location.reload();
+              }}
+              style={{ position:"absolute", top:"-8px", right:0, background:"transparent",
+                border:`1px solid ${C.border}`, color:C.muted, fontSize:"11px",
+                padding:"4px 10px", borderRadius:"8px", cursor:"pointer",
+                fontFamily:"'Raleway',sans-serif", letterSpacing:"0.5px",
+                transition:"all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = C.gold; e.currentTarget.style.borderColor = C.gold; }}
+              onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.border; }}>
+              ↺ Recommencer
+            </button>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>Comment vous appelez-vous ?</h2>
             <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
@@ -7531,9 +7556,9 @@ function App() {
         person2: { ...p2, prenom: p2Prenom },
       };
     });
-    // v_couple Session 13 — Passage par genre-voix-couple AVANT seance-couple
-    // (aligne sur le pattern solo : Profil → GenreVoix → Séance avec démo+4 voix).
-    setStep("genre-voix-couple");
+    // v4_express (2026-05-25) — saute genre-voix-couple (démo imparfaite, code mort).
+    // Va direct à la séance ; le couple choisira sa voix dans la grille des 4 voix.
+    setStep("seance-couple");
   };
 
   // v_couple Session 13 — handler du choix de voix pour le couple
@@ -7581,8 +7606,11 @@ function App() {
       belief: prefs.beliefSystem || "?"
     });
     updateUser({ ...prefs, seanceNum: 1 });
-    // v26bis — nouveau flux : Profil → GenreVoix (au lieu de Séance directement)
-    setStep("genre-voix");
+    // v4_express (2026-05-25) — saute GenreVoix (démo Bella/Marcel imparfaite,
+    // mise en code mort en attendant refonte). Va direct à la séance ; le client
+    // choisira sa voix dans la grille des 4 voix de SeancePlayer.
+    // Code GenreVoix conservé pour réactivation future (cf. handleGenreVoixNext).
+    setStep("seance");
   };
 
   // v26bis — handler pour l'écran GenreVoix (choix Femme/Homme pour l'extrait découverte)
