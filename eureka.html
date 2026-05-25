@@ -3987,7 +3987,7 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
           }}
           disabled={!canContinue || !selectedVoice}
           variant="gold">
-          ✦ Générer la séance complète (1h08) →
+          ✦ Générer la séance complète →
         </Btn>
         <Btn onClick={() => {
             try { localStorage.removeItem(PROFIL_KEY); } catch {}
@@ -3995,7 +3995,7 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
           }}
           disabled={!canContinue || !selectedVoice}
           variant="primary">
-          ◈ Générer la séance découverte (~45 min) →
+          ◈ Générer la séance découverte →
         </Btn>
         {!selectedVoice && canContinue && (
           <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", fontStyle:"italic", marginTop:"4px" }}>
