@@ -1303,7 +1303,7 @@ function ReminderPanel() {
 // ══════════════════════════════════════════════════════════════════
 function TutorielModal({ onClose }) {
   const steps = [
-    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five (BFI-10, validé scientifiquement) et au quiz VAKOG (sensorialité). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
+    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five et au quiz VAKOG (canal sensoriel). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
     { icon:"🎯", title:"2. Votre situation", desc:"Décrivez ce que vous traversez et votre objectif. Plus vous êtes précis, plus la séance sera puissante et personnalisée." },
     { icon:"🎙️", title:"3. Votre environnement", desc:"Choisissez votre voix, votre ambiance sonore et votre direction de relaxation. Tout est adapté à votre profil." },
     { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, asseyez-vous confortablement et laissez la transformation opérer." },
@@ -2988,10 +2988,10 @@ function Anamnese({ onNext, personId }) {
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
-              {prenom ? `À quelle adresse vous envoyer votre séance, ${prenom} ?` : "À quelle adresse vous envoyer votre séance ?"}
+              {prenom ? `Votre adresse email, ${prenom} ?` : "Votre adresse email ?"}
             </h2>
             <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
-              Vous recevrez un récapitulatif de votre séance par email. Pas de spam — juste votre séance.
+              Identifiant unique pour suivre vos séances. Aucun envoi de spam.
             </p>
             <input type="email" value={email}
               onChange={e => { setEmail(e.target.value); setET(true); }}
