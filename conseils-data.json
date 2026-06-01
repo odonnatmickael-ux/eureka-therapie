@@ -1,20 +1,21 @@
 {
   "version": 1,
-  "currentMonth": "2026-05",
+  "currentMonth": "2026-06",
   "currentConseil": {
-    "title": "Quand l'inquiétude s'installe sans raison apparente",
-    "theme": "anxiete",
-    "themeLabel": "Calmer l'anxiété du quotidien",
+    "title": "Accueillir le changement de saison sans se forcer",
+    "theme": "saison_ete",
+    "themeLabel": "Préparer son corps et son esprit à l'été",
     "body": [
-      "Il y a des journées où rien de particulier ne s'est passé, et pourtant quelque chose en vous ne se pose pas. Une légère tension dans la poitrine, des pensées qui tournent en boucle, une vigilance constante que vous ne savez pas vraiment expliquer. Vous fonctionnez, vous assurez, mais à l'intérieur, c'est comme si le volume était monté trop fort sans que vous ayez touché au bouton.",
-      "Ce que vous ressentez a une logique. Votre système nerveux, sollicité en permanence par les exigences du quotidien, peut rester en état d'alerte même lorsque le danger réel est absent — un peu comme un moteur qui continue de tourner après l'arrêt du contact. Ce n'est pas une faiblesse, c'est une réponse du corps qui a appris à anticiper. Et ce qui a été appris peut, progressivement, être apaisé.",
-      "Posez les deux pieds à plat sur le sol, là où vous êtes. Inspirez lentement par le nez pendant 4 secondes, puis expirez par la bouche pendant 6 secondes, comme si vous souffliez doucement sur une flamme sans l'éteindre. Répétez trois fois, en laissant chaque expiration être un peu plus relâchée que la précédente. Ce simple décalage entre inspiration et expiration envoie au corps un signal de sécurité.",
-      "Si vous souhaitez aller plus loin, une séance EUREKA peut vous accompagner avec une pratique audio construite autour de ce que vous vivez spécifiquement. Pour l'instant, posez simplement la main sur votre poitrine un instant — et laissez-vous exister, là, sans rien avoir à résoudre."
+      "L'été approche, et avec lui une certaine injonction à aller mieux, à profiter, à rayonner. Pourtant vous sentez peut-être un décalage entre ce que la saison semble exiger de vous et ce que vous vivez réellement : une fatigue persistante, un corps qui tarde à suivre, une énergie qui ne répond pas à l'appel. Ce fossé, silencieux mais réel, peut lui seul peser.",
+      "Ce vécu est tout à fait compréhensible. Votre corps et votre esprit fonctionnent selon leurs propres rythmes, qui ne coïncident pas toujours avec le calendrier. Les transitions saisonnières mobilisent des ressources — régulation du sommeil, adaptation à la lumière, ajustement du tonus — et cette mobilisation prend du temps. Ce n'est pas un manque de volonté, c'est simplement un processus qui demande à être accompagné.",
+      "Essayez ceci, là où vous êtes : posez les deux pieds à plat sur le sol. Inspirez lentement par le nez pendant 4 secondes en imaginant que l'air descend jusqu'au ventre. Retenez doucement 2 secondes, puis expirez par la bouche pendant 6 secondes, comme si vous relâchiez une charge que vous portez depuis le matin. Répétez trois fois. Ce simple geste invite le corps à quitter son état de veille tendue et à retrouver un appui.",
+      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment. Quelle que soit la façon dont cet été s'ouvre pour vous, vous avez le droit de l'aborder à votre propre cadence."
     ],
-    "facebookPost": "Il y a des jours où tout semble aller... et pourtant quelque chose en vous ne se pose pas vraiment. Une tension diffuse, des pensées qui ne s'arrêtent pas, une sorte de bruit de fond intérieur que vous ne savez pas comment éteindre.\n\nCe vécu est plus courant qu'on ne le dit. Et surtout, il est légitime.\n\nDans notre Conseil du mois, Mickael vous propose un regard bienveillant sur cette expérience — sans étiquette, sans discours trop rapide — ainsi qu'un exercice de respiration simple que vous pouvez essayer maintenant, en moins d'une minute, là où vous êtes. 🌿\n\nPas de grande promesse. Juste un geste concret, et quelques mots pour vous sentir un peu moins seul avec ce que vous portez.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-05-20T19:59:10.717Z"
+    "facebookPost": "L'été arrive, et avec lui cette impression que tout le monde devrait être au mieux de sa forme. Mais si ce n'est pas tout à fait votre cas en ce moment, vous n'êtes pas seul.\n\nLes transitions de saison demandent quelque chose au corps et à l'esprit. Pas besoin de forcer ni de faire semblant. Ce mois-ci, notre conseil s'adresse à celles et ceux qui aimeraient aborder l'été plus en douceur — sans injonction, sans recette miracle.\n\nVous y trouverez une explication simple de ce que vous ressentez peut-être, et un seul geste concret à essayer, là où vous êtes, en moins d'une minute. Rien de plus. 🌿\n\nParce qu'accompagner le changement, c'est d'abord apprendre à s'écouter.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-06-01T11:45:23.094Z"
   },
   "recentThemes": [
+    "saison_ete",
     "anxiete",
     "le_geste_des_epaules",
     "la_lumiere_du_matin",
