@@ -987,7 +987,30 @@ function buildSystemPrompt(data) {
       "    « TU ES cet homme accompli » → « TU VIS cette plénitude », « cet aboutissement EST en toi »\n" +
       "INTERDICTION ABSOLUE : aucun accord genré explicite (« prêt », « prête », « accompli », « accomplie », « cet homme », « cette femme ») appliqué à la personne. Si un participe doit absolument s'accorder, il s'accorde avec un nom neutre/objet, jamais avec la personne.\n";
   }
-  return baseSysPrompt + accordDirective + endoSuffix + visionSuffix;
+  // v4_express (2026-05-25) — directive ÉCRASE-TOUT pour la séance Express
+  // Activée uniquement quand data.expressMode === true (sinon string vide → aucun effet).
+  // Applique les 3 allègements définis dans la conv claude.ai (24 mai 2026) :
+  //   1) Relaxation corporelle = 5 zones, 2 phrases max chacune
+  //   2) Scène 1 (hypothèses peut-être) = 1 seule au lieu de 4
+  //   3) Cycles = 1 seul cycle complet, pas de répétition
+  // Toute la posture, le ton, la respiration, la désophronisation restent identiques.
+  let expressOverride = "";
+  if (data && data.expressMode === true) {
+    const _archeKey = (data && data.archetypeKey) || "compagnon";
+    expressOverride = "\n\n=== MODE EXPRESS — OVERRIDE FINAL (PRIORITÉ ABSOLUE SUR LES INSTRUCTIONS PRÉCÉDENTES DE LONGUEUR) ===\n" +
+      "Tu génères une SÉANCE EXPRESS d'environ 20 minutes (vs ~1h08 pour la complète). Applique ces 3 allègements OBLIGATOIRES sans toucher au reste de la posture sophrologique :\n\n" +
+      "1. RELAXATION CORPORELLE ALLÉGÉE — au lieu de la relaxation détaillée doigt par doigt / orteil par orteil (groupes complets), utilise UNIQUEMENT ces 5 grandes zones, 2 phrases MAX par zone :\n" +
+      "   • Tête (front, mâchoire, paupières, langue détendus)\n" +
+      "   • Cou (nuque qui se relâche, épaules qui s'abaissent)\n" +
+      "   • Bras (depuis les épaules jusqu'aux doigts, ouverts et lourds)\n" +
+      "   • Tronc (dos, poitrine, ventre, organes en paix)\n" +
+      "   • Jambes (depuis le bassin jusqu'aux pieds, posés)\n" +
+      "   Format : 2 phrases courtes par zone, [PAUSE_3s] après chaque zone, puis [PAUSE_5s] à la fin de la 5e zone pour annoncer le corps entièrement détendu. Ne PAS énumérer les doigts ni les orteils.\n\n" +
+      "2. SCÈNE 1 — HYPOTHÈSE UNIQUE — dans le bloc METAPHORES (entre ===METAPHORES_START=== et ===METAPHORES_END===), génère UNE SEULE hypothèse « peut-être que... », la plus universelle pour l'archétype " + _archeKey + ". Pas 4 hypothèses, UNE SEULE. Plus longue et plus profonde que les hypothèses de la complète (puisqu'elle est seule). Termine quand même par : 'Laisse résonner ce qui résonne... et laisse glisser doucement ce qui n'est pas encore pour toi... [PAUSE_3s]'\n\n" +
+      "3. CYCLES — UN SEUL CYCLE — tu génères les Scènes 1, 2, 3 UNE SEULE FOIS. Pas de répétition, pas de « Nous recommençons », pas de « Une deuxième fois ». C'est une séance unique d'introduction/d'entretien. L'ancrage viendra par la pratique répétée (revenir écouter à nouveau), pas par les cycles internes.\n\n" +
+      "TOUT LE RESTE IDENTIQUE À LA COMPLÈTE : accueil, briefing respiratoire, descente 10→1, mantra final, désophronisation/réveil. Mêmes règles d'accord grammatical, mêmes interdits, même posture déontologique. Seulement les 3 points ci-dessus changent.\n";
+  }
+  return baseSysPrompt + accordDirective + endoSuffix + visionSuffix + expressOverride;
 }
 // ══════════════════════════════════════════════════════════════════
 // COULEURS & STYLES
@@ -1280,7 +1303,7 @@ function ReminderPanel() {
 // ══════════════════════════════════════════════════════════════════
 function TutorielModal({ onClose }) {
   const steps = [
-    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five (BFI-10, validé scientifiquement) et au quiz VAKOG (sensorialité). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
+    { icon:"🧬", title:"1. Votre profil unique", desc:"Répondez au questionnaire Big Five et au quiz VAKOG (canal sensoriel). Ces 18 questions permettent à l'IA de comprendre qui vous êtes vraiment." },
     { icon:"🎯", title:"2. Votre situation", desc:"Décrivez ce que vous traversez et votre objectif. Plus vous êtes précis, plus la séance sera puissante et personnalisée." },
     { icon:"🎙️", title:"3. Votre environnement", desc:"Choisissez votre voix, votre ambiance sonore et votre direction de relaxation. Tout est adapté à votre profil." },
     { icon:"🌊", title:"4. Votre séance", desc:"L'IA génère un script unique puis une voix sophrologique. Mettez un casque, asseyez-vous confortablement et laissez la transformation opérer." },
@@ -2876,7 +2899,32 @@ function Anamnese({ onNext, personId }) {
 
         {/* ─── Écran 0 : Prénom ─── */}
         {screen === 0 && (
-          <div style={{ animation:"fadeUp .35s ease" }}>
+          <div style={{ animation:"fadeUp .35s ease", position:"relative" }}>
+            {/* v4_express (2026-05-25) — bouton « Recommencer » accessible dès le premier écran.
+                Permet à un client qui s'est trompé de mode (solo/couple) de repartir proprement
+                sans passer par DevTools ni Mentions légales. Efface tout localStorage EUREKA. */}
+            <button type="button"
+              onClick={() => {
+                if (!window.confirm("Recommencer depuis le début ? Vos saisies de ce parcours seront effacées.")) return;
+                try {
+                  // Clear toutes les clés Anamnèse/Quiz solo + couple
+                  const keys = ["eureka_anamnese_state",
+                                "eureka_anamnese_p1_state", "eureka_anamnese_p2_state",
+                                "eureka_quiz_bigfive", "eureka_quiz_bigfive_p1", "eureka_quiz_bigfive_p2",
+                                "eureka_quiz_vakog", "eureka_quiz_vakog_p1", "eureka_quiz_vakog_p2"];
+                  keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+                } catch {}
+                window.location.reload();
+              }}
+              style={{ position:"absolute", top:"-8px", right:0, background:"transparent",
+                border:`1px solid ${C.border}`, color:C.muted, fontSize:"11px",
+                padding:"4px 10px", borderRadius:"8px", cursor:"pointer",
+                fontFamily:"'Raleway',sans-serif", letterSpacing:"0.5px",
+                transition:"all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = C.gold; e.currentTarget.style.borderColor = C.gold; }}
+              onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.border; }}>
+              ↺ Recommencer
+            </button>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>Comment vous appelez-vous ?</h2>
             <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
@@ -2940,10 +2988,10 @@ function Anamnese({ onNext, personId }) {
           <div style={{ animation:"fadeUp .35s ease" }}>
             <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"24px", color:C.cream,
               fontWeight:"400", marginBottom:"0.5rem" }}>
-              {prenom ? `À quelle adresse vous envoyer votre séance, ${prenom} ?` : "À quelle adresse vous envoyer votre séance ?"}
+              {prenom ? `Votre adresse email, ${prenom} ?` : "Votre adresse email ?"}
             </h2>
             <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75", marginBottom:"1.5rem" }}>
-              Vous recevrez un récapitulatif de votre séance par email. Pas de spam — juste votre séance.
+              Identifiant unique pour suivre vos séances. Aucun envoi de spam.
             </p>
             <input type="email" value={email}
               onChange={e => { setEmail(e.target.value); setET(true); }}
@@ -3638,16 +3686,52 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
   const [relaxDir, setRelaxDir] = useState(saved?.relaxDir || "");
   const [beliefSystem, setBeliefSystem] = useState(saved?.beliefSystem || "");
   const [musicChoice, setMusicChoice] = useState(saved?.musicChoice || "");
-  // v26bis — selectedVoice retiré de ProfilResult (consigne Mickaël 2026-05-08).
-  // Le choix de voix se fait maintenant APRÈS la séance dans VoiceSelection.
-  // Persiste à chaque changement de choix
+  // v4_express (2026-05-25) — selectedVoice réintégré dans ProfilResult (consigne Mickaël 2026-05-25 :
+  // fusionner choix voix avec autres choix avant la séance, plus de page intermédiaire).
+  const [selectedVoice, setSelectedVoice] = useState(saved?.selectedVoice || "");
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const previewAudioRef = useRef(null);
+  const VOICE_PREVIEW_NAMES = {
+    "4RZ84U1b4WCqpu57LvIq": "bella",
+    "YV28ox2c5Cuh5rim0LrW": "marcel",
+    "cQVn2FWawJsxa2z9X3l1": "valentin",
+    "19cV422MaCP4oU6N8AFm": "mickael"
+  };
+  const playVoicePreview = async (voice) => {
+    if (playingPreview === voice.id) {
+      previewAudioRef.current?.pause();
+      setPlayingPreview(null);
+      return;
+    }
+    setPlayingPreview(voice.id + "_loading");
+    try {
+      const voiceName = VOICE_PREVIEW_NAMES[voice.id] || "bella";
+      const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/preview_" + voiceName + ".mp3";
+      const r = await fetch(blobUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        if (previewAudioRef.current) {
+          previewAudioRef.current.pause();
+          previewAudioRef.current.src = url;
+          previewAudioRef.current.play();
+          setPlayingPreview(voice.id);
+        }
+      } else {
+        setPlayingPreview(null);
+      }
+    } catch(e) {
+      setPlayingPreview(null);
+    }
+  };
+  // Persiste à chaque changement de choix (incl. selectedVoice)
   useEffect(() => {
     try {
       localStorage.setItem(PROFIL_KEY, JSON.stringify({
-        relaxDir, beliefSystem, musicChoice
+        relaxDir, beliefSystem, musicChoice, selectedVoice
       }));
     } catch {}
-  }, [relaxDir, beliefSystem, musicChoice]);
+  }, [relaxDir, beliefSystem, musicChoice, selectedVoice]);
 
   const vakog = vakogResult.dominant;
   // Archétype dérivé des scores Big Five (Pèlerin / Bâtisseur / Compagnon / Voyageur)
@@ -3848,15 +3932,68 @@ function ProfilResult({ prenom, bigFiveScores, vakogResult, problem, onNext }) {
         )}
       </div>
 
+      {/* v4_express (2026-05-25) — Grille des 4 voix avec preview audio.
+          Remplace l'ancien bouton « Choisir ma voix » qui redirigeait vers une page séparée. */}
+      <div style={{ marginTop:"1.5rem", padding:"1rem", background:C.panel,
+        borderRadius:"12px", border:`1.5px solid ${selectedVoice ? C.gold : C.border}` }}>
+        <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
+          textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:"600" }}>
+          Étape — Choix de la voix
+        </p>
+        <p style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"18px",
+          color:C.cream, fontWeight:"400", marginBottom:"0.5rem" }}>
+          Quelle voix pour votre séance ?
+        </p>
+        <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6",
+          marginBottom:"0.875rem", fontStyle:"italic" }}>
+          Écoutez un extrait court de chaque voix puis cliquez celle qui vous parle.
+        </p>
+        <audio ref={previewAudioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
+        <div style={{ display:"grid", gap:"0.5rem" }}>
+          {VOICES.map(v => (
+            <div key={v.id}
+              style={{ padding:"0.75rem 0.875rem", background: selectedVoice===v.id ? `rgba(184,149,90,.12)` : C.bg,
+                border:`1.5px solid ${selectedVoice===v.id ? C.gold : C.border}`, borderRadius:"10px",
+                display:"flex", gap:"10px", alignItems:"center", cursor:"pointer",
+                transition:"all .2s" }} onClick={() => setSelectedVoice(v.id)}>
+              <div style={{ width:"32px", height:"32px", borderRadius:"50%",
+                background: v.gender==="M" ? `rgba(42,138,143,.3)` : `rgba(184,149,90,.3)`,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:"15px", flexShrink:0 }}>
+                {v.gender==="M" ? "👨" : "👩"}
+              </div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:"12px", color:C.cream, fontWeight:"500" }}>{v.name}</p>
+                <p style={{ fontSize:"10px", color:C.muted }}>{v.desc}</p>
+              </div>
+              <button onClick={e => { e.stopPropagation(); playVoicePreview(v); }}
+                style={{ padding:"5px 12px", background:"transparent",
+                  border:`1px solid ${playingPreview===v.id+"_loading" ? C.gold : C.border}`,
+                  borderRadius:"7px", fontSize:"10px", color:C.muted, cursor:"pointer",
+                  flexShrink:0, fontFamily:"'Raleway',sans-serif" }}>
+                {playingPreview===v.id+"_loading" ? "⏳" : playingPreview===v.id ? "⏹ Stop" : "▶ Écouter"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* v4_express (2026-05-25) — Bilan se termine par un seul « Continuer → ».
+          Les boutons de génération (Complète/Découverte) sont sur la page suivante,
+          où le client saisit sa clé ElevenLabs. Logique : clé + génération sur la même page. */}
       <Btn onClick={() => {
-          // Nettoyage : choix validés, on libère le brouillon localStorage
           try { localStorage.removeItem(PROFIL_KEY); } catch {}
-          // v26bis — selectedVoice n'est plus passé d'ici ; il sera sélectionné après la séance
-          onNext({ relaxDir, beliefSystem, musicChoice });
+          onNext({ relaxDir, beliefSystem, musicChoice, selectedVoice });
         }}
-        disabled={!canContinue} variant="gold">
-        Choisir ma voix ✦
+        disabled={!canContinue || !selectedVoice}
+        variant="gold" style={{ marginTop:"1rem" }}>
+        Continuer →
       </Btn>
+      {!selectedVoice && canContinue && (
+        <p style={{ fontSize:"11px", color:C.hint, textAlign:"center", fontStyle:"italic", marginTop:"0.5rem" }}>
+          ↑ Choisissez d'abord une voix pour continuer
+        </p>
+      )}
     </Card>
   );
 }
@@ -4746,7 +4883,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     // v2_visionMatinee — projection silvienne du futur résolu (Option E)
     visionMatinee,
     // 2026-05-23 — accord grammatical (M/F/N) saisi à l'écran prénom
-    accord
+    accord,
+    // v4_express (2026-05-25) — mode choisi sur le bilan (Complète/Découverte)
+    fullGenMode: requestedMode
   } = userData;
   const [selectedVoice, setSelectedVoice] = useState(initialSelectedVoice || "");
   // States pour la preview audio dans la grille VoiceSelection (4 boutons ▶ Écouter)
@@ -4815,7 +4954,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   }, [elevenClientKey]);
   const [fullGenPhase, setFullGenPhase] = useState(null);
   const [fullGenMsg, setFullGenMsg] = useState("");
-  const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta"
+  const [fullGenMode, setFullGenMode] = useState(null); // "complete" | "beta" | "express"
   // v27 — Mantra personnalise (bonus offert apres la seance, echec silencieux si l'API plante)
   const [mantraData, setMantraData] = useState(null);
   const [scriptParts, setScriptParts] = useState(null); // { intro, scenes, cloture, annonces7, annonces3 }
@@ -5134,6 +5273,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       generateSession();
     }
   }, []);
+
+  // v4_express (2026-05-25) — Auto-trigger retiré : le client clique le bouton Générer
+  // explicitement sur la page séance (avec sa clé ElevenLabs déjà saisie).
 
   // WakeLock — empêche l'écran de se verrouiller pendant la lecture audio.
   // Sans ça, sur Samsung A54 (et autres Android), l'OS suspend l'app au lock
@@ -5457,7 +5599,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         "Nous recommençons une deuxième fois...",
         "Une dernière fois... pour ancrer cette transformation..."
       ];
-      // v5_express (2026-06-06) — Séance Express : 1 SEUL cycle (~20 min), pas de répétition.
+      // v4_express (2026-05-25) — 1 cycle pour la séance Express (~20 min)
+      // Annonce unique, sans recommencement. Le client a déjà fait la complète,
+      // l'express est un format ressource quand la complète est trop longue.
       const annonces1 = [
         "Je vous invite maintenant... à commencer ce travail de transformation, " + prenom + "... [PAUSE_2s] Installez-vous... encore plus profondément... [PAUSE_2s]"
       ];
@@ -5599,7 +5743,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         cloture: cleaner(part3),
         annonces7: annonces7,
         annonces3: annonces3,
-        annonces1: annonces1
+        annonces1: annonces1  // v4_express : 1 cycle, Express ~20 min
       });
 
       // v27 — APPEL 4 : Mantra personnalise (bonus offert)
@@ -5680,17 +5824,16 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
         setMantraData(null);
       }
 
-      // AUDIO — chargement depuis Vercel Blob selon archétype Big Five
-      // Les 4 archétypes Big Five mappent sur les 4 blocs audio existants
-      // Format URL Blob : demo_<voix>_<archetype>_<canal>.mp3
+      // v4_express (2026-05-25) — chargement de l'échantillon DÉSACTIVÉ.
+      // L'échantillon découverte audio n'est plus parfait → on saute son chargement
+      // jusqu'à refonte. Code original conservé ci-dessous (commenté) pour réactivation.
+      // Le client ne voit plus le player « Échantillon type » : il va direct sur le
+      // choix de voix + boutons « Générer la séance complète/découverte ».
+      /* AUDIO ÉCHANTILLON — CODE MORT V4_EXPRESS
       setLoadMsg("Chargement de votre audio personnalisé...");
       const canalMap = { V:"visuel", A:"auditif", K:"kinesth", O:"kinesth", G:"kinesth", R:"rationnel" };
       const canal = canalMap[vakog] || "visuel";
       const bloc = archetype.bloc || "pelerin";
-      // v26bis — la voix de l'extrait découverte est déterminée par genderPref
-      // (choix Femme/Homme fait à l'étape GenreVoix), PAS par selectedVoice
-      // (qui n'est défini qu'après VoiceSelection en bas de la page séance).
-      // Fallback historique : si selectedVoice est déjà défini (cas resume séance), on l'utilise.
       const VOICE_NAMES = {
         "4RZ84U1b4WCqpu57LvIq": "bella",
         "YV28ox2c5Cuh5rim0LrW": "marcel",
@@ -5700,10 +5843,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const voiceName = selectedVoice
         ? (VOICE_NAMES[selectedVoice] || "bella")
         : (genderPref === "M" ? "marcel" : "bella");
-      // BÊTA : ?t=timestamp force le navigateur à re-télécharger l'échantillon Blob
-      // (au cas où on remplace le MP3 pendant le développement). À retirer quand stable.
       const blobUrl = "https://hnuokd1cvass8ly7.public.blob.vercel-storage.com/demo_" + voiceName + "_" + bloc + "_" + canal + ".mp3?t=" + Date.now();
       setAudioUrl(blobUrl);
+      FIN CODE MORT */
 
       // EMAIL — ANONYMISATION TOTALE (RGPD)
       // On n'envoie AUCUNE donnée perso à EmailJS : pas de prénom, pas de problème,
@@ -5761,14 +5903,21 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     lastPositionSaveRef.current = 0;
     setFullGenMode(mode);
     setFullGenPhase("generating");
-    setFullGenMsg(mode === "express" ? "Préparation de votre séance express..." : (mode === "beta" ? "Préparation de votre séance découverte..." : "Préparation de votre séance complète..."));
+    setFullGenMsg(
+      mode === "express" ? "Préparation de votre séance express..."
+      : mode === "beta" ? "Préparation de votre séance découverte..."
+      : "Préparation de votre séance complète..."
+    );
     try {
       // ─── Reconstruction du script selon le mode ──────────────────
       // bêta = 3 cycles (annonces3) ; complète = 7 cycles (annonces7)
       // Phase A : si profil sensible, cycles 1-2 utilisent scenesDouce, cycles 3+ standard
       let activeScript = script;
       if (scriptParts) {
-        const annonces = mode === "express" ? scriptParts.annonces1 : (mode === "beta" ? scriptParts.annonces3 : scriptParts.annonces7);
+        // v4_express : mode "express" → 1 cycle, "beta" → 3 cycles, autre (complete) → 7 cycles
+        const annonces = mode === "express" ? scriptParts.annonces1
+                       : mode === "beta" ? scriptParts.annonces3
+                       : scriptParts.annonces7;
         const sensible = scriptParts.isProfileSensible;
         const douce = scriptParts.scenesDouce;
         const sceneToUse = (i) => (sensible && i < 2 && douce) ? douce : scriptParts.scenes;
@@ -5906,7 +6055,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           r = await safeFetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: key, voiceId: selectedVoice, ...body })
+            body: JSON.stringify({ key: key, voiceId: selectedVoice, sessionMode: fullGenMode || "complete", ...body })
           }, { timeoutMs: 60000, maxRetries: 1 });
         } catch (netErr) {
           throw new Error("Erreur réseau ElevenLabs (" + netErr.message + "). Modèle utilisé : " + effectiveModelId + ". Si v3 actif, vérifier que ta voix supporte v3 et que ton plan a accès au modèle v3.");
@@ -6331,28 +6480,9 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     }
   };
 
-  if (phase === "generating") {
-    return (
-      <Card>
-        <Logo small />
-        <div style={{ textAlign:"center", padding:"2rem 0" }}>
-          <BreathingOrb />
-          <h2 style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:"22px", color:C.cream,
-            fontWeight:"300", marginBottom:"0.75rem" }}>Création en cours…</h2>
-          <p style={{ fontSize:"13px", color:C.muted, marginBottom:"2rem",
-            animation:"pulse 2s ease infinite" }}>{loadMsg}</p>
-          <div style={{ height:"3px", background:C.border, borderRadius:"2px", overflow:"hidden" }}>
-            <div style={{ height:"100%", background:`linear-gradient(90deg,${C.teal},${C.gold})`,
-              width:"60%", borderRadius:"2px", animation:"shimmer 2s linear infinite",
-              backgroundSize:"200% 100%" }} />
-          </div>
-          <p style={{ fontSize:"11px", color:C.hint, marginTop:"1rem" }}>
-            Patientez — génération du script puis de l'audio complet
-          </p>
-        </div>
-      </Card>
-    );
-  }
+  // v4_express (2026-05-25) — Option C : on NE remplace PLUS l'interface par un écran plein
+  // pendant la génération du script. À la place : bannière discrète dans le render principal +
+  // boutons Générer désactivés tant que phase !== "ready". Le client voit déjà la grille des 4 voix.
 
   // v26 — bouton 🌅 visible UNIQUEMENT après génération de la séance complète/découverte
   //        (pas pendant l'audio démo Vercel Blob qui sert juste de preview).
@@ -6369,6 +6499,22 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
     <Card style={{ maxWidth:"640px" }}>
       <Logo small />
       <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"1.5rem" }}>
+
+        {/* v4_express (2026-05-25) — Bannière de chargement discrète, visible pendant la
+            génération du script. Remplace l'ancien écran plein « Création en cours ».
+            Permet au client d'explorer la page (voir les voix) pendant l'attente. */}
+        {phase === "generating" && (
+          <div style={{ background:"rgba(42,138,143,.08)", borderRadius:"12px",
+            padding:"0.85rem 1.1rem", marginBottom:"1.25rem",
+            border:`1px solid ${C.teal}`, display:"flex", alignItems:"center", gap:"0.75rem" }}>
+            <span style={{ display:"inline-block", width:"10px", height:"10px",
+              borderRadius:"50%", background:C.teal,
+              animation:"pulse 1.4s ease-in-out infinite", flexShrink:0 }}></span>
+            <p style={{ fontSize:"12px", color:C.cream, lineHeight:"1.55", margin:0 }}>
+              <strong style={{ color:C.teal }}>Préparation du script personnalisé…</strong> Patientez 1 à 2 min. Vous pouvez choisir votre voix ci-dessous pendant ce temps. {loadMsg ? <span style={{ color:C.muted, fontStyle:"italic" }}>({loadMsg})</span> : null}
+            </p>
+          </div>
+        )}
 
         {/* En-tête résumé */}
         <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
@@ -6439,41 +6585,35 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               )}
             </div>
 
-            <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
-              <div style={{ width:"48px", height:"48px", borderRadius:"50%",
-                background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
-              <div>
-                <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>
-                  {isPersonalized
-                    ? "Votre séance personnalisée"
-                    : `Échantillon type — ${blocName} × ${VAKOG_NAMES[vakog]}`}
-                </p>
-                <p style={{ fontSize:"12px", color:C.muted }}>
-                  {isPersonalized
-                    ? "Avec votre prénom et vos problèmes · Casque · Assis(e), dos droit · Yeux fermés"
-                    : "Avant-goût adapté à votre profil — sans votre prénom"}
-                </p>
-              </div>
-            </div>
-            <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
-              onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
-              onTimeUpdate={handleAudioTimeUpdate}
-              onLoadedMetadata={handleAudioLoadedMetadata}
-              onEnded={handleAudioEnded} />
-            {/* Slider de vitesse de lecture (modif #7 — 2026-05-06) */}
-            <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={seanceFullyGenerated ? (VOICE_PLAYBACK_DEFAULTS[selectedVoice] || 1.00) : 1.00} />
-
-            {/* Si échantillon : flèche claire vers la section séance complète */}
-            {!isPersonalized && (
-              <div style={{ background:"rgba(184,149,90,.08)", borderRadius:"10px",
-                padding:"0.875rem 1rem", marginTop:"1rem",
-                border:`1px dashed ${C.gold}` }}>
-                <p style={{ fontSize:"12px", color:C.goldLight, lineHeight:"1.6" }}>
-                  ✦ Pour entendre <strong>VOTRE séance complète</strong> avec votre prénom <strong>{prenom}</strong> et vos problèmes précis,
-                  voir « Générer ma séance complète » ci-dessous ↓
-                </p>
-              </div>
+            {/* v4_express (2026-05-25) — bloc échantillon UI gaté.
+                Ne s'affiche QUE si audio personnalisé chargé (séance complète/découverte/express déjà générée).
+                Plus d'échantillon découverte automatique. */}
+            {audioUrl && (
+              <>
+                <div style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"1rem", paddingRight:"5rem" }}>
+                  <div style={{ width:"48px", height:"48px", borderRadius:"50%",
+                    background:`linear-gradient(135deg,${C.teal},${C.tealDark})`,
+                    display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px" }}>🎧</div>
+                  <div>
+                    <p style={{ fontSize:"14px", color:C.cream, fontWeight:"500" }}>
+                      {isPersonalized
+                        ? "Votre séance personnalisée"
+                        : `Échantillon type — ${blocName} × ${VAKOG_NAMES[vakog]}`}
+                    </p>
+                    <p style={{ fontSize:"12px", color:C.muted }}>
+                      {isPersonalized
+                        ? "Avec votre prénom et vos problèmes · Casque · Assis(e), dos droit · Yeux fermés"
+                        : "Avant-goût adapté à votre profil — sans votre prénom"}
+                    </p>
+                  </div>
+                </div>
+                <audio ref={audioRef} src={audioUrl} controls style={{ width:"100%", accentColor:C.gold }}
+                  onPlay={handleAudioPlay} onPause={() => setIsPlaying(false)}
+                  onTimeUpdate={handleAudioTimeUpdate}
+                  onLoadedMetadata={handleAudioLoadedMetadata}
+                  onEnded={handleAudioEnded} />
+                <SpeedSlider audioRef={audioRef} storageKey="eureka_speed_player" defaultRate={seanceFullyGenerated ? (VOICE_PLAYBACK_DEFAULTS[selectedVoice] || 1.00) : 1.00} />
+              </>
             )}
 
             <div style={{ background:C.panel, borderRadius:"10px", padding:"0.75rem 1rem",
@@ -6486,12 +6626,17 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
           </div>
           );
         })() : (
-          <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
-            border:`1px solid ${C.border}`, marginBottom:"1.5rem", textAlign:"center" }}>
-            <p style={{ fontSize:"13px", color:C.muted }}>
-              🎙️ Audio non disponible · Lisez le script ci-dessous ou téléchargez-le
-            </p>
-          </div>
+          /* v4_express (2026-05-25) — fallback réécrit. L'ancien message « Audio non disponible »
+             apparaissait avant que le client ait choisi voix + cliqué Générer → sonnait comme erreur.
+             Maintenant : message contextuel qui invite à passer à la génération. */
+          (!isResume && fullGenPhase !== "done") ? (
+            <div style={{ background:C.panel, borderRadius:"14px", padding:"1.25rem",
+              border:`1px dashed ${C.border}`, marginBottom:"1.5rem", textAlign:"center" }}>
+              <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.6" }}>
+                🎙️ Choisissez une voix ci-dessous et lancez « Générer la séance complète » ou « découverte » pour créer votre audio personnalisé.
+              </p>
+            </div>
+          ) : null
         )}
 
 
@@ -6759,6 +6904,32 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               ✓ {fullGenMsg}
             </div>
           )}
+
+          {/* v4_express (2026-05-25) — Bouton bonus Express, visible UNIQUEMENT après Complète générée.
+              Pas après Découverte. La séance Express est un format ressource ~20 min pour les jours où
+              la complète est trop longue. Réutilise scriptParts (pas de régén Claude pour MVP).
+              Phase 2 : régén Claude avec expressMode pour vraies 20 min + IndexedDB séparée. */}
+          {fullGenPhase === "done" && fullGenMode === "complete" && scriptParts && !isResume && (
+            <div style={{ marginTop:"1rem", marginBottom:"1rem", padding:"1rem 1.25rem",
+              background:"rgba(184,149,90,.08)", borderRadius:"12px",
+              border:"1px solid rgba(184,149,90,.35)" }}>
+              <p style={{ fontSize:"11px", color:"#d4b483", letterSpacing:"1px",
+                textTransform:"uppercase", marginBottom:"0.5rem", fontWeight:"600" }}>
+                ✦ Bonus : Séance Express (~20 min, 1 cycle)
+              </p>
+              <p style={{ fontSize:"12px", color:C.muted, lineHeight:"1.65", marginBottom:"0.75rem" }}>
+                Pour les jours où vous avez moins de temps, la séance express condense le travail en 20 minutes — moins approfondie mais plus accessible.
+              </p>
+              <Btn onClick={() => generateFullAudio("express")}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
+                variant="primary" style={{ marginTop:0, fontSize:"13px" }}>
+                Générer la séance express →
+              </Btn>
+              <p style={{ fontSize:"10px", color:C.hint, fontStyle:"italic", marginTop:"0.5rem", lineHeight:"1.55" }}>
+                Avec votre token bêta, l'Express est gratuite après une Complète générée. Sinon, votre clé ElevenLabs sera utilisée.
+              </p>
+            </div>
+          )}
           {fullGenPhase === "error" && (
             <div style={{ padding:"0.75rem 1rem", background:"rgba(192,57,43,.1)",
               borderRadius:"10px", marginBottom:"0.75rem", fontSize:"12px", color:"#f87171" }}>
@@ -6766,9 +6937,13 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             </div>
           )}
 
-          {/* v26bis — VoiceSelection : grille des 4 voix avec ▶ Écouter (consigne Mickaël 2026-05-08) */}
-          {/* Apparaît si la séance complète n'est pas encore générée. Disparaît une fois sélectionnée + générée. */}
-          {fullGenPhase !== "done" && (
+          {/* v5_couple_fix (2026-06-06) — Grille des voix RÉACTIVÉE pour le mode COUPLE uniquement.
+              En solo, la voix est choisie sur le bilan (ProfilResult) → grille masquée.
+              En couple, le bilan (ProfilCouple) n'a PAS de sélecteur de voix et l'étape
+              genre-voix-couple est sautée → sans cette grille, selectedVoice resterait vide
+              et les boutons Générer seraient désactivés à vie (bug v4 qui cassait le couple).
+              On affiche donc la grille ici quand `couple` est vrai, comme dans la v3 visionE. */}
+          {couple && fullGenPhase !== "done" && (
             <div style={{ marginBottom:"1rem", padding:"1rem", background:C.panel,
               borderRadius:"12px", border:`1.5px solid ${selectedVoice ? C.gold : C.border}` }}>
               <p style={{ fontSize:"10px", color:C.gold, letterSpacing:"2px",
@@ -6781,7 +6956,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
               </p>
               <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6",
                 marginBottom:"0.875rem", fontStyle:"italic" }}>
-                Vous venez d'écouter votre extrait découverte. Choisissez maintenant la voix qui vous accompagnera dans votre vraie séance personnalisée.
+                Choisissez la voix qui vous accompagnera dans votre séance à deux. Écoutez un extrait de chacune puis cliquez celle qui vous parle.
               </p>
               <audio ref={previewAudioRef} onEnded={() => setPlayingPreview(null)} style={{ display:"none" }} />
               <div style={{ display:"grid", gap:"0.5rem" }}>
@@ -6820,54 +6995,43 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
             </div>
           )}
 
+          {/* v4_express (2026-05-25) — Boutons Complète/Découverte avec descriptions thérapeutiques
+              + technique (plan ElevenLabs). Visible toujours (le client choisit ici, après avoir saisi sa clé). */}
           <div style={{ display:"grid", gap:"0.75rem" }}>
             <div style={{ background:"rgba(184,149,90,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
               border:"1px solid rgba(184,149,90,.3)" }}>
               <p style={{ fontSize:"11px", color:"#d4b483", marginBottom:"6px", fontWeight:"600" }}>
-                ✦ Séance EUREKA Complète — Protocole original 7 cycles
+                ✦ Séance EUREKA Complète — 7 cycles
+              </p>
+              <p style={{ fontSize:"11.5px", color:C.cream, marginBottom:"6px", lineHeight:"1.55", fontStyle:"italic" }}>
+                Le format thérapeutique de référence. Sept cycles d'ancrage par répétition (engrainement Silva) pour un travail en profondeur.
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
                 Plan Starter ElevenLabs recommandé (6 $/mois — 30 000 crédits ≈ 1-2 séances complètes/mois)
               </p>
               <Btn onClick={() => generateFullAudio("complete")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice || phase !== "ready"}
                 variant="gold" style={{ marginTop:0 }}>
-                {fullGenPhase === "generating" && fullGenMode === "complete" ? "Génération en cours..." : "Générer la séance complète →"}
+                {phase !== "ready" ? "Préparation en cours…" : (fullGenPhase === "generating" && fullGenMode === "complete" ? "Génération en cours..." : "Générer la séance complète →")}
               </Btn>
             </div>
             <div style={{ background:"rgba(42,138,143,.06)", borderRadius:"10px", padding:"0.75rem 1rem",
               border:"1px solid rgba(42,138,143,.3)" }}>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"6px", fontWeight:"600" }}>
-                ◈ Séance Découverte — Version bêta 3 cycles
+                ◈ Séance Découverte — 3 cycles
+              </p>
+              <p style={{ fontSize:"11.5px", color:C.cream, marginBottom:"6px", lineHeight:"1.55", fontStyle:"italic" }}>
+                Format intermédiaire. Trois cycles d'ancrage — seuil minimal pour qu'un travail réel s'installe, plus court que la complète.
               </p>
               <p style={{ fontSize:"11px", color:"#7a9ea0", marginBottom:"8px" }}>
                 Plan gratuit ElevenLabs suffit (10 000 crédits/mois ≈ 1 découverte par mois)
               </p>
               <Btn onClick={() => generateFullAudio("beta")}
-                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
+                disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice || phase !== "ready"}
                 variant="primary" style={{ marginTop:0 }}>
-                {fullGenPhase === "generating" && fullGenMode === "beta" ? "Génération en cours..." : "Générer la séance découverte →"}
+                {phase !== "ready" ? "Préparation en cours…" : (fullGenPhase === "generating" && fullGenMode === "beta" ? "Génération en cours..." : "Générer la séance découverte →")}
               </Btn>
             </div>
-            {/* v5_express (2026-06-06) — Bonus séance Express ~20 min (1 cycle).
-                Additif pur : visible après une Complète générée. Réutilise scriptParts (annonces1).
-                Ne modifie NI le parcours couple, NI la sélection de voix, NI le reste de l'UI. */}
-            {fullGenPhase === "done" && (fullGenMode === "complete" || fullGenMode === "express") && scriptParts && !isResume && (
-              <div style={{ background:"rgba(184,149,90,.08)", borderRadius:"10px", padding:"0.75rem 1rem",
-                border:"1px solid rgba(184,149,90,.35)" }}>
-                <p style={{ fontSize:"11px", color:"#d4b483", marginBottom:"6px", fontWeight:"600" }}>
-                  ✦ Bonus : Séance Express — ~20 min, 1 cycle
-                </p>
-                <p style={{ fontSize:"11px", color:C.muted, lineHeight:"1.6", marginBottom:"8px" }}>
-                  Pour les jours où vous avez moins de temps : un seul cycle, plus court — moins approfondi mais plus accessible.
-                </p>
-                <Btn onClick={() => generateFullAudio("express")}
-                  disabled={!elevenClientKey.trim() || fullGenPhase === "generating" || !selectedVoice}
-                  variant="primary" style={{ marginTop:0 }}>
-                  {fullGenPhase === "generating" && fullGenMode === "express" ? "Génération en cours..." : "Générer la séance express →"}
-                </Btn>
-              </div>
-            )}
           </div>
         </div>
         )}
@@ -7492,9 +7656,9 @@ function App() {
         person2: { ...p2, prenom: p2Prenom },
       };
     });
-    // v_couple Session 13 — Passage par genre-voix-couple AVANT seance-couple
-    // (aligne sur le pattern solo : Profil → GenreVoix → Séance avec démo+4 voix).
-    setStep("genre-voix-couple");
+    // v4_express (2026-05-25) — saute genre-voix-couple (démo imparfaite, code mort).
+    // Va direct à la séance ; le couple choisira sa voix dans la grille des 4 voix.
+    setStep("seance-couple");
   };
 
   // v_couple Session 13 — handler du choix de voix pour le couple
@@ -7539,11 +7703,14 @@ function App() {
   const handleProfilNext = (prefs) => {
     track("profil_completed", {
       music: prefs.musicChoice || "?",
-      belief: prefs.beliefSystem || "?"
+      belief: prefs.beliefSystem || "?",
+      voice: prefs.selectedVoice || "?"
     });
+    // v4_express (2026-05-25) — prefs contient relaxDir + beliefSystem + musicChoice + selectedVoice
+    // (choix faits sur le bilan élargi). Le client clique ensuite Générer Complète/Découverte
+    // sur la page séance (où il saisit sa clé ElevenLabs).
     updateUser({ ...prefs, seanceNum: 1 });
-    // v26bis — nouveau flux : Profil → GenreVoix (au lieu de Séance directement)
-    setStep("genre-voix");
+    setStep("seance");
   };
 
   // v26bis — handler pour l'écran GenreVoix (choix Femme/Homme pour l'extrait découverte)
