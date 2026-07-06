@@ -1,20 +1,21 @@
 {
   "version": 1,
-  "currentMonth": "2026-06",
+  "currentMonth": "2026-07",
   "currentConseil": {
-    "title": "Accueillir le changement de saison sans se forcer",
-    "theme": "saison_ete",
-    "themeLabel": "Préparer son corps et son esprit à l'été",
+    "title": "Quand la solitude pèse plus qu'elle ne repose",
+    "theme": "solitude",
+    "themeLabel": "Apprivoiser la solitude",
     "body": [
-      "L'été approche, et avec lui une certaine injonction à aller mieux, à profiter, à rayonner. Pourtant vous sentez peut-être un décalage entre ce que la saison semble exiger de vous et ce que vous vivez réellement : une fatigue persistante, un corps qui tarde à suivre, une énergie qui ne répond pas à l'appel. Ce fossé, silencieux mais réel, peut lui seul peser.",
-      "Ce vécu est tout à fait compréhensible. Votre corps et votre esprit fonctionnent selon leurs propres rythmes, qui ne coïncident pas toujours avec le calendrier. Les transitions saisonnières mobilisent des ressources — régulation du sommeil, adaptation à la lumière, ajustement du tonus — et cette mobilisation prend du temps. Ce n'est pas un manque de volonté, c'est simplement un processus qui demande à être accompagné.",
-      "Essayez ceci, là où vous êtes : posez les deux pieds à plat sur le sol. Inspirez lentement par le nez pendant 4 secondes en imaginant que l'air descend jusqu'au ventre. Retenez doucement 2 secondes, puis expirez par la bouche pendant 6 secondes, comme si vous relâchiez une charge que vous portez depuis le matin. Répétez trois fois. Ce simple geste invite le corps à quitter son état de veille tendue et à retrouver un appui.",
-      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment. Quelle que soit la façon dont cet été s'ouvre pour vous, vous avez le droit de l'aborder à votre propre cadence."
+      "Il y a des moments où le silence autour de vous n'est pas apaisant — il est loud. Vous êtes seul, peut-être depuis peu, peut-être depuis longtemps, et ce n'est pas tant l'absence des autres qui pèse que cette sensation étrange de ne plus bien savoir quoi faire de vous-même sans eux. Ce n'est pas de la faiblesse. C'est une expérience que beaucoup traversent sans oser la nommer.",
+      "Notre système intérieur est construit pour le lien. Lorsque ce lien se fait rare ou s'étiole, quelque chose en vous se met en veille, parfois en alerte. Cette tension que vous ressentez — cette espèce de vide qui bourdonne — n'est pas un signe que quelque chose cloche en vous. C'est simplement votre corps qui signale un besoin, comme il signale la faim ou la fatigue. Reconnaître cela, c'est déjà cesser de se battre contre soi.",
+      "Essayez ceci, là où vous êtes : posez les deux mains à plat sur vos cuisses, fermez les yeux, et inspirez lentement pendant 4 secondes. Retenez l'air 2 secondes, puis expirez doucement pendant 6 secondes. Répétez trois fois. En expirant, imaginez que vous relâchez non pas la solitude elle-même, mais la résistance que vous lui opposez. Ce n'est pas une solution — c'est une pause, un espace pour vous retrouver un instant.",
+      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment. Quelle que soit la suite, vous avez déjà fait quelque chose d'utile en lisant ces lignes jusqu'ici."
     ],
-    "facebookPost": "L'été arrive, et avec lui cette impression que tout le monde devrait être au mieux de sa forme. Mais si ce n'est pas tout à fait votre cas en ce moment, vous n'êtes pas seul.\n\nLes transitions de saison demandent quelque chose au corps et à l'esprit. Pas besoin de forcer ni de faire semblant. Ce mois-ci, notre conseil s'adresse à celles et ceux qui aimeraient aborder l'été plus en douceur — sans injonction, sans recette miracle.\n\nVous y trouverez une explication simple de ce que vous ressentez peut-être, et un seul geste concret à essayer, là où vous êtes, en moins d'une minute. Rien de plus. 🌿\n\nParce qu'accompagner le changement, c'est d'abord apprendre à s'écouter.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-06-01T11:45:23.094Z"
+    "facebookPost": "Il y a une forme de solitude qui ne ressemble pas au calme. Celle où le silence pèse, où l'absence des autres laisse une sorte de bourdonnement intérieur difficile à nommer.\n\nCe que vous ressentez dans ces moments-là n'est pas un signe que quelque chose ne va pas — c'est simplement votre besoin de lien qui se manifeste, comme n'importe quel autre besoin du corps.\n\nCe mois-ci, le Conseil EUREKA aborde ce sujet avec honnêteté : pas de discours lisse, pas de promesse facile. Juste une façon de comprendre ce qui se passe en vous, et un geste concret — une respiration guidée en moins d'une minute — pour créer une petite pause dans cette tension.\n\nParce que apprivoiser la solitude, ce n'est pas l'effacer. C'est apprendre à ne plus la fuir. 🌿\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-07-06T10:46:48.022Z"
   },
   "recentThemes": [
+    "solitude",
     "saison_ete",
     "anxiete",
     "le_geste_des_epaules",
