@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "currentMonth": "2026-07",
+  "currentMonth": "2026-08",
   "currentConseil": {
-    "title": "Quand la solitude pèse plus qu'elle ne repose",
-    "theme": "solitude",
-    "themeLabel": "Apprivoiser la solitude",
+    "title": "Construire une routine bien-être qui vous ressemble",
+    "theme": "routine",
+    "themeLabel": "Créer une routine bien-être qui tient",
     "body": [
-      "Il y a des moments où le silence autour de vous n'est pas apaisant — il est loud. Vous êtes seul, peut-être depuis peu, peut-être depuis longtemps, et ce n'est pas tant l'absence des autres qui pèse que cette sensation étrange de ne plus bien savoir quoi faire de vous-même sans eux. Ce n'est pas de la faiblesse. C'est une expérience que beaucoup traversent sans oser la nommer.",
-      "Notre système intérieur est construit pour le lien. Lorsque ce lien se fait rare ou s'étiole, quelque chose en vous se met en veille, parfois en alerte. Cette tension que vous ressentez — cette espèce de vide qui bourdonne — n'est pas un signe que quelque chose cloche en vous. C'est simplement votre corps qui signale un besoin, comme il signale la faim ou la fatigue. Reconnaître cela, c'est déjà cesser de se battre contre soi.",
-      "Essayez ceci, là où vous êtes : posez les deux mains à plat sur vos cuisses, fermez les yeux, et inspirez lentement pendant 4 secondes. Retenez l'air 2 secondes, puis expirez doucement pendant 6 secondes. Répétez trois fois. En expirant, imaginez que vous relâchez non pas la solitude elle-même, mais la résistance que vous lui opposez. Ce n'est pas une solution — c'est une pause, un espace pour vous retrouver un instant.",
-      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment. Quelle que soit la suite, vous avez déjà fait quelque chose d'utile en lisant ces lignes jusqu'ici."
+      "Vous avez déjà essayé. Vous vous êtes levé un matin avec la ferme intention de changer quelque chose — méditer, vous étirer, respirer différemment — et pendant quelques jours, ça tenait. Puis la semaine a repris ses droits, et cette habitude toute neuve s'est effilochée sans que vous n'ayez rien fait de mal. Il ne vous reste qu'une légère impression d'avoir, encore une fois, manqué quelque chose.",
+      "Ce que vous avez vécu n'est pas un manque de volonté. Lorsque le quotidien est déjà chargé, le corps et l'esprit cherchent naturellement à préserver leur énergie en revenant à ce qui est connu. Une nouvelle pratique, même douce, demande une forme d'attention qui coûte quelque chose — et ce coût est réel. Comprendre cela, c'est cesser de vous en vouloir et pouvoir recommencer autrement.",
+      "Essayez ceci, une seule fois aujourd'hui, au moment où vous lisez ces lignes. Posez les deux pieds à plat sur le sol. Inspirez lentement par le nez pendant 4 secondes. Expirez par la bouche pendant 6 secondes, comme si vous souffliez sur une bougie sans l'éteindre. Répétez trois fois. Ce n'est pas un rituel à tenir — c'est juste un point d'ancrage que vous pouvez retrouver n'importe où, n'importe quand.",
+      "Si vous souhaitez aller plus loin, les séances EUREKA sont pensées pour s'adapter à ce que vous vivez au moment où vous en avez besoin, sans programme rigide à respecter. Prenez soin de vous, à votre rythme."
     ],
-    "facebookPost": "Il y a une forme de solitude qui ne ressemble pas au calme. Celle où le silence pèse, où l'absence des autres laisse une sorte de bourdonnement intérieur difficile à nommer.\n\nCe que vous ressentez dans ces moments-là n'est pas un signe que quelque chose ne va pas — c'est simplement votre besoin de lien qui se manifeste, comme n'importe quel autre besoin du corps.\n\nCe mois-ci, le Conseil EUREKA aborde ce sujet avec honnêteté : pas de discours lisse, pas de promesse facile. Juste une façon de comprendre ce qui se passe en vous, et un geste concret — une respiration guidée en moins d'une minute — pour créer une petite pause dans cette tension.\n\nParce que apprivoiser la solitude, ce n'est pas l'effacer. C'est apprendre à ne plus la fuir. 🌿\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-07-06T10:46:48.022Z"
+    "facebookPost": "Combien de fois avez-vous commencé une routine bien-être avec de bonnes intentions… pour la voir disparaître au bout de quelques jours ?\n\nCe n'est pas une question de volonté. C'est simplement ce qui arrive quand on essaie d'ajouter quelque chose de nouveau dans un quotidien déjà bien rempli. Le corps cherche ce qu'il connaît. C'est humain.\n\nDans notre conseil du mois, on ne vous propose pas de programme en 30 jours ni de liste de bonnes résolutions. On vous propose un seul geste — sobre, accessible, faisable en moins d'une minute — pour renouer avec vous-même sans pression.\n\nParce qu'une routine qui tient, c'est d'abord une routine qui vous ressemble. ✨\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-08-03T09:54:18.004Z"
   },
   "recentThemes": [
+    "routine",
     "solitude",
     "saison_ete",
     "anxiete",
     "le_geste_des_epaules",
-    "la_lumiere_du_matin",
-    "respiration_apaisement"
+    "la_lumiere_du_matin"
   ]
 }
