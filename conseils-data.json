@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "currentMonth": "2026-08",
+  "currentMonth": "2026-09",
   "currentConseil": {
-    "title": "Construire une routine bien-être qui vous ressemble",
-    "theme": "routine",
-    "themeLabel": "Créer une routine bien-être qui tient",
+    "title": "Revenir à soi avant que septembre ne commence",
+    "theme": "rentree",
+    "themeLabel": "Aborder la rentrée avec sérénité",
     "body": [
-      "Vous avez déjà essayé. Vous vous êtes levé un matin avec la ferme intention de changer quelque chose — méditer, vous étirer, respirer différemment — et pendant quelques jours, ça tenait. Puis la semaine a repris ses droits, et cette habitude toute neuve s'est effilochée sans que vous n'ayez rien fait de mal. Il ne vous reste qu'une légère impression d'avoir, encore une fois, manqué quelque chose.",
-      "Ce que vous avez vécu n'est pas un manque de volonté. Lorsque le quotidien est déjà chargé, le corps et l'esprit cherchent naturellement à préserver leur énergie en revenant à ce qui est connu. Une nouvelle pratique, même douce, demande une forme d'attention qui coûte quelque chose — et ce coût est réel. Comprendre cela, c'est cesser de vous en vouloir et pouvoir recommencer autrement.",
-      "Essayez ceci, une seule fois aujourd'hui, au moment où vous lisez ces lignes. Posez les deux pieds à plat sur le sol. Inspirez lentement par le nez pendant 4 secondes. Expirez par la bouche pendant 6 secondes, comme si vous souffliez sur une bougie sans l'éteindre. Répétez trois fois. Ce n'est pas un rituel à tenir — c'est juste un point d'ancrage que vous pouvez retrouver n'importe où, n'importe quand.",
-      "Si vous souhaitez aller plus loin, les séances EUREKA sont pensées pour s'adapter à ce que vous vivez au moment où vous en avez besoin, sans programme rigide à respecter. Prenez soin de vous, à votre rythme."
+      "Il y a quelque chose d'étrange dans cette période : les journées semblent encore légères en apparence, et pourtant quelque chose en vous s'est déjà mis en tension. Une liste mentale s'est rouverte sans prévenir, les épaules sont un peu plus hautes, le sommeil un peu moins profond. Vous n'avez pas encore repris, mais vous portez déjà le poids de ce qui arrive.",
+      "Ce que vous ressentez est une réponse tout à fait naturelle de votre corps face à l'anticipation. Quand le changement approche — même un changement connu, même une rentrée que vous avez traversée des dizaines de fois — l'organisme se prépare, se met en état d'alerte légère. Ce n'est pas un signe de faiblesse : c'est une forme d'attention que vous vous portez, qui mérite d'être accueillie plutôt que combattue.",
+      "Essayez ceci, là où vous êtes : posez les deux pieds à plat sur le sol, relâchez les mâchoires. Inspirez lentement par le nez en comptant jusqu'à quatre, puis expirez par la bouche en comptant jusqu'à six — un peu plus lentement que l'inspiration. Faites-le trois fois de suite, en laissant chaque expiration emporter, sans effort, un peu de cette tension accumulée.",
+      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment précis. Quelle que soit la manière dont vous abordez ce qui vient, vous avez déjà la capacité de revenir à vous."
     ],
-    "facebookPost": "Combien de fois avez-vous commencé une routine bien-être avec de bonnes intentions… pour la voir disparaître au bout de quelques jours ?\n\nCe n'est pas une question de volonté. C'est simplement ce qui arrive quand on essaie d'ajouter quelque chose de nouveau dans un quotidien déjà bien rempli. Le corps cherche ce qu'il connaît. C'est humain.\n\nDans notre conseil du mois, on ne vous propose pas de programme en 30 jours ni de liste de bonnes résolutions. On vous propose un seul geste — sobre, accessible, faisable en moins d'une minute — pour renouer avec vous-même sans pression.\n\nParce qu'une routine qui tient, c'est d'abord une routine qui vous ressemble. ✨\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-08-03T09:54:18.004Z"
+    "facebookPost": "La rentrée n'a pas encore commencé, et pourtant quelque chose en vous s'est déjà mis en mouvement. Cette tension dans les épaules, cette liste mentale qui s'ouvre toute seule, ce sommeil qui change de texture sans raison apparente... vous n'êtes pas seul à vivre ça.\n\nCe mois-ci, le Conseil EUREKA ne vous propose pas de « positiver » ni de faire comme si septembre était une page blanche. Il vous propose quelque chose de plus simple : comprendre pourquoi vous ressentez ce que vous ressentez, et un geste concret — moins d'une minute — pour retrouver un peu de sol sous les pieds.\n\nPas de grande promesse. Juste un espace pour souffler avant que le rythme reprenne. 🌿\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-09-07T12:02:36.763Z"
   },
   "recentThemes": [
+    "rentree",
     "routine",
     "solitude",
     "saison_ete",
     "anxiete",
-    "le_geste_des_epaules",
-    "la_lumiere_du_matin"
+    "le_geste_des_epaules"
   ]
 }
