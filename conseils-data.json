@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "currentMonth": "2026-09",
+  "currentMonth": "2026-10",
   "currentConseil": {
-    "title": "Revenir à soi avant que septembre ne commence",
-    "theme": "rentree",
-    "themeLabel": "Aborder la rentrée avec sérénité",
+    "title": "Quand la peur s'installe sans prévenir ni raison",
+    "theme": "peurs",
+    "themeLabel": "Apprivoiser ses peurs profondes",
     "body": [
-      "Il y a quelque chose d'étrange dans cette période : les journées semblent encore légères en apparence, et pourtant quelque chose en vous s'est déjà mis en tension. Une liste mentale s'est rouverte sans prévenir, les épaules sont un peu plus hautes, le sommeil un peu moins profond. Vous n'avez pas encore repris, mais vous portez déjà le poids de ce qui arrive.",
-      "Ce que vous ressentez est une réponse tout à fait naturelle de votre corps face à l'anticipation. Quand le changement approche — même un changement connu, même une rentrée que vous avez traversée des dizaines de fois — l'organisme se prépare, se met en état d'alerte légère. Ce n'est pas un signe de faiblesse : c'est une forme d'attention que vous vous portez, qui mérite d'être accueillie plutôt que combattue.",
-      "Essayez ceci, là où vous êtes : posez les deux pieds à plat sur le sol, relâchez les mâchoires. Inspirez lentement par le nez en comptant jusqu'à quatre, puis expirez par la bouche en comptant jusqu'à six — un peu plus lentement que l'inspiration. Faites-le trois fois de suite, en laissant chaque expiration emporter, sans effort, un peu de cette tension accumulée.",
-      "Si vous souhaitez aller plus loin, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez en ce moment précis. Quelle que soit la manière dont vous abordez ce qui vient, vous avez déjà la capacité de revenir à vous."
+      "Il y a des moments où quelque chose en vous se contracte sans que vous puissiez vraiment l'expliquer. Ce n'est pas toujours lié à un danger précis : c'est plutôt une tension sourde qui s'installe dans la poitrine, une vigilance constante que vous portez sans l'avoir choisie. Vous continuez à fonctionner, à faire face, mais quelque chose en vous reste aux aguets.",
+      "Ce vécu est tout à fait légitime. Votre corps a appris, au fil du temps, à anticiper ce qui pourrait mal tourner — c'est une façon de se protéger. Cette mise en alerte n'est pas un défaut de votre caractère, c'est une réponse que vous avez développée pour traverser ce que vous avez traversé. La comprendre, c'est déjà commencer à lui laisser un peu moins de place.",
+      "Essayez ceci, là où vous êtes : posez une main à plat sur votre sternum. Inspirez lentement par le nez sur 4 secondes, en sentant votre main se soulever légèrement. Puis expirez par la bouche sur 6 secondes, en imaginant que vous relâchez doucement une tension que vous n'avez plus besoin de tenir. Répétez trois fois à votre rythme.",
+      "Si vous souhaitez aller plus loin, une séance EUREKA peut vous proposer un accompagnement audio personnalisé, pensé pour ce que vous vivez spécifiquement. Quelle que soit la suite, accordez-vous la douceur d'avoir pris ce moment pour vous."
     ],
-    "facebookPost": "La rentrée n'a pas encore commencé, et pourtant quelque chose en vous s'est déjà mis en mouvement. Cette tension dans les épaules, cette liste mentale qui s'ouvre toute seule, ce sommeil qui change de texture sans raison apparente... vous n'êtes pas seul à vivre ça.\n\nCe mois-ci, le Conseil EUREKA ne vous propose pas de « positiver » ni de faire comme si septembre était une page blanche. Il vous propose quelque chose de plus simple : comprendre pourquoi vous ressentez ce que vous ressentez, et un geste concret — moins d'une minute — pour retrouver un peu de sol sous les pieds.\n\nPas de grande promesse. Juste un espace pour souffler avant que le rythme reprenne. 🌿\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-09-07T12:02:36.763Z"
+    "facebookPost": "Il y a des peurs qu'on n'arrive pas vraiment à nommer. Pas de danger visible, pas d'explication claire — juste cette tension quelque part dans la poitrine, cette vigilance qu'on porte sans l'avoir choisie.\n\nSi vous vous reconnaissez dans ces mots, sachez d'abord ceci : ce que vous ressentez est légitime. Ce n'est pas une faiblesse, c'est une réponse que votre corps a apprise pour vous protéger.\n\nNotre conseil du mois vous propose un geste simple — une respiration guidée, pas à pas — pour commencer à apprivoiser cette tension de l'intérieur. Pas de grande promesse, juste un outil concret à essayer là où vous êtes, en moins d'une minute. 🌿\n\nParce que comprendre ce qu'on ressent, c'est souvent le premier pas pour lui laisser un peu moins de place.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-10-05T14:06:29.090Z"
   },
   "recentThemes": [
+    "peurs",
     "rentree",
     "routine",
     "solitude",
     "saison_ete",
-    "anxiete",
-    "le_geste_des_epaules"
+    "anxiete"
   ]
 }
