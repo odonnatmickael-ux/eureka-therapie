@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "currentMonth": "2026-10",
+  "currentMonth": "2026-11",
   "currentConseil": {
-    "title": "Quand la peur s'installe sans prévenir ni raison",
-    "theme": "peurs",
-    "themeLabel": "Apprivoiser ses peurs profondes",
+    "title": "Quand les mots ne sortent plus comme prévu",
+    "theme": "communication",
+    "themeLabel": "Mieux communiquer avec ses proches",
     "body": [
-      "Il y a des moments où quelque chose en vous se contracte sans que vous puissiez vraiment l'expliquer. Ce n'est pas toujours lié à un danger précis : c'est plutôt une tension sourde qui s'installe dans la poitrine, une vigilance constante que vous portez sans l'avoir choisie. Vous continuez à fonctionner, à faire face, mais quelque chose en vous reste aux aguets.",
-      "Ce vécu est tout à fait légitime. Votre corps a appris, au fil du temps, à anticiper ce qui pourrait mal tourner — c'est une façon de se protéger. Cette mise en alerte n'est pas un défaut de votre caractère, c'est une réponse que vous avez développée pour traverser ce que vous avez traversé. La comprendre, c'est déjà commencer à lui laisser un peu moins de place.",
-      "Essayez ceci, là où vous êtes : posez une main à plat sur votre sternum. Inspirez lentement par le nez sur 4 secondes, en sentant votre main se soulever légèrement. Puis expirez par la bouche sur 6 secondes, en imaginant que vous relâchez doucement une tension que vous n'avez plus besoin de tenir. Répétez trois fois à votre rythme.",
-      "Si vous souhaitez aller plus loin, une séance EUREKA peut vous proposer un accompagnement audio personnalisé, pensé pour ce que vous vivez spécifiquement. Quelle que soit la suite, accordez-vous la douceur d'avoir pris ce moment pour vous."
+      "Vous savez ce que vous voulez dire, mais au moment où vous ouvrez la bouche, quelque chose se coince. Les mots arrivent trop vite, ou pas du tout. La conversation tourne autrement que prévu, et vous vous retrouvez soit à vous taire pour éviter le conflit, soit à dire quelque chose que vous regrettez aussitôt. Ce n'est pas un manque de volonté, ni un défaut de caractère — c'est une expérience que beaucoup traversent en silence.",
+      "Lorsque l'échange avec un proche devient chargé émotionnellement, votre corps réagit avant même que vous ayez le temps de réfléchir. La respiration se raccourcit, la gorge se serre légèrement, les pensées s'accélèrent. Dans cet état, il est très difficile d'accéder à ce que vous souhaitiez vraiment exprimer. Ce n'est pas vous qui manquez de clarté — c'est votre système intérieur qui cherche à se protéger.",
+      "Avant une conversation difficile, ou dès que vous sentez cette tension monter, posez une main sur votre sternum et essayez ceci : inspirez lentement par le nez pendant 4 secondes, puis expirez par la bouche pendant 6 secondes, comme si vous souffliez doucement sur une flamme sans l'éteindre. Répétez trois fois. Cette simple pause ne résout pas le désaccord, mais elle vous permet de revenir à vous-même avant de répondre.",
+      "Si vous souhaitez explorer cela plus en profondeur, une séance EUREKA personnalisée peut vous accompagner à votre rythme, selon ce que vous traversez. Quelle que soit la suite, soyez doux avec vous-même — apprendre à se dire est un chemin, pas une performance."
     ],
-    "facebookPost": "Il y a des peurs qu'on n'arrive pas vraiment à nommer. Pas de danger visible, pas d'explication claire — juste cette tension quelque part dans la poitrine, cette vigilance qu'on porte sans l'avoir choisie.\n\nSi vous vous reconnaissez dans ces mots, sachez d'abord ceci : ce que vous ressentez est légitime. Ce n'est pas une faiblesse, c'est une réponse que votre corps a apprise pour vous protéger.\n\nNotre conseil du mois vous propose un geste simple — une respiration guidée, pas à pas — pour commencer à apprivoiser cette tension de l'intérieur. Pas de grande promesse, juste un outil concret à essayer là où vous êtes, en moins d'une minute. 🌿\n\nParce que comprendre ce qu'on ressent, c'est souvent le premier pas pour lui laisser un peu moins de place.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
-    "generatedAt": "2026-10-05T14:06:29.090Z"
+    "facebookPost": "Il y a des jours où communiquer avec ceux qu'on aime semble plus difficile que tout. On cherche ses mots, on se retient, on regrette ce qu'on a dit — ou ce qu'on n'a pas dit. Ce n'est pas une question d'intelligence ou de bonne volonté. C'est simplement ce qui se passe quand une conversation touche à quelque chose d'important pour nous.\n\nCe mois-ci, le conseil EUREKA aborde ce vécu avec honnêteté : pourquoi les mots nous échappent parfois, et un geste concret à essayer — là, maintenant, sans rien préparer — pour retrouver un peu d'espace intérieur avant d'ouvrir la bouche. 🤍\n\nParce que mieux communiquer commence souvent par s'écouter soi-même quelques secondes.\n\nLe conseil du mois ↓\nhttps://eureka-therapie.vercel.app/conseils.html",
+    "generatedAt": "2026-11-02T15:13:43.009Z"
   },
   "recentThemes": [
+    "communication",
     "peurs",
     "rentree",
     "routine",
     "solitude",
-    "saison_ete",
-    "anxiete"
+    "saison_ete"
   ]
 }
