@@ -207,7 +207,7 @@ function buildPrompt(theme) {
     "    \"Paragraphe 3 — un geste precis pas-a-pas\",",
     "    \"Paragraphe 4 — ouverture EUREKA + phrase douce\"",
     "  ],",
-    "  \"facebookPost\": \"Texte FB 120 a 200 mots, ton chaleureux mais sobre. Resume l'esprit du conseil sans tout devoiler. Pas plus de 2 emojis discrets. Termine imperativement par les deux lignes :\\n\\nLe conseil du mois ↓\\nhttps://eureka-therapie.vercel.app/conseils.html\"",
+    "  \"facebookPost\": \"Texte FB 120 a 200 mots, ton chaleureux mais sobre. Resume l'esprit du conseil sans tout devoiler. Pas plus de 2 emojis discrets. Termine imperativement par les deux lignes :\\n\\nLe conseil du mois ↓\\nhttps://eureka-relaxation.vercel.app/conseils.html\"",
     "}",
     "",
     "Reponds UNIQUEMENT par le JSON. Pas un mot avant, pas un mot apres.",
