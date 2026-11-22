@@ -1,6 +1,6 @@
 // api/conseil-lire.js
 // -----------------------------------------------------------------------------
-// EUREKA Thérapie — Lecture publique du « conseil du mois »
+// EUREKA Relaxation — Lecture publique du « conseil du mois »
 // -----------------------------------------------------------------------------
 // Appelée par conseils.html au chargement de page.
 // Renvoie un JSON minimal : { month, title, body }.

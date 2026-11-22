@@ -1,6 +1,6 @@
 // api/conseil-generate.js
 // -----------------------------------------------------------------------------
-// EUREKA Thérapie — Génération mensuelle automatique du « conseil du mois »
+// EUREKA Relaxation — Génération mensuelle automatique du « conseil du mois »
 // -----------------------------------------------------------------------------
 // Appelée par GitHub Action le 1er lundi du mois à 6h UTC.
 // Fait 4 choses :
@@ -170,7 +170,7 @@ function pickTheme(currentMonth, recentTags, forcedTag) {
 
 function buildPrompt(theme) {
   const lines = [
-    "Tu rediges le Conseil du mois pour EUREKA Therapie, une application web qui propose des seances de sophrologie audio personnalisees par IA. Le porteur du projet est Mickael Odonnat, triple-certifie : Sophrologie Caycedienne (CFFS 2017), Hypnose Ericksonienne (EFH 2017), Methode Silva (Mindvalley 2020). Son serieux editorial est non-negociable.",
+    "Tu rediges le Conseil du mois pour EUREKA Relaxation, une application web qui propose des seances de sophrologie audio personnalisees par IA. Le porteur du projet est Mickael Odonnat, triple-certifie : Sophrologie Caycedienne (CFFS 2017), Hypnose Ericksonienne (EFH 2017), Methode Silva (Mindvalley 2020). Son serieux editorial est non-negociable.",
     "",
     "PUBLIC : adultes francophones qui vivent reellement le probleme ci-dessous dans leur quotidien. Ils sont fatigues des conseils superficiels (\"respire et tout ira mieux\"). Ils veulent un texte qui les comprenne sans les diagnostiquer, et qui leur propose un geste concret a essayer.",
     "",

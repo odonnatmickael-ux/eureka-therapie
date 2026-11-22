@@ -7,7 +7,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EUREKA — Thérapie Guidée par Sophrologie</title>
+<title>EUREKA — Relaxation Guidée par Sophrologie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -1375,7 +1375,7 @@ function MentionsModal({ onClose }) {
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
             fontFamily:"'Raleway',sans-serif" }}>🔒 Données personnelles (RGPD)</p>
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            EUREKA Thérapie ne stocke aucune donnée sur ses propres serveurs. Les informations saisies (prénom, email, problème, objectif, profil Big Five / VAKOG) transitent en temps réel par des sous-traitants techniques (listés ci-dessous) avec leurs propres durées de rétention courtes, pour générer votre séance personnalisée.
+            EUREKA Relaxation ne stocke aucune donnée sur ses propres serveurs. Les informations saisies (prénom, email, problème, objectif, profil Big Five / VAKOG) transitent en temps réel par des sous-traitants techniques (listés ci-dessous) avec leurs propres durées de rétention courtes, pour générer votre séance personnalisée.
             <br/><br/>
             Votre séance générée (audio + script) est conservée <strong style={{ color:C.cream }}>localement sur votre navigateur</strong> (via IndexedDB) afin que vous puissiez la réécouter sans regénération. Vous pouvez l'effacer à tout moment en cliquant sur « Nouvelle séance » ou via les paramètres de votre navigateur (vider le cache et les données du site).
             <br/><br/>
@@ -1495,7 +1495,7 @@ function MentionsModal({ onClose }) {
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem",
             fontFamily:"'Raleway',sans-serif" }}>📋 Conditions d'utilisation</p>
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service et des décisions prises sur la base de celui-ci. EUREKA Thérapie ne saurait être tenu responsable d'un usage non conforme aux contre-indications listées ci-dessus.
+            Ce service est proposé à titre informatif et de bien-être. Aucun résultat n'est garanti. L'utilisateur reste seul responsable de l'utilisation du service et des décisions prises sur la base de celui-ci. EUREKA Relaxation ne saurait être tenu responsable d'un usage non conforme aux contre-indications listées ci-dessus.
           </p>
         </div>
 
@@ -1514,7 +1514,7 @@ function MentionsModal({ onClose }) {
         <div style={{ marginBottom:"1.25rem", paddingBottom:"1.25rem", borderBottom:`1px solid ${C.border}` }}>
           <p style={{ fontSize:"13px", color:C.goldLight, fontWeight:"500", marginBottom:"0.5rem", fontFamily:"'Raleway',sans-serif" }}>👤 Éditeur du site</p>
           <p style={{ fontSize:"13px", color:C.muted, lineHeight:"1.75" }}>
-            EUREKA Thérapie est édité par <strong style={{ color:C.cream }}>Mickaël Odonnat</strong>, Praticien Sophrologue certifié (Centre Français de Formation en Sophrologie, 2017) et praticien certifié de la Méthode Silva (Mindvalley, 2020).
+            EUREKA Relaxation est édité par <strong style={{ color:C.cream }}>Mickaël Odonnat</strong>, Praticien Sophrologue certifié (Centre Français de Formation en Sophrologie, 2017) et praticien certifié de la Méthode Silva (Mindvalley, 2020).
             <br/><br/>
             Contact : <a href="mailto:eureka.therapie@gmail.com" style={{ color:C.gold, textDecoration:"underline" }}>eureka.therapie@gmail.com</a>
           </p>
@@ -2832,7 +2832,7 @@ function Anamnese({ onNext, personId }) {
           <div style={{ background:C.panel, borderRadius:"12px", padding:"1.25rem 1.4rem",
             border:`1px solid ${C.border}`, marginBottom:"1.25rem" }}>
             <p style={{ fontSize:"13px", color:C.cream, lineHeight:"1.75" }}>
-              EUREKA Thérapie accompagne <strong style={{color:C.goldLight}}>votre mieux-être personnel</strong>.
+              EUREKA Relaxation accompagne <strong style={{color:C.goldLight}}>votre mieux-être personnel</strong>.
               Une séance amplifie l'objectif que vous lui confiez — c'est sa raison d'être.
               Si cet objectif vise à infliger quelque chose à autrui, ou à vous infliger
               quelque chose à vous-même, l'amplifier vous éloignerait du mieux-être plutôt
@@ -6392,7 +6392,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
   const displayScript = (script || "").replace(V3_TAG_REGEX, "").replace(/  +/g, " ");
 
   const downloadScript = () => {
-    const content = `EUREKA THÉRAPIE — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nArchétype : ${archetype.icon} ${archetype.name}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${displayScript}`;
+    const content = `EUREKA RELAXATION — Séance Personnalisée\n${"═".repeat(50)}\nPrénom : ${prenom}\nArchétype : ${archetype.icon} ${archetype.name}\nCanal dominant : ${VAKOG_NAMES[vakog]}\nDate : ${new Date().toLocaleDateString("fr-FR")}\nSéance n° : ${seanceNum}\n\n${displayScript}`;
     const blob = new Blob([content], { type:"text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -6415,7 +6415,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(20);
       doc.setTextColor(184, 149, 90);
-      doc.text("EUREKA Thérapie", W/2, y, { align:"center" });
+      doc.text("EUREKA Relaxation", W/2, y, { align:"center" });
       y += 8;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
@@ -6470,7 +6470,7 @@ function SeancePlayer({ userData, resumeData, onRestart }) {
       const totalPages = doc.internal.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
-        doc.text(`EUREKA Thérapie — Document personnel — Page ${p}/${totalPages}`, W/2, 290, { align:"center" });
+        doc.text(`EUREKA Relaxation — Document personnel — Page ${p}/${totalPages}`, W/2, 290, { align:"center" });
       }
 
       doc.save(`eureka_seance${seanceNum}_${prenom}_${archetypeKey}.pdf`);
@@ -7847,7 +7847,7 @@ function App() {
           flexWrap:"wrap", justifyContent:"center" }}>
           <p style={{ fontSize:"10px", color:C.hint, textAlign:"center",
             fontFamily:"'Raleway', sans-serif", letterSpacing:"1px" }}>
-            EUREKA Thérapie · Sophrologie · Protocole personnalisé
+            EUREKA Relaxation · Sophrologie · Protocole personnalisé
           </p>
           <a href="/conseils.html"
             style={{ color:C.hint, fontSize:"10px",
