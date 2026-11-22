@@ -2,6 +2,14 @@
   "rewrites": [
     { "source": "/", "destination": "/eureka.html" }
   ],
+  "redirects": [
+    {
+      "source": "/((?!api/).*)",
+      "has": [{ "type": "host", "value": "eureka-therapie.vercel.app" }],
+      "destination": "https://eureka-relaxation.vercel.app/$1",
+      "permanent": true
+    }
+  ],
   "functions": {
     "api/generate.js": { "maxDuration": 300 },
     "api/tts.js": { "maxDuration": 300 }
